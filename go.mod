@@ -1,10 +1,11 @@
-module github.com/starslabhq/chainmonitor
+module github.com/starslabhq/hermes-rebalance
 
 go 1.15
 
 require (
 	github.com/Shopify/sarama v1.26.0
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
+	github.com/go-xorm/xorm v0.7.9
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
@@ -18,4 +19,5 @@ require (
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	xorm.io/core v0.7.2-0.20190928055935-90aeac8d08eb
 )

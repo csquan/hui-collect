@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/starslabhq/chainmonitor/config"
+	"github.com/starslabhq/hermes-rebalance/config"
 
 	"github.com/sirupsen/logrus"
 )

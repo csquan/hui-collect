@@ -9,11 +9,21 @@ type Base struct {
 }
 
 type BaseTask struct {
-	State int
+	State   int
 	Message string
-	params string // used for create sub tasks
+	params  string // used for create sub tasks
 }
 
+type PartReBalanceState = int
+
+const (
+	Init PartReBalanceState = iota
+	Cross
+	TransferIn
+	Farm
+	Success
+	Failed
+)
 
 type PartReBalanceTask struct {
 	*Base
@@ -27,7 +37,6 @@ type AssetTransferTask struct {
 	TransferType uint8  `xorm:"transfer_type"`
 	Progress     string `xorm:"progress"`
 }
-
 
 type TransactionTask struct {
 	*Base
