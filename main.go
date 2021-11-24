@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/chainmonitor/log"
+	"github.com/starslabhq/chainmonitor/tasks"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/starslabhq/chainmonitor/config"
@@ -45,8 +48,18 @@ func main() {
 	}
 
 	leaseAlive()
+	defer removeFile()
 	logrus.Info("hermes-rebalance started")
-	removeFile()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+
+	scheduler, err := tasks.NewTaskScheduler(conf, sigCh)
+	if err != nil {
+		return
+	}
+
+	scheduler.Start()
 }
 
 var fName = `/tmp/huobi.lock`

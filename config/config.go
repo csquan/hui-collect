@@ -23,18 +23,18 @@ func (o *DataBaseConf) init() {
 	o.RetryInterval = time.Duration(o.RetryIntervalInt) * time.Millisecond
 }
 
-
-
 type Config struct {
-	ProfPort int    `mapstructure:"prof_port"`
-	AppName  string `mapstructure:"app_name"`
-	DataBase DataBaseConf `mapstructure:"output"`
-	LogConf  Log          `mapstructure:"log"`
+	AppName          string `mapstructure:"app_name"`
+	ProfPort         int    `mapstructure:"prof_port"`
+	QueryInterval    time.Duration
+	QueryIntervalInt uint64       `mapstructure:"query_interval"` //ms
+	DataBase         DataBaseConf `mapstructure:"output"`
+	LogConf          Log          `mapstructure:"log"`
 }
 
-
-
-
+func (c *Config) init() {
+	c.QueryInterval = time.Duration(c.QueryIntervalInt) * time.Millisecond
+}
 
 type Log struct {
 	Stdout stdout `mapstructure:"stdout"`
@@ -71,8 +71,9 @@ func LoadConf(fpath string) (*Config, error) {
 
 	//load default config first
 	conf := &Config{
-		DataBase:       DefaultDataBaseConfig,
-		LogConf:      DefaultLogConfig,
+		DataBase:         DefaultDataBaseConfig,
+		LogConf:          DefaultLogConfig,
+		QueryIntervalInt: 3000,
 	}
 
 	vip := viper.New()
@@ -100,7 +101,9 @@ func LoadConf(fpath string) (*Config, error) {
 		return nil, err
 	}
 
+	conf.init()
 	conf.DataBase.init()
+
 	return conf, nil
 }
 
@@ -141,7 +144,7 @@ func remoteConfig(namespace string, v *viper.Viper) error {
 	}
 
 	if v.Get("app_name") == nil {
-		return  errors.New("read remote config error : app_name not found! This namespace might not exist!")
+		return errors.New("read remote config error : app_name not found! This namespace might not exist!")
 	}
 
 	err = v.WatchRemoteConfigOnChannel() // 启动一个goroutine来同步配置更改
