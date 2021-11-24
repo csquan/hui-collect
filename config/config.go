@@ -24,7 +24,7 @@ type Config struct {
 	ProfPort         int    `mapstructure:"prof_port"`
 	QueryInterval    time.Duration
 	QueryIntervalInt uint64       `mapstructure:"query_interval"` //ms
-	DataBase         DataBaseConf `mapstructure:"output"`
+	DataBase         DataBaseConf `mapstructure:"database"`
 	LogConf          Log          `mapstructure:"log"`
 }
 

@@ -1,9 +1,11 @@
 package db
 
 import (
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/types"
 	"xorm.io/core"
 )
 
@@ -28,4 +30,11 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 	}
 
 	return
+}
+
+func (*Mysql) UpdateTransferTask(task *types.AssetTransferTask) error {
+	return nil
+}
+func (*Mysql) SaveTxTasks([]*types.TransactionTask) error {
+	return nil
 }

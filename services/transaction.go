@@ -2,8 +2,8 @@ package services
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/starslabhq/chainmonitor/config"
-	"github.com/starslabhq/chainmonitor/types"
+	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/types"
 )
 
 type TransactionState int
