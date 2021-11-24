@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"strings"
 	"time"
@@ -140,7 +141,7 @@ func remoteConfig(namespace string, v *viper.Viper) error {
 	}
 
 	if v.Get("app_name") == nil {
-		return fmt.Errorf("read remote config error : app_name not found! This namespace might not exsit!")
+		return  errors.New("read remote config error : app_name not found! This namespace might not exist!")
 	}
 
 	err = v.WatchRemoteConfigOnChannel() // 启动一个goroutine来同步配置更改
