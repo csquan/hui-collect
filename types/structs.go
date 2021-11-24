@@ -20,7 +20,7 @@ type PartReBalanceTask struct {
 	*BaseTask
 }
 
-type TransferTask struct {
+type AssetTransferTask struct {
 	*Base
 	*BaseTask
 	RebalanceId  uint64 `xorm:"rebalance_id"`
