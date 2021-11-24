@@ -12,16 +12,12 @@ import (
 )
 
 type DataBaseConf struct {
-	DB               string `mapstructure:"db"`             //DB 连接信息
-	SqlBatch         int    `mapstructure:"sql_batch"`      //  批量插入sql时，每次批量插入的最大值
-	RetryIntervalInt int    `mapstructure:"retry_interval"` // 存储失败时重试的间隔 ms
-	RetryTimes       int    `mapstructure:"retry_times"`    // 存储失败，重试次数
-	RetryInterval    time.Duration
+	DB string `mapstructure:"db"` //DB 连接信息
 }
 
-func (o *DataBaseConf) init() {
-	o.RetryInterval = time.Duration(o.RetryIntervalInt) * time.Millisecond
-}
+//func (o *DataBaseConf) init() {
+//	o.RetryInterval = time.Duration(o.RetryIntervalInt) * time.Millisecond
+//}
 
 type Config struct {
 	AppName          string `mapstructure:"app_name"`
@@ -71,7 +67,6 @@ func LoadConf(fpath string) (*Config, error) {
 
 	//load default config first
 	conf := &Config{
-		DataBase:         DefaultDataBaseConfig,
 		LogConf:          DefaultLogConfig,
 		QueryIntervalInt: 3000,
 	}
@@ -102,7 +97,6 @@ func LoadConf(fpath string) (*Config, error) {
 	}
 
 	conf.init()
-	conf.DataBase.init()
 
 	return conf, nil
 }
