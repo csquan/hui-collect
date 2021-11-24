@@ -2,8 +2,8 @@ package services
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/starslabhq/chainmonitor/config"
-	"github.com/starslabhq/chainmonitor/types"
+	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/types"
 	"os"
 	"sync"
 	"time"
@@ -12,15 +12,18 @@ import (
 type ServiceScheduler struct {
 	conf *config.Config
 
+	db types.IDB
+
 	services []types.IAsyncService
 
 	closeCh <-chan os.Signal
 }
 
-func NewServiceScheduler(conf *config.Config, closeCh <-chan os.Signal) (t *ServiceScheduler, err error) {
+func NewServiceScheduler(conf *config.Config, db types.IDB, closeCh <-chan os.Signal) (t *ServiceScheduler, err error) {
 	t = &ServiceScheduler{
 		conf:     conf,
 		closeCh:  closeCh,
+		db: db,
 		services: make([]types.IAsyncService, 0),
 	}
 
@@ -28,6 +31,14 @@ func NewServiceScheduler(conf *config.Config, closeCh <-chan os.Signal) (t *Serv
 }
 
 func (t *ServiceScheduler) Start() {
+	//init db
+
+	partReBalance, err := NewPartReBalanceService(t.db, t.conf)
+	if err != nil {
+		logrus.Fatalf("new re balance service error: %v", err)
+	}
+	t.services = append(t.services, partReBalance)
+
 	timer := time.NewTimer(t.conf.QueryInterval)
 	for {
 		select {

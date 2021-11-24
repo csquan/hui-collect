@@ -4,14 +4,15 @@ import (
 	"flag"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/starslabhq/chainmonitor/log"
-	"github.com/starslabhq/chainmonitor/services"
+	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/db"
+	"github.com/starslabhq/hermes-rebalance/log"
+	"github.com/starslabhq/hermes-rebalance/services"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/starslabhq/chainmonitor/config"
 	"net/http"
 	_ "net/http/pprof"
 )
@@ -54,7 +55,12 @@ func main() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 
-	scheduler, err := services.NewServiceScheduler(conf, sigCh)
+	dbConnection, err := db.NewMysql(&conf.DataBase)
+	if err != nil {
+		logrus.Fatalf("connect to dbConnection error:%v", err)
+	}
+
+	scheduler, err := services.NewServiceScheduler(conf, dbConnection, sigCh)
 	if err != nil {
 		return
 	}
@@ -65,7 +71,7 @@ func main() {
 var fName = `/tmp/huobi.lock`
 
 func removeFile() {
-	os.Remove(fName)
+	_ = os.Remove(fName)
 }
 
 func leaseAlive() {
@@ -74,5 +80,5 @@ func leaseAlive() {
 		panic(fmt.Sprintf("create alive file err:%v", err))
 	}
 	now := time.Now().Unix()
-	fmt.Fprintf(f, "%d", now)
+	_, _ = fmt.Fprintf(f, "%d", now)
 }

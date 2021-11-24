@@ -2,19 +2,8 @@ package services
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/starslabhq/chainmonitor/config"
-	"github.com/starslabhq/chainmonitor/types"
-)
-
-type PartReBalanceState int
-
-const (
-	Init PartReBalanceState = iota
-	Cross
-	TransferIn
-	Farm
-	Success
-	Failed
+	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/types"
 )
 
 type PartReBalance struct {
@@ -50,14 +39,14 @@ func (p *PartReBalance) Run() (err error) {
 		logrus.Errorf("more than one rebalance services are being processed. services:%v", tasks)
 	}
 
-	switch PartReBalanceState(tasks[0].State) {
-	case Init:
+	switch tasks[0].State {
+	case types.Init:
 		return p.handleInit(tasks[0])
-	case Cross:
+	case types.Cross:
 		return p.handleCross(tasks[0])
-	case TransferIn:
+	case types.TransferIn:
 		return p.handleTransferIn(tasks[0])
-	case Farm:
+	case types.Farm:
 		return p.handleFarm(tasks[0])
 	default:
 		logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
@@ -73,9 +62,11 @@ func (p *PartReBalance) handleInit(task *types.PartReBalanceTask) (err error) {
 func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
 	return
 }
+
 func (p *PartReBalance) handleTransferIn(task *types.PartReBalanceTask) (err error) {
 	return
 }
+
 func (p *PartReBalance) handleFarm(task *types.PartReBalanceTask) (err error) {
 	return
 }
