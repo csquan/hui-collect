@@ -26,6 +26,19 @@ import (
 	"time"
 )
 
+const (
+	SignState = iota
+	AuditState
+	ValidatorState
+	FinishState
+)
+
+const appId = "rebal-si-gateway"
+const taskType = "withdraw"
+const bustype = "starsHecoBridgeWithdraw"
+const platform = "starshecobridge"
+const chain = "heco"
+
 // head key, case insensitive
 const (
 	headKeyData              = "date"
@@ -659,4 +672,157 @@ func (p *SignProcess) String() string {
 	fmt.Fprintf(result, "all:\n%s\n", string(p.All))
 	fmt.Fprintf(result, "all sha256: %s\n", hex.EncodeToString(p.AllSHA256))
 	return result.String()
+}
+
+func sign(input string,decimal int,nonce int,from string,to string,GasLimit string,GasPrice string,Amount string,quantity string,receiver string )(signResp Response, err error) {
+	var si SigReqData
+	si.ToTag = input
+	si.Decimal = decimal
+	si.Nonce = nonce
+	si.From = from
+	si.To = to
+	si.FeeStep = GasLimit
+	si.FeePrice = GasPrice
+	si.Amount = Amount
+	si.TaskType = taskType
+
+	var au BusData
+	au.Chain = "heco"
+	au.Quantity = quantity
+	au.ToAddress = receiver
+	au.ToTag = input
+
+	var req SignReq
+	req.SiReq = si
+	req.AuReq = au
+
+	resp, err := SignGatewayEvmChain(req, appId)
+	if err != nil{
+		signResp.Result = false
+		return signResp,err
+	}
+
+	fmt.Println(resp)
+
+	fmt.Println("EncryptData")
+	fmt.Println(resp.Data.EncryptData)
+
+	fmt.Println("CipherKey")
+	fmt.Println(resp.Data.Extra.Cipher)
+
+	return resp,nil
+}
+
+func audit(input string,to string,quantity string,orderID int) (AuditResponse, error)  {
+	var bus BusData
+	bus.Chain = chain
+	bus.Quantity = quantity //保持和签名请求中的一致
+	bus.ToAddress = to
+	bus.ToTag = input
+
+	var AuditInput AuditReq
+	AuditInput.AppId = appId
+	AuditInput.AuReq.BusType = bustype
+	AuditInput.AuReq.BusStep = 1 //推荐值，不修改
+	AuditInput.AuReq.BusId = string(orderID) //ID保持和validator中的id一样,确保每次调用增1
+	AuditInput.AuReq.BusData = bus
+	AuditInput.AuReq.Result = 1 //推荐值，不修改
+
+	resp, err := PostAuditInfo(AuditInput.AuReq, appId)
+	if err != nil {
+         return resp,err
+	}
+	fmt.Println(resp)
+
+	return resp,nil
+}
+
+//3.send to validator
+func validator(input string,to string,quantity string,orderID int) (vaResp *VaResp, err error) {
+	var vreq ValidReq
+	vreq.Id = orderID
+	vreq.Platform = platform
+	vreq.Chain = chain
+
+	//todo：增加db读取
+	//vreq.Encrypt =      //从db中获取该交易的SignRetData.Data.Encryption
+	//vreq.Cipherkey =    //从db中获取该交易的SignRetData.Data.Extra.Cipher
+
+	resp, err := Validator(vreq, appId)
+	if err != nil{
+		return resp,err
+	}
+	fmt.Println(resp)
+	return resp,nil
+}
+
+
+//更新tx的状态，todo：唯一标志tx
+func updateTxStateAndData(signResp Response,state int)  {
+
+}
+
+func updateRawTxStateAndData(validatorResp VaResp,state int)  {
+
+}
+
+func updateTxState(ValidatorState int){
+
+}
+
+//对外暴露的接口服务
+func signTx(input string,decimal int,nonce int,from string,to string,GasLimit string,GasPrice string,Amount string,quantity string,receiver string,orderID int) (vaResp *VaResp) {
+	var vRet VaResp
+	vRet.OK = false
+
+	//delete "0x" if have
+	if strings.Contains(input,"0x"){
+		input = input[2:]
+	}
+	if strings.Contains(from,"0x"){
+		from = from[2:]
+	}
+	if strings.Contains(to,"0x"){
+		to = to[2:]
+	}
+	if strings.Contains(receiver,"0x"){
+		receiver = receiver[2:]
+	}
+
+	q := string(quantity)
+	if len(q) < decimal{//精度不对，函数返回
+		vRet.RawTx = "Decimal and quantity is not right,plese check!"
+		return &vRet
+	}
+
+	// 从数据库中取出这笔交易的状态state
+	state := 0
+
+	switch state {
+	case SignState:
+		signRet,err := sign(input, decimal, nonce, from, to, GasLimit, GasPrice, Amount, quantity, receiver)
+		if err != nil {
+			//err写入db
+		}else{
+			updateTxStateAndData(signRet,AuditState)
+		}
+	case AuditState:
+		_,err := audit(input,receiver,quantity,orderID)
+		if err != nil {
+			//写入db
+		}else{
+			updateTxState(ValidatorState)
+		}
+	case ValidatorState:
+		vRet,err := validator(input, to, quantity,orderID)  //这里检验通过会改写vRet
+		if err != nil  {
+			//写入db
+		}else{
+			//todo:updateRawTxStateAndData(vRet,FinishState)
+		}
+	case FinishState:
+		vRet.Ok = true
+		vRet.RawTx = "This tx had finished,please check!"
+	}
+	return vRet
 }
