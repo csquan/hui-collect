@@ -14,21 +14,23 @@ import (
 )
 
 var (
-	conffile string
+	confFile string
 )
 
 func init() {
-	flag.StringVar(&conffile, "conf", "config.yaml", "conf file")
+	flag.StringVar(&confFile, "conf", "config.yaml", "conf file")
 }
 
 func main() {
 
 	flag.Parse()
-	fmt.Println(conffile)
-	conf, err := config.LoadConf(conffile)
+	logrus.Info(confFile)
+	conf, err := config.LoadConf(confFile)
 	if err != nil {
-		fmt.Println(err.Error())
+		logrus.Errorf("load config error:%v", err)
+		return
 	}
+
 	if conf.ProfPort != 0 {
 		go func() {
 			err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", conf.ProfPort), nil)
