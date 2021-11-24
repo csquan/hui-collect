@@ -1,4 +1,4 @@
-package tasks
+package services
 
 import (
 	"github.com/sirupsen/logrus"
@@ -9,25 +9,25 @@ import (
 	"time"
 )
 
-type TaskScheduler struct {
+type ServiceScheduler struct {
 	conf *config.Config
 
-	tasks []types.IAsyncTask
+	services []types.IAsyncService
 
 	closeCh <-chan os.Signal
 }
 
-func NewTaskScheduler(conf *config.Config, closeCh <-chan os.Signal) (t *TaskScheduler, err error) {
-	t = &TaskScheduler{
-		conf:    conf,
-		closeCh: closeCh,
-		tasks:   make([]types.IAsyncTask, 0),
+func NewServiceScheduler(conf *config.Config, closeCh <-chan os.Signal) (t *ServiceScheduler, err error) {
+	t = &ServiceScheduler{
+		conf:     conf,
+		closeCh:  closeCh,
+		services: make([]types.IAsyncService, 0),
 	}
 
 	return
 }
 
-func (t *TaskScheduler) Start() {
+func (t *ServiceScheduler) Start() {
 	timer := time.NewTimer(t.conf.QueryInterval)
 	for {
 		select {
@@ -37,16 +37,16 @@ func (t *TaskScheduler) Start() {
 
 			wg := sync.WaitGroup{}
 
-			for _, task := range t.tasks {
+			for _, service := range t.services {
 				wg.Add(1)
-				go func(asyncTask types.IAsyncTask) {
+				go func(asyncService types.IAsyncService) {
 					defer wg.Done()
 
-					err := asyncTask.Run()
+					err := asyncService.Run()
 					if err != nil {
-						logrus.Errorf("run task [%v] failed. err:%v", asyncTask.Name(), err)
+						logrus.Errorf("run service [%v] failed. err:%v", asyncService.Name(), err)
 					}
-				}(task)
+				}(service)
 			}
 
 			wg.Wait()

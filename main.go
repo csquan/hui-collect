@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/chainmonitor/log"
-	"github.com/starslabhq/chainmonitor/tasks"
+	"github.com/starslabhq/chainmonitor/services"
 	"os"
 	"os/signal"
 	"syscall"
@@ -54,7 +54,7 @@ func main() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 
-	scheduler, err := tasks.NewTaskScheduler(conf, sigCh)
+	scheduler, err := services.NewServiceScheduler(conf, sigCh)
 	if err != nil {
 		return
 	}

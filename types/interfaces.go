@@ -14,7 +14,7 @@ type IDB interface {
 	IWriter
 }
 
-type IAsyncTask interface {
+type IAsyncService interface {
 	Name() string
 	Run() error
 }

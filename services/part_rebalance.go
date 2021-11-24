@@ -1,4 +1,4 @@
-package tasks
+package services
 
 import (
 	"github.com/sirupsen/logrus"
@@ -47,7 +47,7 @@ func (p *PartReBalance) Run() (err error) {
 	}
 
 	if len(tasks) > 1 {
-		logrus.Errorf("more than one rebalance tasks are being processed. tasks:%v", tasks)
+		logrus.Errorf("more than one rebalance services are being processed. services:%v", tasks)
 	}
 
 	switch PartReBalanceState(tasks[0].State) {
