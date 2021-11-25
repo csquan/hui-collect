@@ -58,3 +58,26 @@ type InvestTask struct {
 	*BaseTask
 	RebalanceId uint64 `xorm:"rebalance_id"`
 }
+
+type CrossTask struct {
+	*Base
+	*BaseTask
+	RebalanceId  uint64 `xorm:"rebalance_id"`
+	ChainFrom    string `xorm:"chain_from"`
+	ChainTo      string `xorm:"chain_to"`
+	CurrencyFrom string `xorm:"currency_from"`
+	CurrencyTo   string `xorm:"currency_to"`
+	Amount       string `xorm:"amount"`
+}
+
+type CrossSubTask struct {
+	*Base
+	No           uint   `xorm:"no"` //taskNo
+	ParentId     uint64 `xorm:"parent_id"`
+	ChainFrom    string `xorm:"chain_from"`
+	ChainTo      string `xorm:"chain_to"`
+	CurrencyFrom string `xorm:"currency_from"`
+	CurrencyTo   string `xorm:"currency_to"`
+	Amount       string `xorm:"amount"`
+	State        int    `xorm:"state"`
+}

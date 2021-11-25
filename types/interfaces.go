@@ -6,16 +6,21 @@ type IReader interface {
 	GetOpenedPartReBalanceTasks() ([]*PartReBalanceTask, error)
 
 	GetOpenedAssetTransferTasks() ([]*AssetTransferTask, error)
-	GetAssetTransferTasksWithReBalanceId(reBalanceId uint64)([]*AssetTransferTask, error)
+	GetAssetTransferTasksWithReBalanceId(reBalanceId uint64) ([]*AssetTransferTask, error)
 
 	GetOpenedTransactionTask() (*TransactionTask, error)
-	GetTxTasks(uint64) ([]*TransactionTask, error)
+	GetTxTasks(uint) ([]*TransactionTask, error)
+
+	GetOpenedCrossTasks() ([]*CrossTask, error)
+	GetCrossSubTasks(crossTaskId uint) ([]*CrossSubTask, error)
 }
 
 type IWriter interface {
-	CreateAssetTransferTask(task  *AssetTransferTask) error
+	CreateAssetTransferTask(task *AssetTransferTask) error
 	UpdateTransferTask(task *AssetTransferTask) error
 	SaveTxTasks([]*TransactionTask) error
+
+	SaveCrossSubTasks([]*CrossSubTask) error
 }
 
 type IDB interface {
@@ -27,4 +32,3 @@ type IAsyncService interface {
 	Name() string
 	Run() error
 }
-
