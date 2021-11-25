@@ -67,7 +67,7 @@ func (m *Mysql) CreateAssetTransferTask(itf xorm.Interface, task *types.AssetTra
 	return
 }
 
-func (m *Mysql)UpdateTxTask(task *types.SignTask) error {
+func (m *Mysql)UpdateTxTask(task *types.TransactionTask) error {
 	return nil
 }
 

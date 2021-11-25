@@ -140,7 +140,7 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 	return result, nil
 }
 
-func (signer *Signer) audit(input string,to string,quantity string,orderID int) (AuditResponse, error)  {
+func AuditTx(input string,to string,quantity string,orderID int) (AuditResponse, error)  {
 	var bus BusData
 	bus.Chain = chain
 	bus.Quantity = quantity //保持和签名请求中的一致

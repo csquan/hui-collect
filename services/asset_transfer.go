@@ -79,7 +79,7 @@ func (t *AssetTransfer) handleAssetTransferInit(task *types.AssetTransferTask) (
 				if b, err := json.Marshal(param); err != nil {
 					return err
 				} else {
-					baseTask := &types.BaseTask{State: int(TxUnSigned)}
+					baseTask := &types.BaseTask{State: int(SignState)}
 					task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce, Params: string(b)}
 					nonce++
 					txTasks = append(txTasks, task)

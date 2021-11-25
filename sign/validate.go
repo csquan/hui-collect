@@ -240,7 +240,7 @@ func ValidatorInfo() (*VaResp, error) {
 }
 
 //3.send to validator
-func (signer *Signer) validator(input string,to string,quantity string,orderID int) (vaResp *VaResp, err error) {
+func ValidatorTx(input string,to string,quantity string,orderID int) (vaResp *VaResp, err error) {
 	var vreq ValidReq
 	vreq.Id = orderID
 	vreq.Platform = platform

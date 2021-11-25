@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
+	signer "github.com/starslabhq/hermes-rebalance/sign"
 )
 
 type TransactionState int
@@ -67,17 +68,63 @@ func (t *Transaction) Run() (err error) {
 
 
 func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
+	//TODO 放在事物中
+	input := ""  //temp def
+	decimal := 0
+	nonce :=0
+	from := ""
+	to := ""
+	GasLimit :=""
+	GasPrice :=""
+	Amount :=""
+	quantity:=""
+	receiver:=""
 
+	signRet,err := signer.SignTx(input, decimal, nonce, from, to, GasLimit, GasPrice, Amount, quantity, receiver)
+	if err != nil {
+		//err写入db
+	}else {
+		task.State = int(AuditState)
+		//task.Cipher = signRet.Data.Extra.Cipher
+		//task.EncryptData = signRet.Data.EncryptData
+		task.TxHash = signRet.Data.Extra.TxHash
+
+		t.db.UpdateTxTask(task)
+	}
 	return nil
 }
 
 func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
+	//TODO 放在事物中
+	input := ""  //temp def
+	quantity:=""
+	receiver:=""
+	orderID :=0
 
+	_, err = signer.AuditTx(input,receiver,quantity,orderID)
+	if err != nil {
+		//写入db
+	}else{
+		task.State = int(ValidatorState)
+		t.db.UpdateTxTask(task)
+	}
 	return nil
 }
 
 func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
+	input := ""  //temp def
+	quantity:=""
+	orderID :=0
+	to := ""
 
+	_,err = signer.ValidatorTx(input, to, quantity,orderID)  //这里检验通过会改写vRet
+	if err != nil  {
+		//写入db
+	}else{
+		task.State = int(TxSigned)
+		//task.RawTx = vRet.RawTx
+		t.db.UpdateTxTask(task)
+	}
 	return nil
 }
 

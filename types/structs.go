@@ -56,16 +56,13 @@ type TransactionTask struct {
 	SignData        []byte `xorm:"signed_data"`
 	Params          string `xorm:"params"`
 	Hash            string `xorm:"hash"`
+
+	Cipher      	[]byte `xorm:"cipher"`
+	TxHash      	string `xorm:"txHash"`
+	EncryptData 	[]byte `xorm:"encryptData"`
+	RawTx       	[]byte `xorm:"rawTx"`
 }
 
-type SignTask struct {
-	*Base
-	*BaseTask
-	Cipher      string `xorm:"string"`
-	TxHash      string `xorm:"TxHash"`
-	EncryptData string `xorm:"EncryptData"`
-	RawTx       string `xorm:"rawTx"`
-}
 
 type InvestTask struct {
 	*Base

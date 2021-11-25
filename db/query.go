@@ -14,9 +14,6 @@ func (*Mysql) GetOpenedAssetTransferTasks() ([]*types.AssetTransferTask, error) 
 	return nil, nil
 }
 
-func (*Mysql) GetOpenedSignTasks() ([]*types.SignTask, error) {
-	return nil, nil
-}
 
 func (m *Mysql) GetAssetTransferTasksWithReBalanceId(reBalanceId uint64) (tasks []*types.AssetTransferTask, err error) {
 	tasks = make([]*types.AssetTransferTask, 0)
