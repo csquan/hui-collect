@@ -38,3 +38,6 @@ func (*Mysql) UpdateTransferTask(task *types.AssetTransferTask) error {
 func (*Mysql) SaveTxTasks([]*types.TransactionTask) error {
 	return nil
 }
+func (*Mysql) CreateTransferTask(task *types.AssetTransferTask) error {
+	return nil
+}

@@ -7,7 +7,7 @@ import (
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
-type AssetTransferState int
+type AssetTransferState = int
 
 const (
 	AssetTransferInit AssetTransferState = iota

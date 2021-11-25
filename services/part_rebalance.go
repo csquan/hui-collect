@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -46,8 +47,8 @@ func (p *PartReBalance) Run() (err error) {
 		return p.handleCross(tasks[0])
 	case types.PartReBalanceTransferIn:
 		return p.handleTransferIn(tasks[0])
-	case types.PartReBalanceFarm:
-		return p.handleFarm(tasks[0])
+	case types.PartReBalanceInvest:
+		return p.handleInvest(tasks[0])
 	default:
 		logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
 	}
@@ -56,17 +57,39 @@ func (p *PartReBalance) Run() (err error) {
 }
 
 func (p *PartReBalance) handleInit(task *types.PartReBalanceTask) (err error) {
+	//TODO create cross task
 	return
 }
 
 func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
+	//TODO check cross task and create transferIn task
 	return
 }
 
 func (p *PartReBalance) handleTransferIn(task *types.PartReBalanceTask) (err error) {
+	atTasks, err := p.db.GetAssetTransferTasksWithReBalanceId(task.ID)
+	if err != nil {
+		logrus.Errorf("get asset transfer task error:%v", err)
+		return err
+	}
+
+	if len(atTasks) == 0 {
+		err = fmt.Errorf("part rebalance task [%v] has no transfer in task", task)
+		return
+	}
+
+	for _, at := range atTasks {
+		if at.State != AssetTransferFailed && at.State != AssetTransferSuccess  {
+			logrus.Debugf("asset transfer task [%v] is not finished", at)
+			return
+		}
+	}
+
+	//TODO check transferIn task and create farm task
+
 	return
 }
 
-func (p *PartReBalance) handleFarm(task *types.PartReBalanceTask) (err error) {
+func (p *PartReBalance) handleInvest(task *types.PartReBalanceTask) (err error) {
 	return
 }

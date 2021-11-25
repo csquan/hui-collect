@@ -3,7 +3,7 @@ package types
 import "time"
 
 type Base struct {
-	ID        uint      `json:"id" gorm:"primary_key"`
+	ID        uint64      `json:"id" gorm:"primary_key"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -20,7 +20,7 @@ const (
 	PartReBalanceInit PartReBalanceState = iota
 	PartReBalanceCross
 	PartReBalanceTransferIn
-	PartReBalanceFarm
+	PartReBalanceInvest
 	PartReBalanceSuccess
 	PartReBalanceFailed
 )
