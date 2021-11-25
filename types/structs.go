@@ -74,7 +74,7 @@ type SignTask struct {
 	Cipher          string `xorm:"string"`
 	TxHash          string `xorm:"TxHash"`
 	EncryptData     string `xorm:"EncryptData"`
-	rawTx      		string `xorm:"rawTx"`
+	RawTx      		string `xorm:"rawTx"`
 }
 
 

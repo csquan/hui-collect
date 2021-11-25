@@ -238,3 +238,22 @@ func ValidatorInfo() (*VaResp, error) {
 	}, nil
 
 }
+
+//3.send to validator
+func (signer *Signer) validator(input string,to string,quantity string,orderID int) (vaResp *VaResp, err error) {
+	var vreq ValidReq
+	vreq.Id = orderID
+	vreq.Platform = platform
+	vreq.Chain = chain
+
+	//todo：增加db读取
+	//vreq.Encrypt =      //从db中获取该交易的SignRetData.Data.Encryption
+	//vreq.Cipherkey =    //从db中获取该交易的SignRetData.Data.Extra.Cipher
+
+	resp, err := Validator(vreq, appId)
+	if err != nil{
+		return resp,err
+	}
+	fmt.Println(resp)
+	return resp,nil
+}
