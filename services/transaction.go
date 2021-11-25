@@ -16,6 +16,7 @@ type TransactionState int
 const (
 	TxInit TransactionState = iota
 	TxUnSigned
+
 	TxSigned
 	TxCheckReceipt
 	TxSuccess
