@@ -8,18 +8,14 @@ require (
 	github.com/ethereum/go-ethereum v1.10.13
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-xorm/xorm v0.7.9
-	github.com/golang/snappy v0.0.4 // indirect
-	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lestrrat-go/strftime v1.0.5 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/shima-park/agollo v1.2.12
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.8.1
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/sys v0.0.0-20210816183151-1e6c022a8912
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	xorm.io/core v0.7.2-0.20190928055935-90aeac8d08eb
