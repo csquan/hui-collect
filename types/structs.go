@@ -29,16 +29,31 @@ const (
 type PartReBalanceTask struct {
 	*Base
 	*BaseTask
-	Data []*RebalanceData
 	Params string `xorm:"params"`
 }
 
-type RebalanceData struct {
-	vaultAddr string //合约地址
-	address   string //跨连桥钱包地址
-	amount    uint64 //跨链资金大小
-	taskId    uint64 //链下跨链任务id
+type RebalanceParams struct {
+	AssetTransferInParams []*AssetTransferInParam
+	InvestParam           *InvestParam
+}
 
+type AssetTransferInParam struct {
+	From string
+	To   string //合约地址
+	amount  uint64 //跨链资金大小
+	taskId  uint64 //链下跨链任务id
+}
+
+type InvestParam struct {
+	From string
+	To   string //合约地址
+	Data *InvestData
+}
+
+type InvestData struct {
+	address    []string
+	token1List []uint64
+	token2List []uint64
 }
 
 type AssetTransferTask struct {

@@ -3,9 +3,11 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
+	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
 const (
@@ -68,30 +70,31 @@ func getNonce() int {
 	return 0
 }
 func (t *AssetTransfer) handleAssetTransferInit(task *types.AssetTransferTask) (err error) {
-	//解析params 创建txTasks子任务，切换到TransferOngoing
-	//TODO 放在事物中
-	params := make([]*types.RebalanceData, 0)
-	if err := json.Unmarshal([]byte(task.Params), params); err != nil {
-		var txTasks []*types.TransactionTask
-		nonce := getNonce()
-		for _, param := range params {
-			if b, err := json.Marshal(param); err != nil {
-				return err
-			} else {
-				baseTask := &types.BaseTask{State: int(TxUnSigned)}
-				task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce, Params: string(b)}
-				nonce++
-				txTasks = append(txTasks, task)
+	err = utils.CommitWithSession(t.db, func(session *xorm.Session) error {
+		params := make([]*types.AssetTransferInParam, 0)
+		if err := json.Unmarshal([]byte(task.Params), params); err != nil {
+			var txTasks []*types.TransactionTask
+			nonce := getNonce()
+			for _, param := range params {
+				if b, err := json.Marshal(param); err != nil {
+					return err
+				} else {
+					baseTask := &types.BaseTask{State: int(TxUnSigned)}
+					task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce, Params: string(b)}
+					nonce++
+					txTasks = append(txTasks, task)
+				}
 			}
-		}
-		if err := t.db.SaveTxTasks(txTasks); err != nil {
+			if err := t.db.SaveTxTasks(txTasks); err != nil {
+				return err
+			}
+			task.State = int(AssetTransferOngoing)
+			return t.db.UpdateAssetTransferTask(task)
+		} else {
 			return err
 		}
-		task.State = int(AssetTransferOngoing)
-		return t.db.UpdateAssetTransferTask(task)
-	} else {
-		return err
-	}
+	})
+	return err
 }
 
 type Progress struct {
