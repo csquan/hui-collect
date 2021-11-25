@@ -60,6 +60,7 @@ func (p *PartReBalance) Run() (err error) {
 	return
 }
 
+//handleInit find out init state and create cross task
 func (p *PartReBalance) handleInit(task *types.PartReBalanceTask) (err error) {
 	crossBalances := make([]*types.CrossBalanceItem, 0)
 	err = json.Unmarshal([]byte(task.Params), &crossBalances)
@@ -118,11 +119,17 @@ func (p *PartReBalance) readParams(task *types.PartReBalanceTask) (params *types
 	return
 }
 
+//handleCross check cross task state and create transfer in task when cross finished
 func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
 
 	crossTasks, err := p.db.GetCrossTasksByReBalanceId(task.ID)
 	if err != nil {
 		logrus.Errorf("get cross task for rebalance [%v] failed", task)
+	}
+
+	if len(crossTasks) == 0 {
+		err = fmt.Errorf("part rebalance task [%v] has no cross task", task)
+		return
 	}
 
 	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {
@@ -187,6 +194,7 @@ func (p *PartReBalance) createTransferInTask(task *types.PartReBalanceTask) (ass
 	return
 }
 
+// handleTransferIn check transferIn task state and create invest task after transferIn finished
 func (p *PartReBalance) handleTransferIn(task *types.PartReBalanceTask) (err error) {
 
 	atTasks, err := p.db.GetAssetTransferTasksWithReBalanceId(task.ID)
