@@ -64,7 +64,9 @@ func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
 }
 
 func (p *PartReBalance) handleTransferIn(task *types.PartReBalanceTask) (err error) {
-	return
+	baseTask := &types.BaseTask{State: int(AssetTransferInit), Params: task.Params}
+	assetTransfer := &types.AssetTransferTask{BaseTask:baseTask, RebalanceId: task.ID, TransferType: AssetTransferOut}
+	return p.db.InsertAssetTransfer(assetTransfer)
 }
 
 func (p *PartReBalance) handleFarm(task *types.PartReBalanceTask) (err error) {

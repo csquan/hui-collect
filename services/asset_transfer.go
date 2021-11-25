@@ -1,10 +1,16 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
+)
+
+const (
+	AssetTransferOut = iota
+	AssetTransferIn
 )
 
 type AssetTransferState int
@@ -16,24 +22,24 @@ const (
 	AssetTransferFailed
 )
 
-type Transfer struct {
+type AssetTransfer struct {
 	db     types.IDB
 	config *config.Config
 }
 
-func NewAssetTransferService(db types.IDB, conf *config.Config) (p *Transfer, err error) {
-	p = &Transfer{
+func NewAssetTransferService(db types.IDB, conf *config.Config) (p *AssetTransfer, err error) {
+	p = &AssetTransfer{
 		db:     db,
 		config: conf,
 	}
 	return
 }
 
-func (t *Transfer) Name() string {
-	return "transfer"
+func (t *AssetTransfer) Name() string {
+	return "asset_transfer"
 }
 
-func (t *Transfer) Run() (err error) {
+func (t *AssetTransfer) Run() (err error) {
 	tasks, err := t.db.GetOpenedAssetTransferTasks()
 	if err != nil {
 		return
@@ -59,16 +65,34 @@ func (t *Transfer) Run() (err error) {
 
 	return
 }
-
-func (t *Transfer) handleAssetTransferInit(task *types.AssetTransferTask) (err error) {
-	//解析params 创建txTasks自任务，切换到TransferOngoing
+func getNonce() int {
+	return 0
+}
+func (t *AssetTransfer) handleAssetTransferInit(task *types.AssetTransferTask) (err error) {
+	//解析params 创建txTasks子任务，切换到TransferOngoing
 	//TODO 放在事物中
-	var txTasks []*types.TransactionTask
-	if err := t.db.SaveTxTasks(txTasks); err != nil {
+	params := make([]*types.RebalanceData, 0)
+	if err := json.Unmarshal(task.Params, params); err != nil {
+		var txTasks []*types.TransactionTask
+		nonce := getNonce()
+		for _, param := range params {
+			if b, err := json.Marshal(param); err != nil {
+				return err
+			} else {
+				baseTask := &types.BaseTask{State: int(TxUnSigned), Params: b}
+				task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce}
+				nonce++
+				txTasks = append(txTasks, task)
+			}
+		}
+		if err := t.db.SaveTxTasks(txTasks); err != nil {
+			return err
+		}
+		task.State = int(AssetTransferOngoing)
+		return t.db.UpdateAssetTransferTask(task)
+	} else {
 		return err
 	}
-	task.State = int(AssetTransferOngoing)
-	return t.db.UpdateTransferTask(task)
 }
 
 type Progress struct {
@@ -81,7 +105,7 @@ func (p *Progress) toString() string {
 	return fmt.Sprintf("%d/%d failed:%d", p.SuccessCount, p.AllCount, p.FailedCount)
 }
 
-func (t *Transfer) handleAssetTransferOngoing(task *types.AssetTransferTask) (err error) {
+func (t *AssetTransfer) handleAssetTransferOngoing(task *types.AssetTransferTask) (err error) {
 	//扫描子txTasks，更新状态
 	txTasks, err := t.db.GetTxTasks(task.ID)
 	if err != nil {
@@ -104,5 +128,5 @@ func (t *Transfer) handleAssetTransferOngoing(task *types.AssetTransferTask) (er
 		task.State = int(AssetTransferSuccess)
 	}
 	task.Progress = progress.toString()
-	return t.db.UpdateTransferTask(task)
+	return t.db.UpdateAssetTransferTask(task)
 }

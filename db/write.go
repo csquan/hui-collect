@@ -32,9 +32,16 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 	return
 }
 
-func (*Mysql) UpdateTransferTask(task *types.AssetTransferTask) error {
+func (*Mysql) InsertAssetTransfer(task *types.AssetTransferTask) error {
+	return nil
+}
+func (*Mysql) UpdateAssetTransferTask(task *types.AssetTransferTask) error {
 	return nil
 }
 func (*Mysql) SaveTxTasks([]*types.TransactionTask) error {
+	return nil
+}
+
+func (*Mysql) UpdateTransactionTask(task *types.TransactionTask) error {
 	return nil
 }

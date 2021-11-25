@@ -23,7 +23,7 @@ func NewServiceScheduler(conf *config.Config, db types.IDB, closeCh <-chan os.Si
 	t = &ServiceScheduler{
 		conf:     conf,
 		closeCh:  closeCh,
-		db: db,
+		db:       db,
 		services: make([]types.IAsyncService, 0),
 	}
 
