@@ -9,7 +9,7 @@ type IReader interface {
 	GetAssetTransferTasksWithReBalanceId(reBalanceId uint64)([]*AssetTransferTask, error)
 
 	GetOpenedTransactionTask() (*TransactionTask, error)
-	GetTxTasks(uint) ([]*TransactionTask, error)
+	GetTxTasks(uint64) ([]*TransactionTask, error)
 }
 
 type IWriter interface {

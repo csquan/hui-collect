@@ -10,13 +10,17 @@ func (m *Mysql) GetOpenedPartReBalanceTasks() (tasks []*types.PartReBalanceTask,
 	return
 }
 
-
 func (*Mysql) GetOpenedAssetTransferTasks() ([]*types.AssetTransferTask, error) {
 	return nil, nil
 }
+
+func (*Mysql) GetAssetTransferTasksWithReBalanceId(reBalanceId uint64) ([]*types.AssetTransferTask, error) {
+	return nil, nil
+}
+
 func (*Mysql) GetOpenedTransactionTask() (*types.TransactionTask, error) {
 	return nil, nil
 }
-func (*Mysql) GetTxTasks(uint) ([]*types.TransactionTask, error) {
+func (*Mysql) GetTxTasks(uint64) ([]*types.TransactionTask, error) {
 	return nil, nil
 }
