@@ -13,7 +13,7 @@ type IReader interface {
 }
 
 type IWriter interface {
-	CreateTransferTask(task  *AssetTransferTask) error
+	CreateAssetTransferTask(task  *AssetTransferTask) error
 	UpdateTransferTask(task *AssetTransferTask) error
 	SaveTxTasks([]*TransactionTask) error
 }
