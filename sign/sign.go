@@ -9,12 +9,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/go-delve/delve/pkg/config"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/types"
 	"io"
 	"io/ioutil"
 	"math/big"
@@ -132,6 +134,21 @@ type RespData struct {
 type RespEx struct {
 	Cipher string `json:"cipher"`
 	TxHash string `json:"txhash"`
+}
+//add task control
+type Signer struct {
+	db     types.IDB
+	config *config.Config
+}
+
+type SignerState = int
+
+func NewTransactionService(db types.IDB, conf *config.Config) (s *Signer, err error) {
+	s = &Signer{
+		db:     db,
+		config: conf,
+	}
+	return
 }
 
 func fetchNonce(ctx context.Context, archnode, addr string) (int, error) {
@@ -586,7 +603,27 @@ func (p *SignProcess) String() string {
 	return result.String()
 }
 
-func sign(input string,decimal int,nonce int,from string,to string,GasLimit string,GasPrice string,Amount string,quantity string,receiver string )(signResp Response, err error) {
+func (signer *Signer) sign(input string,decimal int,nonce int,from string,to string,GasLimit string,GasPrice string,Amount string,quantity string,receiver string )(signResp Response, err error) {
+	//params check
+		//delete "0x" if have
+		if strings.Contains(input, "0x") {
+			input = input[2:]
+		}
+		if strings.Contains(from, "0x") {
+			from = from[2:]
+		}
+		if strings.Contains(to, "0x") {
+			to = to[2:]
+		}
+		if strings.Contains(receiver, "0x") {
+			receiver = receiver[2:]
+		}
+
+		q := string(quantity)
+		if len(q) < decimal {
+			///精度不对，函数返回
+		}
+
 	var si SigReqData
 	si.ToTag = input
 	si.Decimal = decimal
@@ -625,7 +662,7 @@ func sign(input string,decimal int,nonce int,from string,to string,GasLimit stri
 	return resp,nil
 }
 
-func audit(input string,to string,quantity string,orderID int) (AuditResponse, error)  {
+func (signer *Signer) audit(input string,to string,quantity string,orderID int) (AuditResponse, error)  {
 	var bus BusData
 	bus.Chain = chain
 	bus.Quantity = quantity //保持和签名请求中的一致
@@ -650,7 +687,7 @@ func audit(input string,to string,quantity string,orderID int) (AuditResponse, e
 }
 
 //3.send to validator
-func validator(input string,to string,quantity string,orderID int) (vaResp *VaResp, err error) {
+func (signer *Signer) validator(input string,to string,quantity string,orderID int) (vaResp *VaResp, err error) {
 	var vreq ValidReq
 	vreq.Id = orderID
 	vreq.Platform = platform
@@ -669,72 +706,92 @@ func validator(input string,to string,quantity string,orderID int) (vaResp *VaRe
 }
 
 
-//更新tx的状态，todo：唯一标志tx
-func updateTxStateAndData(signResp Response,state int)  {
 
-}
 
-func updateRawTxStateAndData(validatorResp VaResp,state int)  {
-
-}
-
-func updateTxState(ValidatorState int){
-
-}
-
-//对外暴露的接口服务
-func signTx(input string,decimal int,nonce int,from string,to string,GasLimit string,GasPrice string,Amount string,quantity string,receiver string,orderID int) (vaResp *VaResp,err error) {
-	var vRet VaResp
-	vRet.OK = false
-
-	//delete "0x" if have
-	if strings.Contains(input,"0x"){
-		input = input[2:]
+//func (signer *Signer)signTx(input string,decimal int,nonce int,from string,to string,GasLimit string,GasPrice string,Amount string,quantity string,receiver string,orderID int) (err error) {
+func (signer *Signer) Run() (err error) {
+	tasks, err := signer.db.GetOpenedSignTasks()
+	if err != nil {
+		return
 	}
-	if strings.Contains(from,"0x"){
-		from = from[2:]
+	if len(tasks) == 0 {
+		logrus.Infof("no available transfer task.")
+		return
 	}
-	if strings.Contains(to,"0x"){
-		to = to[2:]
-	}
-	if strings.Contains(receiver,"0x"){
-		receiver = receiver[2:]
+	if len(tasks) > 1 {
+		logrus.Errorf("more than one sign services are being processed. tasks:%v", tasks)
 	}
 
-	q := string(quantity)
-	if len(q) < decimal{//精度不对，函数返回
-		vRet.RawTx = "Decimal and quantity is not right,plese check!"
-		return &vRet,nil
-	}
-
-	// 从数据库中取出这笔交易的状态state
-	state := 0
-
-	switch state {
+	switch SignerState(tasks[0].State) {
 	case SignState:
-		signRet,err := sign(input, decimal, nonce, from, to, GasLimit, GasPrice, Amount, quantity, receiver)
-		if err != nil {
-			//err写入db
-		}else{
-			updateTxStateAndData(signRet,AuditState)
-		}
+		return signer.handleSign(tasks[0])
 	case AuditState:
-		_,err := audit(input,receiver,quantity,orderID)
-		if err != nil {
-			//写入db
-		}else{
-			updateTxState(ValidatorState)
-		}
+		return signer.handleAudit(tasks[0])
 	case ValidatorState:
-		vRet,err := validator(input, to, quantity,orderID)  //这里检验通过会改写vRet
-		if err != nil  {
-			//写入db
-		}else{
-			updateRawTxStateAndData(*vRet,FinishState)
-		}
-	case FinishState:
-		vRet.OK = true
-		vRet.RawTx = "This tx had finished,please check!"
+		return signer.handleValidator(tasks[0])
+	default:
+		logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
 	}
-	return &vRet,nil
+	return
 }
+
+func (signer *Signer) handleSign(task *types.SignTask) (err error) {
+	//TODO 放在事物中
+	input := ""  //temp def
+	decimal := 0
+	nonce :=0
+	from := ""
+	to := ""
+	GasLimit :=""
+	GasPrice :=""
+	Amount :=""
+	quantity:=""
+	receiver:=""
+
+	signRet,err := signer.sign(input, decimal, nonce, from, to, GasLimit, GasPrice, Amount, quantity, receiver)
+	if err != nil {
+		//err写入db
+	}else {
+		task.State = int(AuditState)
+		task.Cipher = signRet.Data.Extra.Cipher
+		task.EncryptData = signRet.Data.EncryptData
+		task.TxHash = signRet.Data.Extra.TxHash
+		signer.db.UpdateTxTask(task)
+	}
+	return nil
+}
+
+func (signer *Signer) handleAudit(task *types.SignTask) (err error) {
+	//TODO 放在事物中
+	input := ""  //temp def
+	quantity:=""
+	receiver:=""
+	orderID :=0
+
+	_, err = signer.audit(input,receiver,quantity,orderID)
+	if err != nil {
+		//写入db
+	}else{
+		task.State = int(ValidatorState)
+		signer.db.UpdateTxTask(task)
+	}
+	return nil
+}
+
+func (signer *Signer) handleValidator(task *types.SignTask) (err error) {
+	input := ""  //temp def
+	quantity:=""
+	orderID :=0
+	to := ""
+
+	vRet,err := signer.validator(input, to, quantity,orderID)  //这里检验通过会改写vRet
+	if err != nil  {
+		//写入db
+	}else{
+		task.State = int(FinishState)
+		task.rawTx = vRet.RawTx
+		signer.db.UpdateTxTask(task)
+	}
+	return
+}
+

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/db"
 	"github.com/starslabhq/hermes-rebalance/log"
@@ -43,6 +44,8 @@ func main() {
 			}
 		}()
 	}
+
+	//setup log print
 	err = log.Init(conf.AppName, conf.LogConf)
 	if err != nil {
 		log.Fatal(err)
@@ -52,14 +55,23 @@ func main() {
 	defer removeFile()
 	logrus.Info("hermes-rebalance started")
 
+	//setup alert
+	err = alert.InitDingding(&conf.Alert)
+	if err != nil {
+		logrus.Fatalf("set up alert error:%v", err)
+	}
+
+	//listen kill signal
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 
+	//setup db connection
 	dbConnection, err := db.NewMysql(&conf.DataBase)
 	if err != nil {
 		logrus.Fatalf("connect to dbConnection error:%v", err)
 	}
 
+	//setup scheduler
 	scheduler, err := services.NewServiceScheduler(conf, dbConnection, sigCh)
 	if err != nil {
 		return

@@ -14,13 +14,18 @@ type IReader interface {
 	GetTxTasks(uint64) ([]*TransactionTask, error)
 
 	GetOpenedCrossTasks() ([]*CrossTask, error)
+
+	GetOpenedSignTasks() ([]*SignTask, error)
+
 	GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*CrossTask, error)
+
 	GetCrossSubTasks(crossTaskId uint64) ([]*CrossSubTask, error)
+	GetOpenedCrossSubTasks(uint64) ([]*CrossSubTask, error)
+
 }
 
 type IWriter interface {
-
-	InsertAssetTransfer(task *AssetTransferTask) error
+	InsertAssetTransfer(itf xorm.Interface, task *AssetTransferTask) error
 	UpdateAssetTransferTask(task *AssetTransferTask) error
 	UpdateTransactionTask(task *TransactionTask) error
 
@@ -28,13 +33,25 @@ type IWriter interface {
 
 	CreateAssetTransferTask(itf xorm.Interface, task *AssetTransferTask) error
 	UpdateTransferTask(task *AssetTransferTask) error
+	UpdateTxTask(task *SignTask) error
 	SaveTxTasks([]*TransactionTask) error
-
-	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
-	SaveCrossSubTasks([]*CrossSubTask) error
 
 	GetSession() *xorm.Session
 	GetEngine() *xorm.Engine
+
+	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
+	//update cross task state
+	UpdateCrossTaskState(id uint64, state int) error
+	//update cross task task_no cur and amount cur
+	UpdateCrossTaskNoAndAmount(itf xorm.Interface, id, taskNo, amount uint64) error
+	//add bridge task id to sub task
+	UpdateCrossSubTaskBridgeID(itf xorm.Interface, id, bridgeTaskId uint64) error
+
+	//save cross sub task
+	SaveCrossSubTask(subTask *CrossSubTask) error
+
+	//update cross sub task state
+	UpdateCrossSubTaskState(id uint64, state int) error
 }
 
 type IDB interface {

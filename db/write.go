@@ -32,7 +32,7 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 	return
 }
 
-func (*Mysql) InsertAssetTransfer(task *types.AssetTransferTask) error {
+func (*Mysql) InsertAssetTransfer(itf xorm.Interface, task *types.AssetTransferTask) error {
 	return nil
 }
 func (*Mysql) UpdateAssetTransferTask(task *types.AssetTransferTask) error {
@@ -67,6 +67,10 @@ func (m *Mysql) CreateAssetTransferTask(itf xorm.Interface, task *types.AssetTra
 	return
 }
 
+func (m *Mysql)UpdateTxTask(task *types.SignTask) error {
+	return nil
+}
+
 func (m *Mysql) SaveCrossTasks(itf xorm.Interface, tasks []*types.CrossTask) error {
 	_, err := itf.Insert(tasks)
 	if err != nil {
@@ -81,5 +85,23 @@ func (m *Mysql) SaveCrossSubTasks([]*types.CrossSubTask) error {
 }
 
 func (*Mysql) UpdateTransactionTask(task *types.TransactionTask) error {
+	return nil
+}
+
+func (m *Mysql) UpdateCrossTaskState(id uint64, state int) error {
+	return nil
+}
+
+func (m *Mysql) UpdateCrossTaskNoAndAmount(itf xorm.Interface, id, taskNo, amount uint64) error {
+	return nil
+}
+func (m *Mysql) UpdateCrossSubTaskBridgeID(itf xorm.Interface, id, bridgeTaskId uint64) error {
+	return nil
+}
+func (m *Mysql) SaveCrossSubTask(subTask *types.CrossSubTask) error {
+	return nil
+}
+
+func (m *Mysql) UpdateCrossSubTaskState(id uint64, state int) error {
 	return nil
 }
