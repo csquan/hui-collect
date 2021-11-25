@@ -10,7 +10,7 @@ import (
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
-type crossState int
+type crossState = int
 
 const (
 	toCreateSubTask crossState = iota
