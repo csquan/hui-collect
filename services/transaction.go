@@ -15,8 +15,9 @@ type TransactionState int
 
 const (
 	TxInit TransactionState = iota
-	TxUnSigned
-
+	SignState
+	AuditState
+	ValidatorState
 	TxSigned
 	TxCheckReceipt
 	TxSuccess
@@ -49,8 +50,12 @@ func (t *Transaction) Run() (err error) {
 		logrus.Infof("no available Transaction task.")
 	}
 	switch TransactionState(task.State) {
-	case TxUnSigned:
-		return t.handleTransactionUnSigned(task)
+	case SignState:
+		return t.handleSign(task)
+	case AuditState:
+		return t.handleAudit(task)
+	case ValidatorState:
+		return t.handleValidator(task)
 	case TxSigned:
 		return t.handleTransactionSigned(task)
 	default:
@@ -60,19 +65,22 @@ func (t *Transaction) Run() (err error) {
 	return
 }
 
-func (t *Transaction) handleTransactionUnSigned(task *types.TransactionTask) error {
-	txRow, err := signTx(task)
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(txRow)
-	if err != nil {
-		return err
-	}
-	task.SignData = data
-	task.State = int(TxSigned)
-	return t.db.UpdateTransactionTask(task)
+
+func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
+
+	return nil
 }
+
+func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
+
+	return nil
+}
+
+func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
+
+	return nil
+}
+
 
 func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error {
 	transaction := &etypes.Transaction{}
@@ -103,9 +111,6 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 	return t.db.UpdateTransactionTask(task)
 }
 
-func signTx(task *types.TransactionTask) (*etypes.Transaction, error) {
-	return nil, nil
-}
 func broadcast(task *types.TransactionTask) error {
 	return nil
 }
