@@ -6,7 +6,6 @@ type IReader interface {
 	//GetPartReBalanceTasks(state types.PartReBalanceState) ([]*types.PartReBalanceTask, error)
 
 	GetOpenedPartReBalanceTasks() ([]*PartReBalanceTask, error)
-	UpdatePartReBalanceTask(t *PartReBalanceTask) error
 
 	GetOpenedAssetTransferTasks() ([]*AssetTransferTask, error)
 	GetAssetTransferTasksWithReBalanceId(reBalanceId uint64) ([]*AssetTransferTask, error)
@@ -15,17 +14,18 @@ type IReader interface {
 	GetTxTasks(uint64) ([]*TransactionTask, error)
 
 	GetOpenedCrossTasks() ([]*CrossTask, error)
-	GetCrossTasksByReBalanceId(reBalanceId uint64)([]*CrossTask, error)
+	GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*CrossTask, error)
 	GetCrossSubTasks(crossTaskId uint64) ([]*CrossSubTask, error)
 }
 
 type IWriter interface {
+	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
 
-	CreateAssetTransferTask(task *AssetTransferTask) error
+	CreateAssetTransferTask(itf xorm.Interface, task *AssetTransferTask) error
 	UpdateTransferTask(task *AssetTransferTask) error
 	SaveTxTasks([]*TransactionTask) error
 
-	SaveCrossTasks([]*CrossTask) error
+	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
 	SaveCrossSubTasks([]*CrossSubTask) error
 
 	GetSession() *xorm.Session

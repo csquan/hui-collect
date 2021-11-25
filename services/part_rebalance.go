@@ -85,13 +85,13 @@ func (p *PartReBalance) handleInit(task *types.PartReBalanceTask) (err error) {
 	}
 
 	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {
-		execErr = p.db.SaveCrossTasks(crossTasks)
+		execErr = p.db.SaveCrossTasks(session, crossTasks)
 		if execErr != nil {
 			logrus.Errorf("save cross task error:%v task:[%v]", err, task)
 			return
 		}
 		task.State = types.PartReBalanceCross
-		execErr = p.db.UpdatePartReBalanceTask(task)
+		execErr = p.db.UpdatePartReBalanceTask(session, task)
 		if execErr != nil {
 			logrus.Errorf("update part rebalance task error:%v task:[%v]", err, task)
 			return
