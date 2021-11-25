@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	remote "github.com/shima-park/agollo/viper-remote"
 	"github.com/sirupsen/logrus"
-	//"github.com/sirupsen///"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"net/http"

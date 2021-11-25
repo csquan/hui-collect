@@ -18,9 +18,8 @@ type DecParams struct {
 }
 
 type ValidatorResp struct {
-	Data DecParams `json:"data"`
-	//RawTx     string       `json:"raw_tx"`
-	OK bool `json:"ok"`
+	Data DecParams 	`json:"data"`
+	OK 	 bool 		`json:"ok"`
 }
 
 type ValidatorReq struct {

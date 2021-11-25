@@ -74,63 +74,49 @@ type Payload struct {
 type SigReqData struct {
 	//ToTag is the input data for contract revoking params
 	ToTag    string `json:"to_tag"`
-	//Asset    string `json:"asset"`
 	Decimal  int    `json:"decimal"`
-	//Platform string `json:"platform"`
 	Nonce    int    `json:"nonce"`
 	From     string `json:"from"`
-	//To is the contract Addr
-	To string `json:"to"`
-	//GasLimit here
-	FeeStep string `json:"fee_step"`
-	//GasPrice here
-	FeePrice string `json:"fee_price"`
-	//FeeAsset string `json:"fee_asset"`
-	Amount   string `json:"amount"`
-	//ChainId  string `json:"chain_id"`
-	TaskType  string     `json:"taskType"`  //目前支持withdraw, deploy, callContract
+	To 		 string `json:"to"`        		//to：合约地址
+	FeeStep  string `json:"fee_step"`  		//GasLimit
+	FeePrice string `json:"fee_price"` 		//GasPrice
+	Amount   string `json:"amount"`    		//对于合约交易，可以填写0
+	TaskType string     `json:"taskType"` 	//reblance 固定使用withdraw
 }
 
 type ReqData struct {
-	//ToTag is the input data for contract revoking params
-	ToTag    string `json:"to_tag"`
+	ToTag    string `json:"to_tag"`   		//去除0x的inputdata
 	Asset    string `json:"asset"`
 	Decimal  int    `json:"decimal"`
 	Platform string `json:"platform"`
 	Nonce    int    `json:"nonce"`
 	From     string `json:"from"`
-	//To is the contract Addr
-	To string `json:"to"`
-	//GasLimit here
-	FeeStep string `json:"fee_step"`
-	//GasPrice here
-	FeePrice string `json:"fee_price"`
+	To 		 string `json:"to"`				//to：合约地址
+	FeeStep  string `json:"fee_step"`		//GasLimit
+	FeePrice string `json:"fee_price"`		//GasPrice
 	FeeAsset string `json:"fee_asset"`
 	Amount   string `json:"amount"`
 	ChainId  string `json:"chain_id"`
-	//TaskType  string     `json:"taskType"`  //目前支持withdraw, deploy, callContract
 }
 
 type EncParams struct {
-	//Tasks  []Task        `json:"tasks"`
-	//TxType string        `json:"tx_type"`
-	From     string      `json:"from"`   //from_address
-	To       string      `json:"to"`     //to_address -- call contract: contract Address
-	Value    string      `json:"value"`  //value -- call contract: 0
-	InputData string     `json:"inputData"` //contract input data
+	From      string     `json:"from"`     //from_address
+	To        string     `json:"to"`       //to：合约地址
+	Value     string     `json:"value"`    //value -- call contract: 0
+	InputData string     `json:"inputData"` //去除0x的inputdata
 	Chain     string     `json:"chain"`     //destination chain
 	Quantity  string     `json:"quantity"`  //token number
 	ToAddress string     `json:"toAddress"` //receipt address
-	ToTag     string     `json:"toTag"`     //contract input data
-	TaskType  string     `json:"taskType"`  //目前支持withdraw, deploy, callContract
+	ToTag     string     `json:"toTag"`     //去除0x的inputdata
+	TaskType  string     `json:"taskType"`  //reblance 固定使用withdraw
 
 }
 
 type Task struct {
-	TaskId     string `json:"task_id"`
-	UserId     string `json:"user_id"`
-	OriginAddr string `json:"origin_addr"`
-	TaskType   string `json:"task_type"`
+	TaskId     string 	`json:"task_id"`
+	UserId     string 	`json:"user_id"`
+	OriginAddr string 	`json:"origin_addr"`
+	TaskType   string 	`json:"task_type"`
 }
 
 type Response struct {
@@ -236,80 +222,6 @@ type UnData struct {
 	UnsignedData []byte
 	//TaskNonce    string
 }
-
-/*
-//UnsignDataEvmChain to fetch the unsigned data
-func UnsignDataEvmChain(nonce int, chain, dataStr string, conf *Conf) (*UnData, error) {
-	archNode := conf.Vip.GetString("RPCserver." + chain + ".nodeUrl")
-	sysAddr := conf.Vip.GetString("gateway." + chain + ".sysAddr")
-	amstr := "0"
-
-	//the estimate gas is
-	gas, err := EstimateGas(archNode, dataStr, amstr, chain, conf)
-	if err != nil {
-		//there is error when estimate gasLimit, make it 400000 as default
-		gas = uint64(400000)
-		logrus.Debugf("estimate gas error, use default gas %d instead", gas)
-	}
-
-	logrus.Infof("The estimate gas is %d", gas)
-	gaslimit := strconv.FormatUint(gas*3/2, 10)
-	logrus.Infof("The gaslimit for contract interaction 150 is %s", gaslimit)
-
-	//fetch fromAddr nonce
-	//nonce, err := getNonce(chain)
-	//if err != nil {
-	//	logrus.Errorf("There is error when fetch nonce during signing gateway: %v", err)
-	//	return nil, fmt.Errorf("there is error when fetch nonce during signing gateway: %v", err)
-	//}
-
-	//estimate gas price
-	price, err := EstimateGasPrice12(archNode)
-	if err != nil {
-		logrus.Debugf("Estimate price error, use default gasPrice 150Gwei")
-		price = uint64(150000000000)
-	}
-	feePrice := strconv.FormatUint(price, 10)
-
-	//the bridge contract address
-	contractAddr := conf.Vip.GetString("common.bridgeContract." + chain)
-	//assemble the data field for sending transaction
-	reqData := &ReqData{
-		To:    contractAddr,
-		ToTag: dataStr,
-		Nonce: nonce,
-		//The Asset used in different chains
-		//Asset: "ht",
-		Asset:   conf.Vip.GetString("gateway." + chain + ".asset"),
-		Decimal: 18,
-		//The platform used in different chains
-		//Platform: "starlabsne3",
-		Platform: conf.Vip.GetString("gateway." + chain + ".platform"),
-		From:     sysAddr,
-		//GasLimit 2000000
-		FeeStep: gaslimit,
-		//GasPrice 1.2*suggestGasprice, or 150Gwei by default
-		FeePrice: feePrice,
-		//FeeAsset: "ht",
-		FeeAsset: conf.Vip.GetString("gateway." + chain + ".feeAsset"),
-		Amount:   amstr,
-		ChainId:  conf.Vip.GetString("gateway." + chain + ".chainId"),
-	}
-
-	reqDataByte, err := json.Marshal(reqData)
-	if err != nil {
-		logrus.Errorf("json unmarshal request data error: %v", err)
-		return nil, err
-	}
-	return &UnData{
-		FromAddr:     sysAddr,
-		Gas:          int(gas * 3 / 2),
-		GasPrice:     decimal.NewFromInt(int64(price)),
-		Nonce:        nonce,
-		UnsignedData: reqDataByte,
-	}, nil
-}
-*/
 
 
 type SigningReq struct {
