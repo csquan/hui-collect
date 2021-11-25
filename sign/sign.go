@@ -724,7 +724,7 @@ func audit(input string,to string,quantity string,orderID int) (AuditResponse, e
 	AuditInput.AppId = appId
 	AuditInput.AuReq.BusType = bustype
 	AuditInput.AuReq.BusStep = 1 //推荐值，不修改
-	AuditInput.AuReq.BusId = string(orderID) //ID保持和validator中的id一样,确保每次调用增1
+	AuditInput.AuReq.BusId = fmt.Sprintf("%d", orderID)  //ID保持和validator中的id一样,确保每次调用增1
 	AuditInput.AuReq.BusData = bus
 	AuditInput.AuReq.Result = 1 //推荐值，不修改
 
@@ -771,7 +771,7 @@ func updateTxState(ValidatorState int){
 }
 
 //对外暴露的接口服务
-func signTx(input string,decimal int,nonce int,from string,to string,GasLimit string,GasPrice string,Amount string,quantity string,receiver string,orderID int) (vaResp *VaResp) {
+func signTx(input string,decimal int,nonce int,from string,to string,GasLimit string,GasPrice string,Amount string,quantity string,receiver string,orderID int) (vaResp *VaResp,err error) {
 	var vRet VaResp
 	vRet.OK = false
 
@@ -792,7 +792,7 @@ func signTx(input string,decimal int,nonce int,from string,to string,GasLimit st
 	q := string(quantity)
 	if len(q) < decimal{//精度不对，函数返回
 		vRet.RawTx = "Decimal and quantity is not right,plese check!"
-		return &vRet
+		return &vRet,nil
 	}
 
 	// 从数据库中取出这笔交易的状态state
@@ -818,11 +818,11 @@ func signTx(input string,decimal int,nonce int,from string,to string,GasLimit st
 		if err != nil  {
 			//写入db
 		}else{
-			//todo:updateRawTxStateAndData(vRet,FinishState)
+			updateRawTxStateAndData(*vRet,FinishState)
 		}
 	case FinishState:
-		vRet.Ok = true
+		vRet.OK = true
 		vRet.RawTx = "This tx had finished,please check!"
 	}
-	return vRet
+	return &vRet,nil
 }
