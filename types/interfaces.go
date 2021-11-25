@@ -20,7 +20,7 @@ type IReader interface {
 
 type IWriter interface {
 
-	InsertAssetTransfer(task *AssetTransferTask) error
+	InsertAssetTransfer(itf xorm.Interface, task *AssetTransferTask) error
 	UpdateAssetTransferTask(task *AssetTransferTask) error
 	UpdateTransactionTask(task *TransactionTask) error
 

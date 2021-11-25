@@ -106,12 +106,22 @@ func (p *PartReBalance) handleInit(task *types.PartReBalanceTask) (err error) {
 }
 
 func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
+
+	crossTasks, err := p.db.GetCrossTasksByReBalanceId(task.ID)
+	if err != nil {
+		logrus.Errorf("get cross task for rebalance [%v] failed", task)
+	}
+
 	//TODO check cross task and create transferIn task
+	for _, crossTask := range crossTasks {
+		logrus.Debug(crossTask.State)
+	}
+
 	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {
 		baseTask := &types.BaseTask{State: int(AssetTransferInit)}
 		assetTransfer := &types.AssetTransferTask{BaseTask: baseTask,
 			RebalanceId: task.ID, TransferType: AssetTransferOut, Params: task.Params}
-		execErr = p.db.InsertAssetTransfer(assetTransfer)
+		execErr = p.db.InsertAssetTransfer(session, assetTransfer)
 		if execErr != nil {
 			logrus.Errorf("save assetTransfer task error:%v task:[%v]", err, task)
 			return
@@ -124,6 +134,7 @@ func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
 		}
 		return
 	})
+
 	return
 }
 
@@ -140,14 +151,21 @@ func (p *PartReBalance) handleTransferIn(task *types.PartReBalanceTask) (err err
 		return
 	}
 
+	success := true
 	for _, at := range atTasks {
 		if at.State != AssetTransferFailed && at.State != AssetTransferSuccess {
 			logrus.Debugf("asset transfer task [%v] is not finished", at)
 			return
 		}
+
+		success = success && (at.State == AssetTransferSuccess)
 	}
 
 	//TODO check transferIn task and create farm task
+
+	if success {
+		//create invest task
+	}
 
 	return
 }
