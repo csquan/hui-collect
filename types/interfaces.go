@@ -7,11 +7,16 @@ type IReader interface {
 	GetOpenedAssetTransferTasks() ([]*AssetTransferTask, error)
 	GetOpenedTransactionTask() (*TransactionTask, error)
 	GetTxTasks(uint) ([]*TransactionTask, error)
+
+	GetOpenedCrossTasks() ([]*CrossTask, error)
+	GetCrossSubTasks(crossTaskId uint) ([]*CrossSubTask, error)
 }
 
 type IWriter interface {
 	UpdateTransferTask(task *AssetTransferTask) error
 	SaveTxTasks([]*TransactionTask) error
+
+	SaveCrossSubTasks([]*CrossSubTask) error
 }
 
 type IDB interface {
@@ -23,4 +28,3 @@ type IAsyncService interface {
 	Name() string
 	Run() error
 }
-
