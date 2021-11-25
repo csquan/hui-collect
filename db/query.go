@@ -27,6 +27,23 @@ func (m *Mysql) GetAssetTransferTasksWithReBalanceId(reBalanceId uint64) (tasks 
 func (*Mysql) GetOpenedTransactionTask() (*types.TransactionTask, error) {
 	return nil, nil
 }
+
 func (*Mysql) GetTxTasks(uint64) ([]*types.TransactionTask, error) {
+	return nil, nil
+}
+
+func (*Mysql) GetOpenedCrossTasks() ([]*types.CrossTask, error) {
+	return nil, nil
+}
+
+func (*Mysql) GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*types.CrossTask, error) {
+	return nil, nil
+}
+
+func (*Mysql) GetCrossSubTasks(crossTaskId uint64) ([]*types.CrossSubTask, error) {
+	return nil, nil
+}
+
+func (m *Mysql) GetOpenedCrossSubTasks(uint64) ([]*types.CrossSubTask, error) {
 	return nil, nil
 }

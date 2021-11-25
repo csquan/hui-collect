@@ -38,6 +38,7 @@ CREATE TABLE `transaction_task`
     `unsigned_data`    varchar(2000) NOT NULL DEFAULT '' COMMENT '签名前数据',
     `signed_data`      varchar(2000) NOT NULL DEFAULT '' COMMENT '签名后数据',
     `params`           tinyint(4) NOT NULL DEFAULT '0' COMMENT 'init unsinged signed broadcast',
+    `hash`             char(66) NOT NULL DEFAULT '' COMMENT 'transaction hash',
     `created_at`       timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`       timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,

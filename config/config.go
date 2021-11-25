@@ -15,6 +15,10 @@ type DataBaseConf struct {
 	DB string `mapstructure:"db"` //DB 连接信息
 }
 
+type AlertConf struct {
+	url string `mapstructure:"url"`
+}
+
 //func (o *DataBaseConf) init() {
 //	o.RetryInterval = time.Duration(o.RetryIntervalInt) * time.Millisecond
 //}
@@ -26,6 +30,7 @@ type Config struct {
 	QueryIntervalInt uint64       `mapstructure:"query_interval"` //ms
 	DataBase         DataBaseConf `mapstructure:"database"`
 	LogConf          Log          `mapstructure:"log"`
+	Alert            AlertConf    `mapstructure:"alert"`
 }
 
 func (c *Config) init() {

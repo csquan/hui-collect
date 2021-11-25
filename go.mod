@@ -16,6 +16,7 @@ require (
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.8.1
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/sys v0.0.0-20210816183151-1e6c022a8912
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	xorm.io/core v0.7.2-0.20190928055935-90aeac8d08eb
