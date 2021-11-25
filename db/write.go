@@ -32,6 +32,18 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 	return
 }
 
+func (m *Mysql) GetEngine()  *xorm.Engine{
+	return m.engine
+}
+
+func (m *Mysql) GetSession() *xorm.Session {
+	return m.engine.NewSession()
+}
+
+func (*Mysql) UpdatePartReBalanceTask(task *types.PartReBalanceTask) error {
+	return nil
+}
+
 func (*Mysql) UpdateTransferTask(task *types.AssetTransferTask) error {
 	return nil
 }
@@ -45,4 +57,13 @@ func (m *Mysql) CreateAssetTransferTask(task *types.AssetTransferTask) (err erro
 	}
 
 	return
+}
+
+func (m *Mysql) SaveCrossTasks([]*types.CrossTask) error {
+	return nil
+}
+
+
+func (m *Mysql) SaveCrossSubTasks([]*types.CrossSubTask) error {
+	return nil
 }

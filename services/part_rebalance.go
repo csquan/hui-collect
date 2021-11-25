@@ -1,10 +1,13 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
+	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
 type PartReBalance struct {
@@ -57,7 +60,46 @@ func (p *PartReBalance) Run() (err error) {
 }
 
 func (p *PartReBalance) handleInit(task *types.PartReBalanceTask) (err error) {
-	//TODO create cross task
+	crossBalances := make([]*types.CrossBalanceItem, 0)
+	err = json.Unmarshal([]byte(task.Params), &crossBalances)
+	if err != nil {
+		logrus.Errorf("read task [%v] cross params error:%v", task, err)
+		return
+	}
+
+	if len(crossBalances) == 0 {
+		logrus.Errorf("no cross balance is found for rebalance task: [%v]", task)
+		return
+	}
+
+	crossTasks := make([]*types.CrossTask, 0, len(crossBalances))
+	for _, param := range crossBalances {
+		crossTasks = append(crossTasks, &types.CrossTask{
+			ReBalanceId:  task.ID,
+			ChainFrom:    param.FromChain,
+			ChainTo:      param.ToChain,
+			CurrencyFrom: param.FromCurrency,
+			CurrencyTo:   param.ToCurrency,
+			Amount:       param.Amount,
+		})
+	}
+
+	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {
+		execErr = p.db.SaveCrossTasks(crossTasks)
+		if execErr != nil {
+			logrus.Errorf("save cross task error:%v task:[%v]", err, task)
+			return
+		}
+		task.State = types.PartReBalanceCross
+		execErr = p.db.UpdatePartReBalanceTask(task)
+		if execErr != nil {
+			logrus.Errorf("update part rebalance task error:%v task:[%v]", err, task)
+			return
+		}
+
+		return
+	})
+
 	return
 }
 
@@ -79,7 +121,7 @@ func (p *PartReBalance) handleTransferIn(task *types.PartReBalanceTask) (err err
 	}
 
 	for _, at := range atTasks {
-		if at.State != AssetTransferFailed && at.State != AssetTransferSuccess  {
+		if at.State != AssetTransferFailed && at.State != AssetTransferSuccess {
 			logrus.Debugf("asset transfer task [%v] is not finished", at)
 			return
 		}

@@ -3,7 +3,7 @@ package types
 import "time"
 
 type Base struct {
-	ID        uint64      `json:"id" gorm:"primary_key"`
+	ID        uint64    `json:"id" gorm:"primary_key"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -28,6 +28,7 @@ const (
 type PartReBalanceTask struct {
 	*Base
 	*BaseTask
+	Params string `xorm:"params"`
 }
 
 type AssetTransferTask struct {
@@ -62,7 +63,7 @@ type InvestTask struct {
 type CrossTask struct {
 	*Base
 	*BaseTask
-	RebalanceId  uint64 `xorm:"rebalance_id"`
+	ReBalanceId  uint64 `xorm:"rebalance_id"`
 	ChainFrom    string `xorm:"chain_from"`
 	ChainTo      string `xorm:"chain_to"`
 	CurrencyFrom string `xorm:"currency_from"`

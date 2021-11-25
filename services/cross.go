@@ -27,7 +27,7 @@ func getCrossSubTasks(t *types.CrossTask) []*types.CrossSubTask {
 	return nil
 }
 
-func (c *CrossService) transferTaskState(taskId uint, nextState crossState) error {
+func (c *CrossService) transferTaskState(taskId uint64, nextState crossState) error {
 	return nil
 }
 
