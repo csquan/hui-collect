@@ -46,3 +46,6 @@ func (m *Mysql) CreateAssetTransferTask(task *types.AssetTransferTask) (err erro
 
 	return
 }
+func (m *Mysql)UpdateTxTask(task *types.SignTask) error {
+	return nil
+}

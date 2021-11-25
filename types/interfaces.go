@@ -13,11 +13,14 @@ type IReader interface {
 
 	GetOpenedCrossTasks() ([]*CrossTask, error)
 	GetCrossSubTasks(crossTaskId uint) ([]*CrossSubTask, error)
+
+	GetOpenedSignTasks() ([]*SignTask, error)
 }
 
 type IWriter interface {
 	CreateAssetTransferTask(task *AssetTransferTask) error
 	UpdateTransferTask(task *AssetTransferTask) error
+	UpdateTxTask(task *SignTask) error
 	SaveTxTasks([]*TransactionTask) error
 
 	SaveCrossSubTasks([]*CrossSubTask) error
