@@ -6,7 +6,7 @@ import (
 
 func (m *Mysql) GetOpenedPartReBalanceTasks() (tasks []*types.PartReBalanceTask, err error) {
 	tasks = make([]*types.PartReBalanceTask, 0)
-	_, err = m.engine.Where("state != ? and state != ?", types.Success, types.Failed).Desc("state").Get(&tasks)
+	_, err = m.engine.Where("state != ? and state != ?", types.PartReBalanceSuccess, types.PartReBalanceFailed).Desc("state").Get(&tasks)
 	return
 }
 

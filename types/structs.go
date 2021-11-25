@@ -17,12 +17,12 @@ type BaseTask struct {
 type PartReBalanceState = int
 
 const (
-	Init PartReBalanceState = iota
-	Cross
-	TransferIn
-	Farm
-	Success
-	Failed
+	PartReBalanceInit PartReBalanceState = iota
+	PartReBalanceCross
+	PartReBalanceTransferIn
+	PartReBalanceFarm
+	PartReBalanceSuccess
+	PartReBalanceFailed
 )
 
 type PartReBalanceTask struct {

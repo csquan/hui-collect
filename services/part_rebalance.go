@@ -40,13 +40,13 @@ func (p *PartReBalance) Run() (err error) {
 	}
 
 	switch tasks[0].State {
-	case types.Init:
+	case types.PartReBalanceInit:
 		return p.handleInit(tasks[0])
-	case types.Cross:
+	case types.PartReBalanceCross:
 		return p.handleCross(tasks[0])
-	case types.TransferIn:
+	case types.PartReBalanceTransferIn:
 		return p.handleTransferIn(tasks[0])
-	case types.Farm:
+	case types.PartReBalanceFarm:
 		return p.handleFarm(tasks[0])
 	default:
 		logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
