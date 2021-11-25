@@ -38,7 +38,45 @@ func (*Mysql) InsertAssetTransfer(task *types.AssetTransferTask) error {
 func (*Mysql) UpdateAssetTransferTask(task *types.AssetTransferTask) error {
 	return nil
 }
-func (*Mysql) SaveTxTasks([]*types.TransactionTask) error {
+
+func (m *Mysql) GetEngine() *xorm.Engine {
+	return m.engine
+}
+
+func (m *Mysql) GetSession() *xorm.Session {
+	return m.engine.NewSession()
+}
+
+func (*Mysql) UpdatePartReBalanceTask(itf xorm.Interface, task *types.PartReBalanceTask) error {
+	_, err := itf.ID(task.ID).Update(task)
+	return err
+}
+
+func (*Mysql) UpdateTransferTask(task *types.AssetTransferTask) error {
+	return nil
+}
+func (m *Mysql) SaveTxTasks([]*types.TransactionTask) error {
+	return nil
+}
+func (m *Mysql) CreateAssetTransferTask(itf xorm.Interface, task *types.AssetTransferTask) (err error) {
+	_, err = itf.InsertOne(task)
+	if err != nil {
+		logrus.Errorf("insert transfer task error:%v", err)
+	}
+
+	return
+}
+
+func (m *Mysql) SaveCrossTasks(itf xorm.Interface, tasks []*types.CrossTask) error {
+	_, err := itf.Insert(tasks)
+	if err != nil {
+		logrus.Errorf("insert cross tasks error:%v", err)
+	}
+
+	return err
+}
+
+func (m *Mysql) SaveCrossSubTasks([]*types.CrossSubTask) error {
 	return nil
 }
 

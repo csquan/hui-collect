@@ -13,8 +13,7 @@ const (
 	AssetTransferIn
 )
 
-type AssetTransferState int
-
+type AssetTransferState = int
 const (
 	AssetTransferInit AssetTransferState = iota
 	AssetTransferOngoing
@@ -72,15 +71,15 @@ func (t *AssetTransfer) handleAssetTransferInit(task *types.AssetTransferTask) (
 	//解析params 创建txTasks子任务，切换到TransferOngoing
 	//TODO 放在事物中
 	params := make([]*types.RebalanceData, 0)
-	if err := json.Unmarshal(task.Params, params); err != nil {
+	if err := json.Unmarshal([]byte(task.Params), params); err != nil {
 		var txTasks []*types.TransactionTask
 		nonce := getNonce()
 		for _, param := range params {
 			if b, err := json.Marshal(param); err != nil {
 				return err
 			} else {
-				baseTask := &types.BaseTask{State: int(TxUnSigned), Params: b}
-				task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce}
+				baseTask := &types.BaseTask{State: int(TxUnSigned)}
+				task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce, Params: string(b)}
 				nonce++
 				txTasks = append(txTasks, task)
 			}

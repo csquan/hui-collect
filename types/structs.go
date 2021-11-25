@@ -5,7 +5,7 @@ import (
 )
 
 type Base struct {
-	ID        uint      `json:"id" gorm:"primary_key"`
+	ID        uint64    `json:"id" gorm:"primary_key"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -13,24 +13,24 @@ type Base struct {
 type BaseTask struct {
 	State   int
 	Message string
-	Params  []byte // used for create sub tasks
 }
 
 type PartReBalanceState = int
 
 const (
-	Init PartReBalanceState = iota
-	Cross
-	TransferIn
-	Farm
-	Success
-	Failed
+	PartReBalanceInit PartReBalanceState = iota
+	PartReBalanceCross
+	PartReBalanceTransferIn
+	PartReBalanceInvest
+	PartReBalanceSuccess
+	PartReBalanceFailed
 )
 
 type PartReBalanceTask struct {
 	*Base
 	*BaseTask
 	Data []*RebalanceData
+	Params string `xorm:"params"`
 }
 
 type RebalanceData struct {
@@ -38,20 +38,22 @@ type RebalanceData struct {
 	address   string //跨连桥钱包地址
 	amount    uint64 //跨链资金大小
 	taskId    uint64 //链下跨链任务id
+
 }
 
 type AssetTransferTask struct {
 	*Base
 	*BaseTask
-	RebalanceId  uint   `xorm:"rebalance_id"`
+	RebalanceId  uint64 `xorm:"rebalance_id"`
 	TransferType uint8  `xorm:"transfer_type"`
 	Progress     string `xorm:"progress"`
+	Params       string `xorm:"params"`
 }
 
 type TransactionTask struct {
 	*Base
 	*BaseTask
-	RebalanceId     uint   `xorm:"rebalance_id"`
+	RebalanceId     uint64 `xorm:"rebalance_id"`
 	TransferId      uint   `xorm:"transfer_id"`
 	Nonce           int    `xorm:"nonce"`
 	ChainId         int    `xorm:"chain_id"`
@@ -61,6 +63,7 @@ type TransactionTask struct {
 	Value           int    `xorm:"value"`
 	UnSignData      string `xorm:"unsigned_data"`
 	SignData        []byte `xorm:"signed_data"`
+	Params          string `xorm:"params"`
 	Hash            string `xorm:"hash"`
 }
 
@@ -68,4 +71,27 @@ type InvestTask struct {
 	*Base
 	*BaseTask
 	RebalanceId uint64 `xorm:"rebalance_id"`
+}
+
+type CrossTask struct {
+	*Base
+	*BaseTask
+	ReBalanceId  uint64 `xorm:"rebalance_id"`
+	ChainFrom    string `xorm:"chain_from"`
+	ChainTo      string `xorm:"chain_to"`
+	CurrencyFrom string `xorm:"currency_from"`
+	CurrencyTo   string `xorm:"currency_to"`
+	Amount       string `xorm:"amount"`
+}
+
+type CrossSubTask struct {
+	*Base
+	No           uint   `xorm:"no"` //taskNo
+	ParentId     uint64 `xorm:"parent_id"`
+	ChainFrom    string `xorm:"chain_from"`
+	ChainTo      string `xorm:"chain_to"`
+	CurrencyFrom string `xorm:"currency_from"`
+	CurrencyTo   string `xorm:"currency_to"`
+	Amount       string `xorm:"amount"`
+	State        int    `xorm:"state"`
 }
