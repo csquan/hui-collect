@@ -3,7 +3,7 @@ package types
 import "time"
 
 type Base struct {
-	ID        uint      `json:"id" gorm:"primary_key"`
+	ID        uint64      `json:"id" gorm:"primary_key"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -17,12 +17,12 @@ type BaseTask struct {
 type PartReBalanceState = int
 
 const (
-	Init PartReBalanceState = iota
-	Cross
-	TransferIn
-	Farm
-	Success
-	Failed
+	PartReBalanceInit PartReBalanceState = iota
+	PartReBalanceCross
+	PartReBalanceTransferIn
+	PartReBalanceInvest
+	PartReBalanceSuccess
+	PartReBalanceFailed
 )
 
 type PartReBalanceTask struct {

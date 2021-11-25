@@ -4,7 +4,10 @@ type IReader interface {
 	//GetPartReBalanceTasks(state types.PartReBalanceState) ([]*types.PartReBalanceTask, error)
 
 	GetOpenedPartReBalanceTasks() ([]*PartReBalanceTask, error)
+
 	GetOpenedAssetTransferTasks() ([]*AssetTransferTask, error)
+	GetAssetTransferTasksWithReBalanceId(reBalanceId uint64) ([]*AssetTransferTask, error)
+
 	GetOpenedTransactionTask() (*TransactionTask, error)
 	GetTxTasks(uint) ([]*TransactionTask, error)
 
@@ -13,6 +16,7 @@ type IReader interface {
 }
 
 type IWriter interface {
+	CreateAssetTransferTask(task *AssetTransferTask) error
 	UpdateTransferTask(task *AssetTransferTask) error
 	SaveTxTasks([]*TransactionTask) error
 

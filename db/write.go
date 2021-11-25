@@ -35,6 +35,14 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 func (*Mysql) UpdateTransferTask(task *types.AssetTransferTask) error {
 	return nil
 }
-func (*Mysql) SaveTxTasks([]*types.TransactionTask) error {
+func (m *Mysql) SaveTxTasks([]*types.TransactionTask) error {
 	return nil
+}
+func (m *Mysql) CreateAssetTransferTask(task *types.AssetTransferTask) (err error) {
+	_, err = m.engine.InsertOne(task)
+	if err != nil {
+		logrus.Errorf("isnert transfer task error:%v", err)
+	}
+
+	return
 }
