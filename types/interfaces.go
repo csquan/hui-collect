@@ -15,8 +15,6 @@ type IReader interface {
 
 	GetOpenedCrossTasks() ([]*CrossTask, error)
 
-	GetCrossSubTasks(crossTaskId uint) ([]*CrossSubTask, error)
-
 	GetOpenedSignTasks() ([]*SignTask, error)
 
 	GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*CrossTask, error)

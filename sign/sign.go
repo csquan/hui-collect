@@ -9,14 +9,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/derekparker/delve/pkg/config"
+	"github.com/go-delve/delve/pkg/config"
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/types"
 	"io"
 	"io/ioutil"
 	"math/big"
@@ -143,8 +143,8 @@ type Signer struct {
 
 type SignerState = int
 
-func NewTransactionService(db types.IDB, conf *config.Config) (p *Transfer, err error) {
-	p = &Signer{
+func NewTransactionService(db types.IDB, conf *config.Config) (s *Signer, err error) {
+	s = &Signer{
 		db:     db,
 		config: conf,
 	}
@@ -732,6 +732,7 @@ func (signer *Signer) Run() (err error) {
 	default:
 		logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
 	}
+	return
 }
 
 func (signer *Signer) handleSign(task *types.SignTask) (err error) {
@@ -781,6 +782,7 @@ func (signer *Signer) handleValidator(task *types.SignTask) (err error) {
 	input := ""  //temp def
 	quantity:=""
 	orderID :=0
+	to := ""
 
 	vRet,err := signer.validator(input, to, quantity,orderID)  //这里检验通过会改写vRet
 	if err != nil  {
@@ -790,5 +792,6 @@ func (signer *Signer) handleValidator(task *types.SignTask) (err error) {
 		task.rawTx = vRet.RawTx
 		signer.db.UpdateTxTask(task)
 	}
+	return
 }
 
