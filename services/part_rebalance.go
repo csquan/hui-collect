@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
@@ -72,12 +73,10 @@ func (p *PartReBalance) handleInit(task *types.PartReBalanceTask) (err error) {
 		return
 	}
 
-
-
 	crossTasks := make([]*types.CrossTask, 0, len(crossBalances))
 	for _, param := range crossBalances {
 		crossTasks = append(crossTasks, &types.CrossTask{
-			ReBalanceId:  task.ID,
+			RebalanceId:  task.ID,
 			ChainFrom:    param.FromChain,
 			ChainTo:      param.ToChain,
 			CurrencyFrom: param.FromCurrency,

@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/bridge"
@@ -45,13 +46,14 @@ func (c *CrossService) addCrossSubTasks(t *types.CrossTask) error {
 	toAccountId := c.bridgeCli.GetAccountId(t.ChainToAddr)
 	fromCurrencyId := c.bridgeCli.GetCurrencyID(t.CurrencyFrom)
 	toCurrencyId := c.bridgeCli.GetCurrencyID(t.CurrencyTo)
+	amount, _ := strconv.ParseUint(t.Amount, 10, 64) //TODO
 	btask := &bridge.Task{
 		TaskNo:         t.TaskNo,
 		FromAccountId:  fromAccountId,
 		ToAccountId:    toAccountId,
 		FromCurrencyId: fromCurrencyId,
 		ToCurrencyId:   toCurrencyId,
-		Amount:         t.Amount,
+		Amount:         amount,
 	}
 	estimateResult, err := c.bridgeCli.EstimateTask(btask)
 	if err != nil {
@@ -59,7 +61,6 @@ func (c *CrossService) addCrossSubTasks(t *types.CrossTask) error {
 	}
 	total := estimateResult.TotalQuota
 	single := estimateResult.SingleQuota
-	amount := t.Amount
 	var taskNo = t.TaskNo
 	if amount <= total {
 		for {
@@ -86,15 +87,28 @@ func (c *CrossService) addCrossSubTasks(t *types.CrossTask) error {
 			}
 
 			//transaction start TODO
-			err = c.db.UpdateCrossSubTaskBridgeID(subTask.ID, bridgeTaskId)
+			s := c.db.GetSession()
+
+			err = s.Begin()
 			if err != nil {
+
+			}
+
+			err = c.db.UpdateCrossSubTaskBridgeID(s, subTask.ID, bridgeTaskId)
+			if err != nil {
+				s.Rollback()
 				return err
 			}
 			amount -= amountCur
 			taskNo++
-			err = c.db.UpdateCrossTaskNoAndAmount(t.ID, taskNo, amount)
+			err = c.db.UpdateCrossTaskNoAndAmount(s, t.ID, taskNo, amount)
 			if err != nil {
+				s.Rollback()
 				return fmt.Errorf("update taskNo err:%v,taskId:%d", err, t.ID)
+			}
+			err = s.Commit()
+			if err != nil {
+				s.Rollback()
 			}
 			//transaction end
 			if amount > 0 {

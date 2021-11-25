@@ -83,7 +83,7 @@ type CrossTask struct {
 	ChainToAddr   string `xorm:"chain_to_addr"`
 	CurrencyFrom  string `xorm:"currency_from"`
 	CurrencyTo    string `xorm:"currency_to"`
-	Amount        uint64 `xorm:"amount"`
+	Amount        string `xorm:"amount"`
 	TaskNo        uint64
 }
 

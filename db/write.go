@@ -83,3 +83,21 @@ func (m *Mysql) SaveCrossSubTasks([]*types.CrossSubTask) error {
 func (*Mysql) UpdateTransactionTask(task *types.TransactionTask) error {
 	return nil
 }
+
+func (m *Mysql) UpdateCrossTaskState(id uint64, state int) error {
+	return nil
+}
+
+func (m *Mysql) UpdateCrossTaskNoAndAmount(itf xorm.Interface, id, taskNo, amount uint64) error {
+	return nil
+}
+func (m *Mysql) UpdateCrossSubTaskBridgeID(itf xorm.Interface, id, bridgeTaskId uint64) error {
+	return nil
+}
+func (m *Mysql) SaveCrossSubTask(subTask *types.CrossSubTask) error {
+	return nil
+}
+
+func (m *Mysql) UpdateCrossSubTaskState(id uint64, state int) error {
+	return nil
+}
