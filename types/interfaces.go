@@ -15,11 +15,12 @@ type IReader interface {
 
 	GetOpenedCrossTasks() ([]*CrossTask, error)
 	GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*CrossTask, error)
+
 	GetCrossSubTasks(crossTaskId uint64) ([]*CrossSubTask, error)
+	GetOpenedCrossSubTasks(uint64) ([]*CrossSubTask, error)
 }
 
 type IWriter interface {
-
 	InsertAssetTransfer(itf xorm.Interface, task *AssetTransferTask) error
 	UpdateAssetTransferTask(task *AssetTransferTask) error
 	UpdateTransactionTask(task *TransactionTask) error
@@ -35,6 +36,13 @@ type IWriter interface {
 
 	GetSession() *xorm.Session
 	GetEngine() *xorm.Engine
+
+	UpdateCrossTaskState(id uint64, state int) error
+	UpdateCrossTaskNoAndAmount(id, taskNo, amount uint64) error
+
+	SaveCrossSubTask(subTask *CrossSubTask) error
+	UpdateCrossSubTaskBridgeID(id, bridgeTaskId uint64) error
+	UpdateCrossSubTaskState(id uint64, state int) error
 }
 
 type IDB interface {

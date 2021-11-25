@@ -135,7 +135,7 @@ func (b *Bridge) AddAccount(a *AccountAdd) (uint64, error) {
 	return ret.Data.AccountId, nil
 }
 
-func (b *Bridge) addTask(t *Task) (uint64, error) {
+func (b *Bridge) AddTask(t *Task) (uint64, error) {
 	form := url.Values{}
 	form.Add("method", "addTask")
 	form.Add("taskNo", fmt.Sprintf("%d", t.TaskNo))
@@ -179,7 +179,7 @@ func (b *Bridge) addTask(t *Task) (uint64, error) {
 	return ret.Data.TaskId, nil
 }
 
-func (b *Bridge) estimateTask(t *Task) (*EstimateTaskResult, error) {
+func (b *Bridge) EstimateTask(t *Task) (*EstimateTaskResult, error) {
 	form := url.Values{}
 	form.Add("method", "estimateTask")
 	form.Add("fromAccountId", fmt.Sprintf("%d", t.FromAccountId))
@@ -223,7 +223,7 @@ func (b *Bridge) estimateTask(t *Task) (*EstimateTaskResult, error) {
 	return ret.Data, nil
 }
 
-func (b *Bridge) getTaskDetail(taskID uint64) (*TaskDetailResult, error) {
+func (b *Bridge) GetTaskDetail(taskID uint64) (*TaskDetailResult, error) {
 	form := url.Values{}
 	form.Add("method", "getTaskDetail")
 	form.Add("taskId", fmt.Sprintf("%d", taskID))
@@ -252,4 +252,12 @@ func (b *Bridge) getTaskDetail(taskID uint64) (*TaskDetailResult, error) {
 		return nil, err
 	}
 	return ret.Data, nil
+}
+
+func (b *Bridge) GetAccountId(toAddr string) uint64 {
+	return 0
+}
+
+func (b *Bridge) GetCurrencyID(currency string) uint64 {
+	return 0
 }
