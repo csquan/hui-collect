@@ -29,32 +29,7 @@ const (
 type PartReBalanceTask struct {
 	*Base
 	*BaseTask
-	Data   []*RebalanceParams
 	Params string `xorm:"params"`
-}
-
-type RebalanceParams struct {
-	AssetTransferInParams []*AssetTransferInParam
-	InvestParam           *InvestParam
-}
-
-type AssetTransferInParam struct {
-	From string
-	To   string //合约地址
-	amount  uint64 //跨链资金大小
-	taskId  uint64 //链下跨链任务id
-}
-
-type InvestParam struct {
-	From string
-	To   string //合约地址
-	Data *InvestData
-}
-
-type InvestData struct {
-	address    []string
-	token1List []uint64
-	token2List []uint64
 }
 
 type AssetTransferTask struct {
@@ -83,16 +58,14 @@ type TransactionTask struct {
 	Hash            string `xorm:"hash"`
 }
 
-
 type SignTask struct {
 	*Base
 	*BaseTask
-	Cipher          string `xorm:"string"`
-	TxHash          string `xorm:"TxHash"`
-	EncryptData     string `xorm:"EncryptData"`
-	RawTx      		string `xorm:"rawTx"`
+	Cipher      string `xorm:"string"`
+	TxHash      string `xorm:"TxHash"`
+	EncryptData string `xorm:"EncryptData"`
+	RawTx       string `xorm:"rawTx"`
 }
-
 
 type InvestTask struct {
 	*Base
