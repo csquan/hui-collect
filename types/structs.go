@@ -81,23 +81,27 @@ type AssetTransferTask struct {
 type TransactionTask struct {
 	*Base           `xorm:"extends"`
 	*BaseTask       `xorm:"extends"`
-	RebalanceId     uint64 `xorm:"rebalance_id"`
-	TransferId      uint   `xorm:"transfer_id"`
-	TransferType    uint8  `xorm:"transfer_type"`
-	Nonce           int    `xorm:"nonce"`
-	ChainId         int    `xorm:"chain_id"`
-	Params          string `xorm:"params"`
-	Decimal         int    `xorm:"decimal"`
-	From            string `xorm:"from"`
-	To              string `xorm:"to"`
-	ContractAddress string `xorm:"contract_address"`
-	Value           string `xorm:"value"`
-	Input_data      string `xorm:"input_data"`
-	Cipher          string `xorm:"cipher"`
-	EncryptData     string `xorm:"encryptData"`
-	SignData        []byte `xorm:"signed_data"`
-	OrderId         int     `xorm:"order_id"`
-	Hash            string `xorm:"hash"`
+	RebalanceId     uint64 `xorm:"f_rebalance_id"`
+	TransferId      uint   `xorm:"f_transfer_id"`
+	TransferType    uint8  `xorm:"f_transfer_type"`
+	Nonce           int    `xorm:"f_nonce"`
+	ChainId         int    `xorm:"f_chain_id"`
+	Params          string `xorm:"f_params"`
+	Decimal         int    `xorm:"f_decimal"`
+	From            string `xorm:"f_from"`
+	To              string `xorm:"f_to"`
+	ContractAddress string `xorm:"f_contract_address"`
+	Value           string `xorm:"f_value"`
+	Input_data      string `xorm:"f_input_data"`
+	Cipher          string `xorm:"f_cipher"`
+	EncryptData     string `xorm:"f_encryptData"`
+	SignData        []byte `xorm:"f_signed_data"`
+	OrderId         int    `xorm:"f_order_id"`
+	Hash            string `xorm:"f_hash"`
+}
+
+func (t *TransactionTask) TableName() string {
+	return "t_transaction_task"
 }
 
 type InvestTask struct {
