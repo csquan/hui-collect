@@ -12,6 +12,7 @@ import (
 	signer "github.com/starslabhq/hermes-rebalance/sign"
 	"github.com/starslabhq/hermes-rebalance/utils"
 	"github.com/go-xorm/xorm"
+	"time"
 )
 
 type TransactionState int
@@ -111,11 +112,10 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	input := task.Input_data
 	quantity := string(task.Value)
 	receiver := task.To
-	orderID := task.OrderId
+	orderID := int(time.Now().Unix())
 
 	defer utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		timestamp := 0 //当前时间戳
-		t.db.UpdateOrderID(session,timestamp)
+		t.db.UpdateOrderID(session,orderID)  //只在这里更新
 		return
 	})
 
@@ -141,12 +141,6 @@ func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 	quantity := string(task.Value)
 	orderID := task.OrderId
 	to := task.To
-
-	defer utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		timestamp := 0 //当前时间戳
-		t.db.UpdateOrderID(session,timestamp)
-		return
-	})
 
 	vRet,err := signer.ValidatorTx(input, to, quantity,orderID)
 	if err != nil  {
