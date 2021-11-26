@@ -109,16 +109,6 @@ func (p *PartReBalance) handleInit(task *types.PartReBalanceTask) (err error) {
 	return
 }
 
-func (p *PartReBalance) readParams(task *types.PartReBalanceTask) (params *types.Params, err error) {
-	params = &types.Params{}
-	if err = json.Unmarshal([]byte(task.Params), params); err != nil {
-		logrus.Errorf("Unmarshal PartReBalanceTask params error:%v task:[%v]", err, task)
-		return
-	}
-
-	return
-}
-
 //handleCross check cross task state and create transfer in task when cross finished
 func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
 
@@ -178,7 +168,7 @@ func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
 }
 
 func (p *PartReBalance) createTransferInTask(task *types.PartReBalanceTask) (assetTransfer *types.AssetTransferTask, err error) {
-	params, err := p.readParams(task)
+	params, err := task.ReadParams()
 	if err != nil {
 		return
 	}
@@ -200,7 +190,7 @@ func (p *PartReBalance) createTransferInTask(task *types.PartReBalanceTask) (ass
 }
 
 func (p *PartReBalance) createInvestTask(task *types.PartReBalanceTask) (assetTransfer *types.AssetTransferTask, err error) {
-	params, err := p.readParams(task)
+	params, err := task.ReadParams()
 	if err != nil {
 		return
 	}
