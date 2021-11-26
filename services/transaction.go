@@ -33,8 +33,8 @@ type Transaction struct {
 	client ethclient.Client
 }
 
-func NewTransactionService(db types.IDB, conf *config.Config) (p *AssetTransfer, err error) {
-	p = &AssetTransfer{
+func NewTransactionService(db types.IDB, conf *config.Config) (p *Transaction, err error) {
+	p = &Transaction{
 		db:     db,
 		config: conf,
 	}
@@ -80,8 +80,8 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	nonce := task.Nonce
 	from := task.From  //这个是签名机固定的地址？？
 	to := task.To
-	GasLimit :=""
-	GasPrice :=""
+	GasLimit := "2000000"
+	GasPrice := "15000000000"
 	Amount := "0"
 	quantity:= string(task.Value)
 	receiver:= task.To  //和to一致
