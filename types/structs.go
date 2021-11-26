@@ -55,10 +55,9 @@ type PartReBalanceTask struct {
 	Params    string `xorm:"params"`
 }
 
-//
-//func (p *PartReBalanceTask) TableName() string {
-//	return "t_part_rebalance_task"
-//}
+func (p *PartReBalanceTask) TableName() string {
+	return "t_part_rebalance_task"
+}
 
 func (p *PartReBalanceTask) ReadParams() (params *Params, err error) {
 	params = &Params{}
@@ -80,17 +79,17 @@ type AssetTransferTask struct {
 }
 
 type TransactionTask struct {
-	*Base           `xorm:"extends"`
-	*BaseTask       `xorm:"extends"`
-	RebalanceId     uint64 `xorm:"rebalance_id"`
-	TransferId      uint   `xorm:"transfer_id"`
-	TransferType    uint8  `xorm:"transfer_type"`
-	Nonce           int    `xorm:"nonce"`
-	ChainId         int    `xorm:"chain_id"`
-	Params          string `xorm:"params"`
-	Decimal         int    `xorm:"decimal"`
-	From            string `xorm:"from"`
-	To              string `xorm:"to"`
+	*Base        `xorm:"extends"`
+	*BaseTask    `xorm:"extends"`
+	RebalanceId  uint64 `xorm:"rebalance_id"`
+	TransferId   uint   `xorm:"transfer_id"`
+	TransferType uint8  `xorm:"transfer_type"`
+	Nonce        int    `xorm:"nonce"`
+	ChainId      int    `xorm:"chain_id"`
+	Params       string `xorm:"params"`
+	Decimal      int    `xorm:"decimal"`
+	From         string `xorm:"from"`
+	To           string `xorm:"to"`
 	//State           int    `xorm:"state"`
 	ContractAddress string `xorm:"contract_address"`
 	Value           string `xorm:"value"`
