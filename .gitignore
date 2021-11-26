@@ -1,6 +1,5 @@
 vendor
-height.record
-chainmonitor
 check
 bin
 config.yaml
+hermes-rebalance
