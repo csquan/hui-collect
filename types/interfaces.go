@@ -8,7 +8,7 @@ type IReader interface {
 	GetOpenedPartReBalanceTasks() ([]*PartReBalanceTask, error)
 
 	GetOpenedAssetTransferTasks() ([]*AssetTransferTask, error)
-	GetAssetTransferTasksWithReBalanceId(reBalanceId uint64) ([]*AssetTransferTask, error)
+	GetAssetTransferTasksWithReBalanceId(reBalanceId uint64, transferType int) ([]*AssetTransferTask, error)
 
 	GetOpenedTransactionTask() (*TransactionTask, error)
 	GetTxTasks(uint64) ([]*TransactionTask, error)

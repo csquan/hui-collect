@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	AssetTransferOut = iota
-	AssetTransferIn
+	AssetTransferIn = iota
+	Invest
+
 )
 
 type AssetTransferState = int

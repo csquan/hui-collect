@@ -15,9 +15,9 @@ func (*Mysql) GetOpenedAssetTransferTasks() ([]*types.AssetTransferTask, error) 
 }
 
 
-func (m *Mysql) GetAssetTransferTasksWithReBalanceId(reBalanceId uint64) (tasks []*types.AssetTransferTask, err error) {
+func (m *Mysql) GetAssetTransferTasksWithReBalanceId(reBalanceId uint64, transferType int) (tasks []*types.AssetTransferTask, err error) {
 	tasks = make([]*types.AssetTransferTask, 0)
-	_, err = m.engine.Where("rebalance_id", reBalanceId).Get(&tasks)
+	_, err = m.engine.Where("rebalance_id = ? and transfer_type = ?", reBalanceId, transferType).Get(&tasks)
 	return
 }
 
