@@ -77,3 +77,34 @@ CREATE TABLE `invest_task` (
     ENGINE = InnoDB
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='组LP';
+
+CREATE TABLE `cross_task`(
+    `id`           bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `rebalance_id` int(11)             NOT NULL DEFAULT '0' COMMENT 'rebalance task id',
+    `chain_from` varchar(10) NOT NULL DEFAULT '' COMMENT 'from chain',
+    `chain_to` varchar(10) NOT NULL DEFAULT '' COMMENT 'to chain',
+    `chain_from_addr` char(42) NOT NULL DEFAULT '' COMMENT 'from addr',
+    `chain_to_addr` char(42) NOT NULL DEFAULT '' COMMENT 'to addr',
+    `currency_from` varchar(10) NOT NULL DEFAULT '' COMMENT 'from currency',
+    `currency_to` varchar(10) NOT NULL DEFAULT '' COMMENT 'to currency',
+    `amount` varchar(256) NOT NULL DEFAULT '0' COMMENT 'amount',
+    `state` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'task state 0:等待创建子任务 1:子任务创建完成 2:任务完成',
+    `created_at` timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_rebalance_id` (`rebalance_id`),
+    KEY `idx_state` (`state`)
+)DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE `cross_sub_task`(
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `parent_id` bigint(20) unsigned NOT NULL DEFAULT 0,
+    `task_no` int(11) NOT NULL DEFAULT 0 COMMENT 'task number 相同parent_id下保持唯一递增',
+    `bridge_task_id` bigint(20) unsigned NOT NULL DEFAULT 0 COMMENT '在跨链服务中的taskid',
+    `amount` varchar(256) NOT NULL DEFAULT '0' COMMENT '跨链数量',
+    `state` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'task state 0:等待跨链 1:跨链执行中 2:跨链完成',
+    `created_at` timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_parent_id`(`parent_id`)
+) DEFAULT CHARSET = utf8mb4;

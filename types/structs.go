@@ -2,8 +2,9 @@ package types
 
 import (
 	"encoding/json"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Base struct {
@@ -91,7 +92,7 @@ type CrossTask struct {
 	CurrencyFrom  string `xorm:"currency_from"`
 	CurrencyTo    string `xorm:"currency_to"`
 	Amount        string `xorm:"amount"`
-	TaskNo        uint64
+	State         int    `xorm:"state"`
 }
 
 type CrossSubTask struct {
@@ -99,10 +100,11 @@ type CrossSubTask struct {
 	*BaseTask
 	TaskNo       uint64 `xorm:"task_no"`
 	BridgeTaskId uint64 `xorm:"bridge_task_id"` //跨链桥task_id
-	ParentTaskId uint64 `xorm:"cross_task_id"`  //父任务id
-	ChainFrom    string `xorm:"chain_from"`
-	ChainTo      string `xorm:"chain_to"`
-	CurrencyFrom string `xorm:"currency_from"`
-	CurrencyTo   string `xorm:"currency_to"`
+	ParentTaskId uint64 `xorm:"parent_id"`      //父任务id
+	ChainFrom    string
+	ChainTo      string
+	CurrencyFrom string
+	CurrencyTo   string
 	Amount       string `xorm:"amount"`
+	State        int    `xorm:"state"`
 }
