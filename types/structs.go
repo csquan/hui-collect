@@ -1,6 +1,8 @@
 package types
 
 import (
+	"encoding/json"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -32,6 +34,16 @@ type PartReBalanceTask struct {
 	Params string `xorm:"params"`
 }
 
+func (p *PartReBalanceTask) ReadParams() (params *Params, err error) {
+	params = &Params{}
+	if err = json.Unmarshal([]byte(p.Params), params); err != nil {
+		logrus.Errorf("Unmarshal PartReBalanceTask params error:%v task:[%v]", err, p)
+		return
+	}
+
+	return
+}
+
 type AssetTransferTask struct {
 	*Base
 	*BaseTask
@@ -51,17 +63,16 @@ type TransactionTask struct {
 	Decimal         int    `xorm:"decimal"`
 	From            string `xorm:"from"`
 	To              string `xorm:"to"`
-	State	        int    `xorm:"state"`
+	State           int    `xorm:"state"`
 	ContractAddress string `xorm:"contract_address"`
 	Value           int    `xorm:"value"`
 	Input_data      string `xorm:"input_data"`
- 	Cipher          string `xorm:"cipher"`
-    EncryptData     string `xorm:"encryptData"`
+	Cipher          string `xorm:"cipher"`
+	EncryptData     string `xorm:"encryptData"`
 	SignData        []byte `xorm:"signed_data"`
 	Params          string `xorm:"params"`
 	Hash            string `xorm:"hash"`
 }
-
 
 type InvestTask struct {
 	*Base
