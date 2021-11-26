@@ -32,8 +32,7 @@ type IWriter interface {
 	InsertAssetTransfer(itf xorm.Interface, task *AssetTransferTask) error
 	UpdateAssetTransferTask(task *AssetTransferTask) error
 
-	UpdateTransactionTask(task *TransactionTask) error
-	UpdateTxTask(itf xorm.Interface, task *TransactionTask) error
+	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
 	SaveTxTasks([]*TransactionTask) error
 
 	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
