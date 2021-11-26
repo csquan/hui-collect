@@ -128,10 +128,10 @@ type CrossSubTask struct {
 	TaskNo       uint64 `xorm:"task_no"`
 	BridgeTaskId uint64 `xorm:"bridge_task_id"` //跨链桥task_id
 	ParentTaskId uint64 `xorm:"parent_id"`      //父任务id
-	ChainFrom    string
-	ChainTo      string
-	CurrencyFrom string
-	CurrencyTo   string
-	Amount       string `xorm:"amount"`
-	State        int    `xorm:"state"`
+	// ChainFrom    string
+	// ChainTo      string
+	// CurrencyFrom string
+	// CurrencyTo   string
+	Amount string `xorm:"amount"`
+	State  int    `xorm:"state"`
 }

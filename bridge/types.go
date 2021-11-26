@@ -4,9 +4,9 @@ type Task struct {
 	TaskNo         uint64
 	FromAccountId  uint64
 	ToAccountId    uint64
-	FromCurrencyId uint64
-	ToCurrencyId   uint64
-	Amount         uint64
+	FromCurrencyId int
+	ToCurrencyId   int
+	Amount         string
 }
 
 type AccountAdd struct {
@@ -43,7 +43,7 @@ type ChainListRet struct {
 }
 
 type Currency struct {
-	CurrencyId uint64           `json:"currencyId"`
+	CurrencyId int              `json:"currencyId"`
 	Currency   string           `json:"currency"`
 	Tokens     []*CurrencyToken `json:"chainList"`
 }
@@ -79,8 +79,8 @@ type TaskAddRet struct {
 }
 
 type EstimateTaskResult struct {
-	TotalQuota  uint64   `json:"totalQuota"`
-	SingleQuota uint64   `json:"singleQuota"`
+	TotalQuota  string   `json:"totalQuota"`
+	SingleQuota string   `json:"singleQuota"`
 	Routes      []string `json:"routes"`
 }
 
@@ -103,4 +103,18 @@ type TaskDetailResult struct {
 type TaskDetailRet struct {
 	Code int               `json:"code"`
 	Data *TaskDetailResult `json:"data"`
+}
+
+type Account struct {
+	Account     string `json:"account"`
+	ChainId     int    `json:"chainId"`
+	ChainName   string `json:"chainName"`
+	ChainType   int    `json:"chainType"`
+	AccountId   uint64 `json:"accountId"`
+	AccountType int    `json:"type"`
+}
+
+type AccountListRet struct {
+	Code int                   `json:"code"`
+	Data map[string][]*Account `json:"data"`
 }

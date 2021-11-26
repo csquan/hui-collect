@@ -12,13 +12,45 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Bridge struct {
-	url       string
-	apiKey    string
-	secretKey string
-	cli       *http.Client
+	url        string
+	apiKey     string
+	secretKey  string
+	accounts   map[string]uint64 //key:chainid+"/"+addr v:accountId
+	chains     map[string]int
+	currencies map[string]int
+	cli        *http.Client
+}
+
+func NewBridge(url, ak, sk string, rpcTimeout time.Duration) (*Bridge, error) {
+	cli := &http.Client{
+		Timeout: rpcTimeout,
+	}
+	b := &Bridge{
+		url:        url,
+		apiKey:     ak,
+		secretKey:  sk,
+		cli:        cli,
+		chains:     make(map[string]int),
+		currencies: make(map[string]int),
+	}
+	chainIds, err := b.loadChains()
+	if err != nil {
+		return nil, err
+	}
+	err = b.loadCurrencies()
+	if err != nil {
+		return nil, err
+	}
+	err = b.loadAccounts(chainIds)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
 
 func md5SignHex(data string) string {
@@ -153,6 +185,49 @@ func (b *Bridge) AddAccount(a *AccountAdd) (uint64, error) {
 	return ret.Data.AccountId, nil
 }
 
+func (b *Bridge) GetAccountList(chainId int) ([]*Account, error) {
+	form := url.Values{}
+	method := "getAccountList"
+	form.Add("method", method)
+	now := time.Now().Unix()
+	form.Add("timestamp", fmt.Sprintf("%d", now))
+	form.Add("chainId", fmt.Sprintf("%d", chainId))
+	params := []string{"method", "timestamp", "type", "chainId"}
+	sort.Slice(params, func(i, j int) bool {
+		return params[i] > params[j]
+	})
+	var rawStr string
+	for _, p := range params {
+		rawStr += fmt.Sprintf("&%s=%s", p, form.Get(p))
+	}
+	rawStr += "&secret_key=" + b.secretKey
+	sign := md5SignHex(rawStr)
+	req, err := http.NewRequest("POST", b.url, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("apiKey", b.apiKey)
+	req.Header.Add("sign", sign)
+	req.Header.Add("Content-type", "application/x-www-form-urlencoded")
+
+	res, err := b.cli.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	body, err := ioutil.ReadAll(res.Body)
+	log.Printf("account ret:%s", body)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	ret := &AccountListRet{}
+	err = json.Unmarshal(body, ret)
+	if err != nil {
+		return nil, err
+	}
+	return ret.Data["accountList"], nil
+}
+
 func (b *Bridge) AddTask(t *Task) (uint64, error) {
 	form := url.Values{}
 	now := time.Now().Unix()
@@ -278,10 +353,62 @@ func (b *Bridge) GetTaskDetail(taskID uint64) (*TaskDetailResult, error) {
 	return ret.Data, nil
 }
 
-func (b *Bridge) GetAccountId(toAddr string) uint64 {
-	return 0
+func (b *Bridge) GetChainId(chain string) (int, bool) {
+	id, ok := b.chains[chain]
+	return id, ok
 }
 
-func (b *Bridge) GetCurrencyID(currency string) uint64 {
-	return 0
+func (b *Bridge) GetAccountId(addr string, chainId int) (uint64, bool) {
+	k := fmt.Sprintf("%d/%s", chainId, addr)
+	acoountId, ok := b.accounts[k]
+	if !ok {
+		logrus.Warnf("chainId not exist chainId:%s,accounts:%v", chainId, b.accounts)
+		return 0, false
+	}
+	return acoountId, true
+}
+
+func (b *Bridge) GetCurrencyID(currency string) (int, bool) {
+	ok, id := b.currencies[currency]
+	return ok, id
+}
+
+func (b *Bridge) loadChains() ([]int, error) {
+	chains, err := b.GetChainList()
+	if err != nil {
+		return nil, err
+	}
+	var ids []int
+	for _, chain := range chains {
+		logrus.Infof("chains name:%s,id:%s", chain.Name, chain.ChainId)
+		b.chains[chain.Name] = chain.ChainId
+		ids = append(ids, chain.ChainId)
+	}
+	return ids, nil
+}
+
+func (b *Bridge) loadCurrencies() error {
+	cs, err := b.GetCurrencyList()
+	if err != nil {
+		return err
+	}
+	for _, c := range cs {
+		logrus.Infof("currency name:%s,id:%s", c.Currency, c.CurrencyId)
+		b.currencies[c.Currency] = int(c.CurrencyId)
+	}
+	return nil
+}
+
+func (b *Bridge) loadAccounts(chainIds []int) error {
+	for _, chainId := range chainIds {
+		accounts, err := b.GetAccountList(chainId)
+		if err != nil {
+			return err
+		}
+		for _, account := range accounts {
+			key := fmt.Sprintf("%d/%s", account.ChainId, account.Account)
+			b.accounts[key] = account.AccountId
+		}
+	}
+	return nil
 }

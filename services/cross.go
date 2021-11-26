@@ -3,8 +3,8 @@ package services
 import (
 	"fmt"
 	"sort"
-	"strconv"
 
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/bridge"
 	"github.com/starslabhq/hermes-rebalance/config"
@@ -24,11 +24,7 @@ func min(a, b uint64) uint64 {
 	return a
 }
 
-func (c *CrossService) estimateCrossTask(addrFrom, addrTo, currencyFrom, currencyTo string, amount uint64) (total, single uint64, err error) {
-	fromAccountId := c.bridgeCli.GetAccountId(addrFrom)
-	toAccountId := c.bridgeCli.GetAccountId(addrTo)
-	fromCurrencyId := c.bridgeCli.GetCurrencyID(currencyFrom)
-	toCurrencyId := c.bridgeCli.GetCurrencyID(currencyTo)
+func (c *CrossService) estimateCrossTask(fromAccountId, toAccountId uint64, fromCurrencyId, toCurrencyId int, amount string) (total, single string, err error) {
 	btask := &bridge.Task{
 		FromAccountId:  fromAccountId,
 		ToAccountId:    toAccountId,
@@ -38,20 +34,81 @@ func (c *CrossService) estimateCrossTask(addrFrom, addrTo, currencyFrom, currenc
 	}
 	estimateResult, err := c.bridgeCli.EstimateTask(btask)
 	if err != nil {
-		return 0, 0, err
+		return "0", "0", err
 	}
 	return estimateResult.TotalQuota, estimateResult.SingleQuota, nil
+}
+
+func mustStrToDecimal(num string) decimal.Decimal {
+	d, err := decimal.NewFromString(num)
+	if err != nil {
+		logrus.Fatalf("to decimal err:%v,num:%s", err, num)
+	}
+	return d
+}
+
+type bridgeId struct {
+	fromChainId    int
+	toChainId      int
+	fromAccountId  uint64
+	toAccountId    uint64
+	fromCurrencyId int
+	toCurrencyId   int
+}
+
+func getBridgeID(bridgeCli *bridge.Bridge, task *types.CrossTask) (*bridgeId, error) {
+	fromChainId, ok := bridgeCli.GetChainId(task.ChainFrom)
+	if !ok {
+		return nil, fmt.Errorf("fromChainId not found")
+	}
+	toChainId, ok := bridgeCli.GetChainId(task.ChainTo)
+	if !ok {
+		return nil, fmt.Errorf("fromChainId not found")
+	}
+	fromAccountId, ok := bridgeCli.GetAccountId(task.ChainFromAddr, fromChainId)
+	if !ok {
+		return nil, fmt.Errorf("fromChainId not found")
+	}
+	toAccountId, ok := bridgeCli.GetAccountId(task.ChainToAddr, toChainId)
+	if !ok {
+		return nil, fmt.Errorf("fromChainId not found")
+	}
+	fromCurrencyId, ok := bridgeCli.GetCurrencyID(task.CurrencyFrom)
+	if !ok {
+		return nil, fmt.Errorf("fromChainId not found")
+	}
+	toCurrencyId, ok := bridgeCli.GetCurrencyID(task.CurrencyTo)
+	if !ok {
+		return nil, fmt.Errorf("fromChainId not found")
+	}
+	return &bridgeId{
+		fromChainId:    fromChainId,
+		toChainId:      toChainId,
+		fromAccountId:  fromAccountId,
+		toAccountId:    toAccountId,
+		fromCurrencyId: fromCurrencyId,
+		toCurrencyId:   toCurrencyId,
+	}, nil
 }
 
 func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool, err error) {
 	if parent.Amount == "" {
 		return true, nil
 	}
-	amount, _ := strconv.ParseUint(parent.Amount, 10, 64) //TODO amount type
-	if amount == 0 {                                      //create sub task finish
+	if parent.Amount == "0" { //create sub task finish
 		return true, nil
 	}
+	amount, err := decimal.NewFromString(parent.Amount)
+	if err != nil {
+		return false, err
+	}
+	bridgeId, err := getBridgeID(c.bridgeCli, parent)
+	if err != nil {
+		return false, err
+	}
+
 	subTasks, _ := c.db.GetCrossSubTasks(parent.ID)
+
 	if len(subTasks) > 0 {
 		sort.Slice(subTasks, func(i, j int) bool {
 			return subTasks[i].TaskNo < subTasks[j].TaskNo
@@ -61,41 +118,43 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 		case types.Crossing:
 			fallthrough
 		case types.Crossed:
-			var totalAmount uint64
+			var totalAmount decimal.Decimal
 			for _, sub := range subTasks {
-				a, _ := strconv.ParseUint(sub.Amount, 10, 64)
-				totalAmount += a
+				subAmount, err := decimal.NewFromString(sub.Amount)
+				if err != nil {
+					logrus.Fatalf("unexpectd sub amount err:%v,subTaskId:%d", err, sub.ID)
+				}
+				totalAmount = decimal.Sum(totalAmount, subAmount)
 			}
 
-			if totalAmount < amount {
-				amountLeft := amount - totalAmount
-				total, single, err := c.estimateCrossTask(parent.ChainFromAddr, parent.ChainToAddr, parent.CurrencyFrom, parent.CurrencyTo, amountLeft)
-				if total < amountLeft {
+			// if totalAmount < amount {
+			if totalAmount.LessThan(amount) {
+				amountLeft := amount.Sub(totalAmount)
+				totalStr, singleStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
+					bridgeId.fromCurrencyId, bridgeId.toCurrencyId, amountLeft.String())
+				total := mustStrToDecimal(totalStr)
+				single := mustStrToDecimal(singleStr)
+				if true {
 					logrus.Fatalf("unexpectd esimate total parentId:%d,total:%d,amount:%d", parent.ID, total, amountLeft)
 				}
 				if err != nil {
 					return false, err
 				}
-				amountLeft = min(amountLeft, single)
+				amountLeft = decimal.Min(amountLeft, single)
 				subTask := &types.CrossSubTask{
 					ParentTaskId: parent.ID,
 					TaskNo:       latestSub.TaskNo + 1,
-					ChainFrom:    parent.ChainFrom,
-					ChainTo:      parent.ChainTo,
-					CurrencyFrom: parent.CurrencyFrom,
-					CurrencyTo:   parent.CurrencyTo,
 					Amount:       fmt.Sprintf("%d", amountLeft),
+					State:        int(types.ToCross),
 				}
 				err = c.db.SaveCrossSubTask(subTask)
 				if err != nil {
 					return false, fmt.Errorf("add sub task err:%v,task:%v", err, subTask)
 				}
-				if amountLeft <= single { //剩余amount可一次提交完成
-					// c.db.UpdateCrossTaskState(t.ID, int(subTaskCreated))
+				if amountLeft.LessThanOrEqual(single) { //剩余amount可一次提交完成
 					return true, nil
 				}
 			} else if totalAmount == amount {
-				// c.db.UpdateCrossTaskState(t.ID, int(subTaskCreated))
 				return true, nil
 			} else {
 				logrus.Fatalf("unexpected amount taskID:%d,task:%v", parent.ID, parent)
@@ -106,27 +165,25 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 			logrus.Fatalf("unexpected task state:%d,sub_task id:%d", latestSub.State, latestSub.ID)
 		}
 	} else { // the first sub task
-		total, single, err := c.estimateCrossTask(parent.ChainFromAddr, parent.ChainToAddr, parent.CurrencyFrom, parent.CurrencyTo, amount)
+		totalStr, singleStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
+			bridgeId.fromCurrencyId, bridgeId.toCurrencyId, amount.String())
 		if err != nil {
 			return false, err
 		}
-		if amount <= total {
-			amountCur := min(amount, single)
+		total := mustStrToDecimal(totalStr)
+		signal := mustStrToDecimal(singleStr)
+		if amount.LessThanOrEqual(total) {
+			amountCur := decimal.Min(amount, signal)
 			subTask := &types.CrossSubTask{
 				ParentTaskId: parent.ID,
 				TaskNo:       0,
-				ChainFrom:    parent.ChainFrom,
-				ChainTo:      parent.ChainTo,
-				CurrencyFrom: parent.CurrencyFrom,
-				CurrencyTo:   parent.CurrencyTo,
-				Amount:       fmt.Sprintf("%d", amountCur),
+				Amount:       amountCur.String(),
 			}
 			err = c.db.SaveCrossSubTask(subTask)
 			if err != nil {
 				return false, fmt.Errorf("add sub task err:%v,task:%v", err, subTask)
 			}
-			if amount <= single {
-				// c.db.UpdateCrossTaskState(t.ID, int(subTaskCreated))
+			if amount.LessThanOrEqual(signal) {
 				return true, nil
 			}
 		} else {

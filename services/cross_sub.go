@@ -27,17 +27,22 @@ func (c *CrossSubTaskService) Run() error {
 		if len(childTasks) == 0 {
 			continue
 		}
+		bridgeId, err := getBridgeID(c.bridgeCli, pt)
+		if err != nil {
+			logrus.Errorf("get bridgeId err:%v,taskId:%d", bridgeId, pt.ID)
+			continue
+		}
 		for _, subTask := range childTasks {
 			switch types.CrossSubState(subTask.State) {
 			case types.ToCross:
 				//do cross
 				t := &bridge.Task{
 					TaskNo:         subTask.TaskNo,
-					FromAccountId:  0,
-					ToAccountId:    0,
-					FromCurrencyId: 0,
-					ToCurrencyId:   0,
-					Amount:         subTask.TaskNo,
+					FromAccountId:  bridgeId.fromAccountId,
+					ToAccountId:    bridgeId.toAccountId,
+					FromCurrencyId: bridgeId.fromCurrencyId,
+					ToCurrencyId:   bridgeId.toCurrencyId,
+					Amount:         subTask.Amount,
 				}
 				taskId, err := c.bridgeCli.AddTask(t)
 				if err != nil && taskId != 0 {
