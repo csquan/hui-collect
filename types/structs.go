@@ -1,7 +1,10 @@
 package types
 
 import (
+	"encoding/json"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Base struct {
@@ -32,6 +35,16 @@ type PartReBalanceTask struct {
 	Params string `xorm:"params"`
 }
 
+func (p *PartReBalanceTask) ReadParams() (params *Params, err error) {
+	params = &Params{}
+	if err = json.Unmarshal([]byte(p.Params), params); err != nil {
+		logrus.Errorf("Unmarshal PartReBalanceTask params error:%v task:[%v]", err, p)
+		return
+	}
+
+	return
+}
+
 type AssetTransferTask struct {
 	*Base
 	*BaseTask
@@ -48,11 +61,13 @@ type TransactionTask struct {
 	TransferId      uint   `xorm:"transfer_id"`
 	Nonce           int    `xorm:"nonce"`
 	ChainId         int    `xorm:"chain_id"`
+	Decimal         int    `xorm:"decimal"`
 	From            string `xorm:"from"`
 	To              string `xorm:"to"`
+	State           int    `xorm:"state"`
 	ContractAddress string `xorm:"contract_address"`
 	Value           int    `xorm:"value"`
-	UnSignData      string `xorm:"unsigned_data"`
+	Input_data      string `xorm:"input_data"`
 	SignData        []byte `xorm:"signed_data"`
 	Params          string `xorm:"params"`
 	Hash            string `xorm:"hash"`
@@ -61,6 +76,12 @@ type TransactionTask struct {
 	TxHash          string `xorm:"txHash"`
 	EncryptData     string `xorm:"encryptData"`
 	RawTx           string `xorm:"rawTx"`
+}
+
+type InvestTask struct {
+	*Base
+	*BaseTask
+	RebalanceId uint64 `xorm:"rebalance_id"`
 }
 
 type CrossTask struct {
@@ -74,7 +95,7 @@ type CrossTask struct {
 	CurrencyFrom  string `xorm:"currency_from"`
 	CurrencyTo    string `xorm:"currency_to"`
 	Amount        string `xorm:"amount"`
-	TaskNo        uint64
+	State         int    `xorm:"state"`
 }
 
 type CrossSubTask struct {
@@ -82,10 +103,11 @@ type CrossSubTask struct {
 	*BaseTask
 	TaskNo       uint64 `xorm:"task_no"`
 	BridgeTaskId uint64 `xorm:"bridge_task_id"` //跨链桥task_id
-	ParentTaskId uint64 `xorm:"cross_task_id"`  //父任务id
-	ChainFrom    string `xorm:"chain_from"`
-	ChainTo      string `xorm:"chain_to"`
-	CurrencyFrom string `xorm:"currency_from"`
-	CurrencyTo   string `xorm:"currency_to"`
+	ParentTaskId uint64 `xorm:"parent_id"`      //父任务id
+	ChainFrom    string
+	ChainTo      string
+	CurrencyFrom string
+	CurrencyTo   string
 	Amount       string `xorm:"amount"`
+	State        int    `xorm:"state"`
 }

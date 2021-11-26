@@ -16,8 +16,7 @@ type crossState = int
 const (
 	toCreateSubTask crossState = iota
 	subTaskCreated
-	taskSuc    //all sub task suc
-	subTaskSuc //single sub task suc
+	taskSuc //all sub task suc
 )
 
 type CrossService struct {
@@ -32,15 +31,6 @@ func min(a, b uint64) uint64 {
 	}
 	return a
 }
-
-// func (c *CrossService) getSingleCrossAmount(btask *bridge.Task) (uint64, error) {
-// 	estimateResult, err := c.bridgeCli.EstimateTask(btask)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	single := estimateResult.SingleQuota
-// 	return single, nil
-// }
 
 func (c *CrossService) estimateCrossTask(addrFrom, addrTo, currencyFrom, currencyTo string, amount uint64) (total, single uint64, err error) {
 	fromAccountId := c.bridgeCli.GetAccountId(addrFrom)
@@ -61,15 +51,15 @@ func (c *CrossService) estimateCrossTask(addrFrom, addrTo, currencyFrom, currenc
 	return estimateResult.TotalQuota, estimateResult.SingleQuota, nil
 }
 
-func (c *CrossService) addCrossSubTasks(t *types.CrossTask) (finished bool, err error) {
-	if t.Amount == "" {
+func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool, err error) {
+	if parent.Amount == "" {
 		return true, nil
 	}
-	amount, _ := strconv.ParseUint(t.Amount, 10, 64) //TODO amount type
-	if amount == 0 {                                 //create sub task finish
+	amount, _ := strconv.ParseUint(parent.Amount, 10, 64) //TODO amount type
+	if amount == 0 {                                      //create sub task finish
 		return true, nil
 	}
-	subTasks, _ := c.db.GetCrossSubTasks(t.ID)
+	subTasks, _ := c.db.GetCrossSubTasks(parent.ID)
 	if len(subTasks) > 0 {
 		sort.Slice(subTasks, func(i, j int) bool {
 			return subTasks[i].TaskNo < subTasks[j].TaskNo
@@ -87,18 +77,21 @@ func (c *CrossService) addCrossSubTasks(t *types.CrossTask) (finished bool, err 
 
 			if totalAmount < amount {
 				amountLeft := amount - totalAmount
-				_, single, err := c.estimateCrossTask(t.ChainFromAddr, t.ChainToAddr, t.CurrencyFrom, t.CurrencyTo, amountLeft)
+				total, single, err := c.estimateCrossTask(parent.ChainFromAddr, parent.ChainToAddr, parent.CurrencyFrom, parent.CurrencyTo, amountLeft)
+				if total < amountLeft {
+					logrus.Fatalf("unexpectd esimate total parentId:%d,total:%d,amount:%d", parent.ID, total, amountLeft)
+				}
 				if err != nil {
 					return false, err
 				}
 				amountLeft = min(amountLeft, single)
 				subTask := &types.CrossSubTask{
-					ParentTaskId: t.ID,
-					TaskNo:       t.TaskNo,
-					ChainFrom:    t.ChainFrom,
-					ChainTo:      t.ChainTo,
-					CurrencyFrom: t.CurrencyFrom,
-					CurrencyTo:   t.CurrencyTo,
+					ParentTaskId: parent.ID,
+					TaskNo:       latestSub.TaskNo + 1,
+					ChainFrom:    parent.ChainFrom,
+					ChainTo:      parent.ChainTo,
+					CurrencyFrom: parent.CurrencyFrom,
+					CurrencyTo:   parent.CurrencyTo,
 					Amount:       fmt.Sprintf("%d", amountLeft),
 				}
 				err = c.db.SaveCrossSubTask(subTask)
@@ -113,25 +106,27 @@ func (c *CrossService) addCrossSubTasks(t *types.CrossTask) (finished bool, err 
 				// c.db.UpdateCrossTaskState(t.ID, int(subTaskCreated))
 				return true, nil
 			} else {
-				logrus.Fatalf("unexpected amount taskID:%d,task:%v", t.ID, t)
+				logrus.Fatalf("unexpected amount taskID:%d,task:%v", parent.ID, parent)
 			}
 		case toCross:
 			return false, nil
+		default:
+			logrus.Fatalf("unexpected task state:%d,sub_task id:%d", latestSub.State, latestSub.ID)
 		}
-	} else { //
-		total, single, err := c.estimateCrossTask(t.ChainFromAddr, t.ChainToAddr, t.CurrencyFrom, t.CurrencyTo, amount)
+	} else { // the first sub task
+		total, single, err := c.estimateCrossTask(parent.ChainFromAddr, parent.ChainToAddr, parent.CurrencyFrom, parent.CurrencyTo, amount)
 		if err != nil {
 			return false, err
 		}
 		if amount <= total {
 			amountCur := min(amount, single)
 			subTask := &types.CrossSubTask{
-				ParentTaskId: t.ID,
-				TaskNo:       t.TaskNo,
-				ChainFrom:    t.ChainFrom,
-				ChainTo:      t.ChainTo,
-				CurrencyFrom: t.CurrencyFrom,
-				CurrencyTo:   t.CurrencyTo,
+				ParentTaskId: parent.ID,
+				TaskNo:       0,
+				ChainFrom:    parent.ChainFrom,
+				ChainTo:      parent.ChainTo,
+				CurrencyFrom: parent.CurrencyFrom,
+				CurrencyTo:   parent.CurrencyTo,
 				Amount:       fmt.Sprintf("%d", amountCur),
 			}
 			err = c.db.SaveCrossSubTask(subTask)
@@ -142,6 +137,8 @@ func (c *CrossService) addCrossSubTasks(t *types.CrossTask) (finished bool, err 
 				// c.db.UpdateCrossTaskState(t.ID, int(subTaskCreated))
 				return true, nil
 			}
+		} else {
+			logrus.Warnf("cross task amount bigger than total taskId:%d,amount:%d,total:%s", parent.ID, parent.Amount)
 		}
 	}
 	return false, nil

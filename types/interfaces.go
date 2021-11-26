@@ -13,44 +13,43 @@ type IReader interface {
 	GetOpenedTransactionTask() (*TransactionTask, error)
 	GetTxTasks(uint64) ([]*TransactionTask, error)
 
+	GetOrderID() (int, error)
+
 	GetOpenedCrossTasks() ([]*CrossTask, error)
-
 	GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*CrossTask, error)
-
 	GetCrossSubTasks(crossTaskId uint64) ([]*CrossSubTask, error)
-	GetOpenedCrossSubTasks(uint64) ([]*CrossSubTask, error)
-
+	GetOpenedCrossSubTasks(parentTaskId uint64) ([]*CrossSubTask, error)
 }
 
 type IWriter interface {
-	InsertAssetTransfer(itf xorm.Interface, task *AssetTransferTask) error
 	UpdateAssetTransferTask(itf xorm.Interface, task *AssetTransferTask) error
-	UpdateTransactionTask(task *TransactionTask) error
+	GetSession() *xorm.Session
+	GetEngine() *xorm.Engine
 
 	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
 
-	CreateAssetTransferTask(itf xorm.Interface, task *AssetTransferTask) error
-	UpdateTransferTask(task *AssetTransferTask) error
+	SaveAssetTransferTask(itf xorm.Interface, task *AssetTransferTask) error
 
-	UpdateTxTask(itf xorm.Interface,task *TransactionTask) error
+
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error
+	InsertAssetTransfer(itf xorm.Interface, task *AssetTransferTask) error
 
-	GetSession() *xorm.Session
-	GetEngine() *xorm.Engine
+	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
 
 	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
 	//update cross task state
 	UpdateCrossTaskState(id uint64, state int) error
-	//update cross task task_no cur and amount cur
-	UpdateCrossTaskNo(itf xorm.Interface, id, taskNo uint64) error
+
 	//add bridge task id to sub task
-	UpdateCrossSubTaskBridgeIDAndState(itf xorm.Interface, id, bridgeTaskId uint64, state int) error
+	UpdateCrossSubTaskBridgeIDAndState(id, bridgeTaskId uint64, state int) error
 
 	//save cross sub task
 	SaveCrossSubTask(subTask *CrossSubTask) error
 
 	//update cross sub task state
 	UpdateCrossSubTaskState(id uint64, state int) error
+
+	UpdateOrderID(itf xorm.Interface, id int) error
 }
 
 type IDB interface {

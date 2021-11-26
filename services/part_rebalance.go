@@ -92,29 +92,19 @@ func (p *PartReBalance) handleInit(task *types.PartReBalanceTask) (err error) {
 	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {
 		execErr = p.db.SaveCrossTasks(session, crossTasks)
 		if execErr != nil {
-			logrus.Errorf("save cross task error:%v task:[%v]", err, task)
+			logrus.Errorf("save cross task error:%v task:[%v]", execErr, task)
 			return
 		}
 
 		task.State = types.PartReBalanceCross
 		execErr = p.db.UpdatePartReBalanceTask(session, task)
 		if execErr != nil {
-			logrus.Errorf("update part rebalance task error:%v task:[%v]", err, task)
+			logrus.Errorf("update part rebalance task error:%v task:[%v]", execErr, task)
 			return
 		}
 
 		return
 	})
-
-	return
-}
-
-func (p *PartReBalance) readParams(task *types.PartReBalanceTask) (params *types.Params, err error) {
-	params = &types.Params{}
-	if err = json.Unmarshal([]byte(task.Params), params); err != nil {
-		logrus.Errorf("Unmarshal PartReBalanceTask params error:%v task:[%v]", err, task)
-		return
-	}
 
 	return
 }
@@ -132,25 +122,30 @@ func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
 		return
 	}
 
-	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {
+	success := true
+	for _, crossTask := range crossTasks {
+		if crossTask.State != taskSuc {
+			logrus.Debugf("cross task [%v] is not finished", crossTask)
 
-		success := true
-		for _, crossTask := range crossTasks {
-			if crossTask.State != taskSuc {
-				logrus.Debugf("cross task [%v] is not finished", crossTask)
-
-				return
-			}
-
-			success = success && crossTask.State == taskSuc
+			return
 		}
+
+		success = success && crossTask.State == taskSuc
+	}
+
+	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {
 
 		//create next state task
 		if success {
-			assetTransfer, err := p.createTransferInTask(task)
-			execErr = p.db.InsertAssetTransfer(session, assetTransfer)
+			var assetTransfer *types.AssetTransferTask
+			assetTransfer, execErr = p.createTransferInTask(task)
 			if execErr != nil {
-				logrus.Errorf("save assetTransfer task error:%v task:[%v]", err, task)
+				return
+			}
+
+			execErr = p.db.SaveAssetTransferTask(session, assetTransfer)
+			if execErr != nil {
+				logrus.Errorf("save assetTransfer task error:%v task:[%v]", execErr, task)
 				return
 			}
 		}
@@ -163,7 +158,7 @@ func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
 		}
 		execErr = p.db.UpdatePartReBalanceTask(session, task)
 		if execErr != nil {
-			logrus.Errorf("update part rebalance task error:%v task:[%v]", err, task)
+			logrus.Errorf("update part rebalance task error:%v task:[%v]", execErr, task)
 			return
 		}
 		return
@@ -173,7 +168,7 @@ func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
 }
 
 func (p *PartReBalance) createTransferInTask(task *types.PartReBalanceTask) (assetTransfer *types.AssetTransferTask, err error) {
-	params, err := p.readParams(task)
+	params, err := task.ReadParams()
 	if err != nil {
 		return
 	}
@@ -195,7 +190,7 @@ func (p *PartReBalance) createTransferInTask(task *types.PartReBalanceTask) (ass
 }
 
 func (p *PartReBalance) createInvestTask(task *types.PartReBalanceTask) (assetTransfer *types.AssetTransferTask, err error) {
-	params, err := p.readParams(task)
+	params, err := task.ReadParams()
 	if err != nil {
 		return
 	}
@@ -226,10 +221,16 @@ func (p *PartReBalance) handleTransferIn(task *types.PartReBalanceTask) (err err
 
 	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {
 		if state == AssetTransferSuccess {
-			invest, err := p.createInvestTask(task)
-			execErr = p.db.InsertAssetTransfer(session, invest)
+			var invest *types.AssetTransferTask
+
+			invest, execErr = p.createInvestTask(task)
 			if execErr != nil {
-				logrus.Errorf("save invest task error:%v task:[%v]", err, task)
+				return
+			}
+
+			execErr = p.db.SaveAssetTransferTask(session, invest)
+			if execErr != nil {
+				logrus.Errorf("save invest task error:%v task:[%v]", execErr, task)
 				return
 			}
 			task.State = types.PartReBalanceInvest
@@ -239,7 +240,7 @@ func (p *PartReBalance) handleTransferIn(task *types.PartReBalanceTask) (err err
 		}
 		execErr = p.db.UpdatePartReBalanceTask(session, task)
 		if execErr != nil {
-			logrus.Errorf("update part rebalance task error:%v task:[%v]", err, task)
+			logrus.Errorf("update part rebalance task error:%v task:[%v]", execErr, task)
 			return
 		}
 		return
@@ -284,10 +285,15 @@ func (p *PartReBalance) handleInvest(task *types.PartReBalanceTask) (err error) 
 
 	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {
 		if state == AssetTransferSuccess {
-			invest, err := p.createInvestTask(task)
-			execErr = p.db.InsertAssetTransfer(session, invest)
+			var invest *types.AssetTransferTask
+			invest, execErr = p.createInvestTask(task)
 			if execErr != nil {
-				logrus.Errorf("save invest task error:%v task:[%v]", err, task)
+				return
+			}
+
+			execErr = p.db.SaveAssetTransferTask(session, invest)
+			if execErr != nil {
+				logrus.Errorf("save invest task error:%v task:[%v]", execErr, task)
 				return
 			}
 			task.State = types.PartReBalanceSuccess
@@ -297,7 +303,7 @@ func (p *PartReBalance) handleInvest(task *types.PartReBalanceTask) (err error) 
 		}
 		execErr = p.db.UpdatePartReBalanceTask(session, task)
 		if execErr != nil {
-			logrus.Errorf("update part rebalance task error:%v task:[%v]", err, task)
+			logrus.Errorf("update part rebalance task error:%v task:[%v]", execErr, task)
 			return
 		}
 		return
