@@ -45,24 +45,30 @@ func (t *Transaction) Name() string {
 	return "transaction"
 }
 func (t *Transaction) Run() (err error) {
-	task, err := t.db.GetOpenedTransactionTask()
+	tasks, err := t.db.GetOpenedTransactionTask()
 	if err != nil {
 		return
 	}
-	if task == nil {
-		logrus.Infof("no available Transaction task.")
+	if len(tasks) == 0 {
+		logrus.Infof("no available part Transaction task.")
+		return
 	}
-	switch TransactionState(task.State) {
+
+	if len(tasks) > 1 {
+		logrus.Errorf("more than one transaction tasks are being processed. tasks:%v", tasks)
+	}
+
+	switch TransactionState(tasks[0].State) {
 	case SignState:
-		return t.handleSign(task)
+		return t.handleSign(tasks[0])
 	case AuditState:
-		return t.handleAudit(task)
+		return t.handleAudit(tasks[0])
 	case ValidatorState:
-		return t.handleValidator(task)
+		return t.handleValidator(tasks[0])
 	case TxSigned:
-		return t.handleTransactionSigned(task)
+		return t.handleTransactionSigned(tasks[0])
 	default:
-		logrus.Errorf("unkonwn task state [%v] for task [%v]", task.State, task.ID)
+		logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
 	}
 
 	return

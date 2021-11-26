@@ -20,8 +20,11 @@ func (m *Mysql) GetAssetTransferTasksWithReBalanceId(reBalanceId uint64, transfe
 	return
 }
 
-func (*Mysql) GetOpenedTransactionTask() (*types.TransactionTask, error) {
-	return nil, nil
+func (m *Mysql) GetOpenedTransactionTask() (tasks []*types.TransactionTask, err error) {
+	//在交易表中找到状态为SignState的交易任务
+	tasks = make([]*types.TransactionTask, 0)
+	_, err = m.engine.Where("state = ?", 1).Get(&tasks)
+	return
 }
 
 func (*Mysql) GetTxTasks(uint64) ([]*types.TransactionTask, error) {
