@@ -58,12 +58,13 @@ func (p *PartReBalance) Run() (err error) {
 	}
 
 	if len(tasks) > 1 {
-		logrus.Errorf("more than one rebalance tasks are being processed. tasks:%v", tasks)
+		err = fmt.Errorf("more than one rebalance tasks are being processed. tasks:%v", tasks)
+		return
 	}
 
 	handler, ok := p.handlers[tasks[0].State]
 	if !ok {
-		logrus.Errorf("unkonwn state for part rebalance task:%v", tasks[0])
+		err = fmt.Errorf("unkonwn state for part rebalance task:%v", tasks[0])
 		return
 	}
 

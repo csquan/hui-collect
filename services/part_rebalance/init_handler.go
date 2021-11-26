@@ -1,8 +1,6 @@
 package part_rebalance
 
 import (
-	"encoding/json"
-
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -18,12 +16,12 @@ func (i *initHandler) CheckFinished(task *types.PartReBalanceTask) (finished boo
 }
 
 func (i *initHandler) MoveToNextState(task *types.PartReBalanceTask, nextState types.PartReBalanceState) (err error) {
-	crossBalances := make([]*types.CrossBalanceItem, 0)
-	err = json.Unmarshal([]byte(task.Params), &crossBalances)
+
+	params, err := task.ReadParams()
 	if err != nil {
-		logrus.Errorf("read task [%v] cross params error:%v", task, err)
 		return
 	}
+	crossBalances := params.CrossBalances
 
 	if len(crossBalances) == 0 {
 		logrus.Errorf("no cross balance is found for rebalance task: [%v]", task)

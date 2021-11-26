@@ -17,7 +17,7 @@ type crossHandler struct {
 func (c *crossHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
 	crossTasks, err := c.db.GetCrossTasksByReBalanceId(task.ID)
 	if err != nil {
-		logrus.Errorf("get cross task for rebalance [%v] failed", task)
+		logrus.Errorf("get cross task for rebalance [%v] failed, err:%v", task, err)
 		return
 	}
 
@@ -55,6 +55,7 @@ func (c *crossHandler) MoveToNextState(task *types.PartReBalanceTask, nextState 
 			var assetTransfer *types.AssetTransferTask
 			assetTransfer, execErr = c.createTransferInTask(task)
 			if execErr != nil {
+				logrus.Errorf("create assetTransfer task error:%v task:[%v]", execErr, task)
 				return
 			}
 
