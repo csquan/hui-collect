@@ -8,14 +8,14 @@ import (
 )
 
 type Base struct {
-	ID        uint64    `json:"id" xorm:"id" gorm:"primary_key"`
-	CreatedAt time.Time `json:"created_at" xorm:"created created_at"`
-	UpdatedAt time.Time `json:"updated_at" xorm:"updated updated_at"`
+	ID        uint64    `xorm:"id" gorm:"primary_key"`
+	CreatedAt time.Time `xorm:"created created_at"`
+	UpdatedAt time.Time `xorm:"updated updated_at"`
 }
 
 type BaseTask struct {
-	State   int
-	Message string
+	State   int    `xorm:"state"`
+	Message string `xorm:"message"`
 }
 
 type PartReBalanceState = int
@@ -48,11 +48,17 @@ const (
 	AssetTransferSuccess
 	AssetTransferFailed
 )
+
 type PartReBalanceTask struct {
-	*Base
-	*BaseTask
-	Params string `xorm:"params"`
+	*Base     `xorm:"extends"`
+	*BaseTask `xorm:"extends"`
+	Params    string `xorm:"params"`
 }
+
+//
+//func (p *PartReBalanceTask) TableName() string {
+//	return "t_part_rebalance_task"
+//}
 
 func (p *PartReBalanceTask) ReadParams() (params *Params, err error) {
 	params = &Params{}
@@ -74,7 +80,7 @@ type AssetTransferTask struct {
 }
 
 type TransactionTask struct {
-	*Base         `xorm:"extends"`
+	*Base           `xorm:"extends"`
 	RebalanceId     uint64 `xorm:"rebalance_id"`
 	TransferId      uint   `xorm:"transfer_id"`
 	TransferType    uint8  `xorm:"transfer_type"`

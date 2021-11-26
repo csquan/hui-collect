@@ -31,7 +31,8 @@ func (i *initHandler) MoveToNextState(task *types.PartReBalanceTask, nextState t
 	crossTasks := make([]*types.CrossTask, 0, len(crossBalances))
 	for _, param := range crossBalances {
 		crossTasks = append(crossTasks, &types.CrossTask{
-			BaseTask:      &types.BaseTask{State: types.ToCreateSubTask},
+			//BaseTask:      &types.BaseTask{State: types.ToCreateSubTask},
+			State: types.ToCreateSubTask,
 			RebalanceId:   task.ID,
 			ChainFrom:     param.FromChain,
 			ChainTo:       param.ToChain,
