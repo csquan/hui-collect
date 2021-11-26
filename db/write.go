@@ -107,8 +107,9 @@ func (m *Mysql) UpdateCrossSubTaskState(id uint64, state int) error {
 	return nil
 }
 
-func (m *Mysql)UpdateOrderID(id int) error {
-	return nil
+func (m *Mysql)UpdateOrderID(itf xorm.Interface, id int) error {
+	_, err := itf.Update(id)
+	return err
 }
 
 

@@ -53,7 +53,7 @@ type IWriter interface {
 	//update cross sub task state
 	UpdateCrossSubTaskState(id uint64, state int) error
 
-	UpdateOrderID(id int) error
+	UpdateOrderID(itf xorm.Interface, id int) error
 }
 
 type IDB interface {

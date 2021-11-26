@@ -107,7 +107,10 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	receiver := task.To
 	orderID,_ := t.db.GetOrderID()
 
-	defer t.db.UpdateOrderID(orderID+1)
+	defer utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+		t.db.UpdateOrderID(session,orderID+1)
+		return
+	})
 
 	_, err = signer.AuditTx(input,receiver,quantity,orderID)
 	if err != nil {
@@ -132,7 +135,10 @@ func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 	orderID,_ := t.db.GetOrderID()
 	to := task.To
 
-	defer t.db.UpdateOrderID(orderID+1)
+	defer utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+		t.db.UpdateOrderID(session,orderID+1)
+		return
+	})
 
 	vRet,err := signer.ValidatorTx(input, to, quantity,orderID)
 	if err != nil  {
