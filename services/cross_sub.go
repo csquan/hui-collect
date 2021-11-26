@@ -31,7 +31,14 @@ func (c *CrossSubTaskService) Run() error {
 			switch types.CrossSubState(subTask.State) {
 			case types.ToCross:
 				//do cross
-				t := &bridge.Task{}
+				t := &bridge.Task{
+					TaskNo:         subTask.TaskNo,
+					FromAccountId:  0,
+					ToAccountId:    0,
+					FromCurrencyId: 0,
+					ToCurrencyId:   0,
+					Amount:         subTask.TaskNo,
+				}
 				taskId, err := c.bridgeCli.AddTask(t)
 				if err != nil && taskId != 0 {
 					//update bridge taskId

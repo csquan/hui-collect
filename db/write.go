@@ -81,10 +81,6 @@ func (m *Mysql) SaveCrossTasks(itf xorm.Interface, tasks []*types.CrossTask) err
 	return err
 }
 
-func (m *Mysql) SaveCrossSubTasks([]*types.CrossSubTask) error {
-	return nil
-}
-
 func (m *Mysql) UpdateCrossTaskState(id uint64, state int) error {
 	_, err := m.engine.Table("cross_task").Where("id = ?", id).Cols("state").Update(
 		&types.CrossTask{

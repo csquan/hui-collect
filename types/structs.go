@@ -8,9 +8,9 @@ import (
 )
 
 type Base struct {
-	ID        uint64    `json:"id" gorm:"primary_key"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uint64    `json:"id" xorm:"id" gorm:"primary_key"`
+	CreatedAt time.Time `json:"created_at" xorm:"created created_at"`
+	UpdatedAt time.Time `json:"updated_at" xorm:"updated updated_at"`
 }
 
 type BaseTask struct {
@@ -104,8 +104,7 @@ type InvestTask struct {
 }
 
 type CrossTask struct {
-	*Base
-	*BaseTask
+	*Base         `xorm:"extends"`
 	RebalanceId   uint64 `xorm:"rebalance_id"`
 	ChainFrom     string `xorm:"chain_from"`
 	ChainFromAddr string `xorm:"chain_from_addr"`
@@ -118,8 +117,7 @@ type CrossTask struct {
 }
 
 type CrossSubTask struct {
-	*Base
-	*BaseTask
+	*Base        `xorm:"extends"`
 	TaskNo       uint64 `xorm:"task_no"`
 	BridgeTaskId uint64 `xorm:"bridge_task_id"` //跨链桥task_id
 	ParentTaskId uint64 `xorm:"parent_id"`      //父任务id

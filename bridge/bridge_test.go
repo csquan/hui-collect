@@ -1,7 +1,9 @@
 package bridge
 
 import (
+	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -26,4 +28,29 @@ func TestGetChainList(t *testing.T) {
 		t.Fatalf("getChainList err:%v", err)
 	}
 	t.Logf("chainList :%v", chainList)
+}
+
+func TestGetCurrencyList(t *testing.T) {
+	clist, err := b.GetCurrencyList()
+	if err != nil {
+		t.Fatalf("get c list err:%v", err)
+	}
+	b, _ := json.Marshal(clist)
+	t.Logf("clist:%s", b)
+}
+
+func TestAddAccount(t *testing.T) {
+	a := &AccountAdd{
+		AccounType: 2,
+		ChainId:    128,
+		Account:    strings.ToLower("0x70d1B6F6536Bb31ecC375eA600089C3631A51Ff5"),
+	}
+	if b == nil {
+		panic("---")
+	}
+	id, err := b.AddAccount(a)
+	if err != nil {
+		t.Fatalf("add account err:%v", err)
+	}
+	t.Logf("accountid:%d", id)
 }

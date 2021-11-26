@@ -10,11 +10,13 @@ type Task struct {
 }
 
 type AccountAdd struct {
-	AccounType uint8  `json:"type"` //(1中转账户,2业务账户,3合约账户,4出入口钱包)
-	ChainId    uint8  `json:"chainId"`
-	Address    string `json:"address"`
-	Account    uint64 `json:"account"` //交易所账号
-	APIKey     string `json:"apiKey"`  //交易所apikey
+	IsMaster        int    `json:"isMaster"`
+	MasterAccountId int    `json:"masterAccountId"`
+	SignerAccountId int    `json:"signerAccountId"`
+	AccounType      uint8  `json:"type"` //(1中转账户,2业务账户,3合约账户,4出入口钱包)
+	ChainId         uint8  `json:"chainId"`
+	Account         string `json:"account"` // 钱包地址/CEX UID
+	APIKey          string `json:"apiKey"`  // CEX api key
 }
 
 type AccountRet struct {
