@@ -8,14 +8,14 @@ import (
 )
 
 type Base struct {
-	ID        uint64    `xorm:"id" gorm:"primary_key"`
-	CreatedAt time.Time `xorm:"created created_at"`
-	UpdatedAt time.Time `xorm:"updated updated_at"`
+	ID        uint64    `xorm:"f_id" gorm:"primary_key"`
+	CreatedAt time.Time `xorm:"created f_created_at"`
+	UpdatedAt time.Time `xorm:"updated f_updated_at"`
 }
 
 type BaseTask struct {
-	State   int    `xorm:"state"`
-	Message string `xorm:"message"`
+	State   int    `xorm:"f_state"`
+	Message string `xorm:"f_message"`
 }
 
 type PartReBalanceState = int
@@ -52,7 +52,7 @@ const (
 type PartReBalanceTask struct {
 	*Base     `xorm:"extends"`
 	*BaseTask `xorm:"extends"`
-	Params    string `xorm:"params"`
+	Params    string `xorm:"f_params"`
 }
 
 func (p *PartReBalanceTask) TableName() string {
