@@ -1,5 +1,7 @@
 package types
 
+import "math/big"
+
 type CrossBalanceItem struct {
 	FromChain    string `json:"from_chain"`
 	ToChain      string `json:"to_chain"`
@@ -17,20 +19,24 @@ type Params struct {
 }
 
 type AssetTransferInParam struct {
-	From   string
-	To     string //合约地址
-	amount uint64 //跨链资金大小
-	taskId uint64 //链下跨链任务id
+	ChainId   int
+	ChainName string
+	From      string
+	To        string //合约地址
+	amount    uint64 //跨链资金大小
+	taskId    uint64 //链下跨链任务id
 }
 
 type InvestParam struct {
-	From string
-	To   string //合约地址
-	Data *InvestData
+	ChainId   int
+	ChainName string
+	From      string
+	To        string //合约地址
+	Data      *InvestData
 }
 
 type InvestData struct {
 	address    []string
-	token1List []uint64
-	token2List []uint64
+	token1List []*big.Int
+	token2List []*big.Int
 }

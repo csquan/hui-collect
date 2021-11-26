@@ -33,7 +33,7 @@ type IWriter interface {
 	UpdateTransferTask(task *AssetTransferTask) error
 
 	UpdateTxTask(itf xorm.Interface,task *TransactionTask) error
-	SaveTxTasks(*xorm.Session, []*TransactionTask) error
+	SaveTxTasks(xorm.Interface, []*TransactionTask) error
 
 	GetSession() *xorm.Session
 	GetEngine() *xorm.Engine
