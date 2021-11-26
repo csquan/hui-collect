@@ -39,6 +39,8 @@ CREATE TABLE `transaction_task` (
     `contract_address` char(42)            NOT NULL DEFAULT '' COMMENT 'contract addr',
     `value`            int(11)             NOT NULL DEFAULT '0' COMMENT '数量',
     `unsigned_data`    text                NOT NULL DEFAULT '' COMMENT '签名前数据',
+    `Cipher`           text                NOT NULL DEFAULT '' COMMENT '加密数据的解密key',
+    `EncryptData`      text                NOT NULL DEFAULT '' COMMENT '加密后数据',
     `signed_data`      text                NOT NULL DEFAULT '' COMMENT '签名后数据',
     `params`           tinyint(4)          NOT NULL DEFAULT '0' COMMENT 'init unsinged signed broadcast',
     `hash`             char(66)            NOT NULL DEFAULT '' COMMENT 'transaction hash',
