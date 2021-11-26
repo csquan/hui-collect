@@ -68,7 +68,7 @@ func (m *Mysql) SaveAssetTransferTask(itf xorm.Interface, task *types.AssetTrans
 }
 
 func (m *Mysql) UpdateTransactionTask(itf xorm.Interface, task *types.TransactionTask) error {
-	_, err := m.engine.Table("transaction_task").Update(task)
+	_, err := m.engine.Table("t_transaction_task").Update(task)
 	return err
 }
 

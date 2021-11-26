@@ -27,7 +27,7 @@ func (m *Mysql) GetAssetTransferTasksWithReBalanceId(reBalanceId uint64, transfe
 func (m *Mysql) GetOpenedTransactionTask() (tasks []*types.TransactionTask, err error) {
 	//在交易表中找到所有状态不为SignState的交易任务
 	tasks = make([]*types.TransactionTask, 0)
-	err = m.engine.Table("transaction_task").Where("state < ?", 4).Find(&tasks)
+	err = m.engine.Table("t_transaction_task").Where("state < ?", 4).Find(&tasks)
 	return
 }
 

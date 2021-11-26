@@ -79,24 +79,24 @@ type AssetTransferTask struct {
 }
 
 type TransactionTask struct {
-	*Base        `xorm:"extends"`
-	*BaseTask    `xorm:"extends"`
-	RebalanceId  uint64 `xorm:"rebalance_id"`
-	TransferId   uint   `xorm:"transfer_id"`
-	TransferType uint8  `xorm:"transfer_type"`
-	Nonce        int    `xorm:"nonce"`
-	ChainId      int    `xorm:"chain_id"`
-	Params       string `xorm:"params"`
-	Decimal      int    `xorm:"decimal"`
-	From         string `xorm:"from"`
-	To           string `xorm:"to"`
-	//State           int    `xorm:"state"`
+	*Base           `xorm:"extends"`
+	*BaseTask       `xorm:"extends"`
+	RebalanceId     uint64 `xorm:"rebalance_id"`
+	TransferId      uint   `xorm:"transfer_id"`
+	TransferType    uint8  `xorm:"transfer_type"`
+	Nonce           int    `xorm:"nonce"`
+	ChainId         int    `xorm:"chain_id"`
+	Params          string `xorm:"params"`
+	Decimal         int    `xorm:"decimal"`
+	From            string `xorm:"from"`
+	To              string `xorm:"to"`
 	ContractAddress string `xorm:"contract_address"`
 	Value           string `xorm:"value"`
 	Input_data      string `xorm:"input_data"`
 	Cipher          string `xorm:"cipher"`
 	EncryptData     string `xorm:"encryptData"`
 	SignData        []byte `xorm:"signed_data"`
+	OrderId         int     `xorm:"order_id"`
 	Hash            string `xorm:"hash"`
 }
 

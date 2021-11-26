@@ -111,10 +111,11 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	input := task.Input_data
 	quantity := string(task.Value)
 	receiver := task.To
-	orderID,_ := t.db.GetOrderID()
+	orderID := task.OrderId
 
 	defer utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		t.db.UpdateOrderID(session,orderID+1)
+		timestamp := 0 //当前时间戳
+		t.db.UpdateOrderID(session,timestamp)
 		return
 	})
 
@@ -138,11 +139,12 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 	input := task.Input_data
 	quantity := string(task.Value)
-	orderID,_ := t.db.GetOrderID()
+	orderID := task.OrderId
 	to := task.To
 
 	defer utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		t.db.UpdateOrderID(session,orderID+1)
+		timestamp := 0 //当前时间戳
+		t.db.UpdateOrderID(session,timestamp)
 		return
 	})
 

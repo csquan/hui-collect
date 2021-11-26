@@ -30,45 +30,34 @@ CREATE TABLE `transfer_task` (
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='资产转移';
 
-DROP TABLE IF EXISTS `transaction_task`;
-CREATE TABLE `transaction_task` (
-    `id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `rebalance_id`     int(11)             NOT NULL DEFAULT '0' COMMENT 'rebalance id',
-    `transfer_id`      int(11)             NOT NULL DEFAULT '0' COMMENT 'transfer id',
-    `transfer_type`    tinyint(4)          NOT NULL DEFAULT '0' COMMENT '0:transferIn 1:invest',
-    `nonce`            int(11)             NOT NULL DEFAULT '0' COMMENT 'nonce',
-    `chain_id`         int(11)             NOT NULL DEFAULT '0' COMMENT 'chain_id',
-    `params`           text                NOT NULL COMMENT '任务数据',
-    `decimal`          int(11)             NOT NULL DEFAULT '0' COMMENT 'decimal',
-    `from`             char(42)            NOT NULL DEFAULT '' COMMENT 'from addr',
-    `to`               char(42)            NOT NULL DEFAULT '' COMMENT 'to addr',
-    `state`            tinyint(4)          NOT NULL DEFAULT '0' COMMENT 'state',
-    `contract_address` char(42)            NOT NULL DEFAULT '' COMMENT 'contract addr',
-    `value`            int(11)             NOT NULL DEFAULT '0' COMMENT '数量',
-    `input_data`       text                NOT NULL COMMENT '合约的inputdata',
-    `cipher`           text                NOT NULL COMMENT '加密数据的解密key',
-    `encryptdata`      text                NOT NULL COMMENT '加密后数据',
-    `signed_data`      text                NOT NULL COMMENT '签名后数据',
-    `hash`             char(66)            NOT NULL DEFAULT '' COMMENT 'transaction hash',
-    `created_at`       timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at`       timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+DROP TABLE IF EXISTS `t_transaction_task`;
+CREATE TABLE `t_transaction_task` (
+    `f_id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `f_rebalance_id`     int(11)             NOT NULL DEFAULT '0' COMMENT 'rebalance id',
+    `f_transfer_id`      int(11)             NOT NULL DEFAULT '0' COMMENT 'transfer id',
+    `f_transfer_type`    tinyint(4)          NOT NULL DEFAULT '0' COMMENT '0:transferIn 1:invest',
+    `f_nonce`            int(11)             NOT NULL DEFAULT '0' COMMENT 'nonce',
+    `f_chain_id`         int(11)             NOT NULL DEFAULT '0' COMMENT 'chain_id',
+    `f_params`           text                NOT NULL COMMENT '任务数据',
+    `f_decimal`          int(11)             NOT NULL DEFAULT '0' COMMENT 'decimal',
+    `f_from`             char(42)            NOT NULL DEFAULT '' COMMENT 'from addr',
+    `f_to`               char(42)            NOT NULL DEFAULT '' COMMENT 'to addr',
+    `f_contract_address` char(42)            NOT NULL DEFAULT '' COMMENT 'contract addr',
+    `f_value`            char(42)            NOT NULL DEFAULT '' COMMENT '数量,以最大精度计算',
+    `f_input_data`       text                NOT NULL  COMMENT '合约的inputdata',
+    `f_Cipher`           text                NOT NULL  COMMENT '加密数据的解密key',
+    `f_EncryptData`      text                NOT NULL  COMMENT '加密后数据',
+    `f_signed_data`      text                NOT NULL  COMMENT '签名后数据',
+    `f_order_id`         int(11)             NOT NULL  COMMENT  '订单ID',
+    `f_hash`             char(66)            NOT NULL DEFAULT '' COMMENT 'transaction hash',
+    `f_created_at`       timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `f_updated_at`       timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
     KEY `idx_state` (`state`)
 )
     ENGINE = InnoDB
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='交易';
-
-DROP TABLE IF EXISTS `order_id`;
-CREATE TABLE `order_id` (
-    `id`      bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `auditid` int(11)             NOT NULL DEFAULT '0' COMMENT '安审的订单ID，校验也用这个',
-    PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
-    KEY `idx_auditid` (`auditid`)
-)
-    ENGINE = InnoDB
-    DEFAULT CHARSET = utf8mb4
-    COLLATE = utf8mb4_bin COMMENT ='订单ID';
 
 DROP TABLE IF EXISTS `invest_task`;
 CREATE TABLE `invest_task` (
