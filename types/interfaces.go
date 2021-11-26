@@ -32,7 +32,7 @@ type IWriter interface {
 	CreateAssetTransferTask(itf xorm.Interface, task *AssetTransferTask) error
 	UpdateTransferTask(task *AssetTransferTask) error
 
-	UpdateTxTask(task *TransactionTask) error
+	UpdateTxTask(itf xorm.Interface,task *TransactionTask) error
 	SaveTxTasks([]*TransactionTask) error
 
 	GetSession() *xorm.Session

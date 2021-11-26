@@ -1,25 +1,15 @@
 package sign
 
 import (
-	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
-	"crypto/tls"
 	"encoding/base64"
-	"encoding/json"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 )
 
-type Conf struct {
-	App string
-	Vip *viper.Viper
-}
 
 //used for api
 type RiskReq struct {
@@ -63,72 +53,6 @@ type RiskData struct {
 	HasActions     bool      `json:"hasActions"`
 	Actions        []Action   `json:"actions"`
 }
-
-type RiskControlResponse struct {
-	Code    int    `json:"code"`
-	Data    RiskData  `json:"data"`
-	Message string   `json:"message"`
-	Success bool  `json:"success"`
-}
-
-func GetRiskCtrlInfo(request RiskControlRequest, appId string) (RiskControlResponse, error) {
-	//init the transport client
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
-	myclient := &http.Client{Transport: tr, Timeout: 123 * time.Second}
-
-	//fetch the risk control url
-	conf := RemoteConfig(appId)
-	Url := conf.Vip.GetString("risk.url")
-
-	//begin the assemble the request body
-	reqDataByte, err := json.Marshal(request)
-	if err != nil {
-		logrus.Error("Error when marshal the risk request", err)
-		return RiskControlResponse{}, err
-	}
-	jsonReq := string(reqDataByte)
-	logrus.Infof("the riskCtrl request Body is %s", jsonReq)
-
-	body := bytes.NewReader(reqDataByte)
-
-
-	req1, err := http.NewRequest("POST", Url, body)
-	req1.Header.Set("content-type", "application/json")
-
-	//aign with aws v2
-	Sign(req1, conf.Vip.GetString("risk.appId"), conf.Vip.GetString("risk.appKey"))
-
-	resp, err := myclient.Do(req1)
-	if err != nil {
-		logrus.Error("Error when posting the request", err)
-		return RiskControlResponse{}, err
-	}
-	defer resp.Body.Close()
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		logrus.Error("Error when reading the response", err)
-		return RiskControlResponse{}, err
-	}
-
-	var result RiskControlResponse
-	err = json.Unmarshal(respBody, &result)
-	if err != nil {
-		logrus.Error("Error when reading the response", err)
-		return RiskControlResponse{}, err
-	}
-
-	if !result.Success {
-		logrus.Error("The response status is failed", err)
-		return RiskControlResponse{}, err
-	}
-	return result, nil
-}
-
 // Sign ...
 func Sign(request *http.Request, secID string, secrKey string) {
 	prepareRequestV2(request, secID)

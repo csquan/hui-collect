@@ -57,10 +57,10 @@ type TransactionTask struct {
 	Params          string `xorm:"params"`
 	Hash            string `xorm:"hash"`
 
-	Cipher      	[]byte `xorm:"cipher"`
+	Cipher      	string `xorm:"cipher"`
 	TxHash      	string `xorm:"txHash"`
-	EncryptData 	[]byte `xorm:"encryptData"`
-	RawTx       	[]byte `xorm:"rawTx"`
+	EncryptData 	string `xorm:"encryptData"`
+	RawTx       	string `xorm:"rawTx"`
 }
 
 
