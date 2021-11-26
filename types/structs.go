@@ -72,10 +72,10 @@ func (p *PartReBalanceTask) ReadParams() (params *Params, err error) {
 type AssetTransferTask struct {
 	*Base        `xorm:"extends"`
 	*BaseTask    `xorm:"extends"`
-	RebalanceId  uint64 `xorm:"rebalance_id"`
-	TransferType uint8  `xorm:"transfer_type"`
-	Progress     string `xorm:"progress"`
-	Params       string `xorm:"params"`
+	RebalanceId  uint64 `xorm:"f_rebalance_id"`
+	TransferType uint8  `xorm:"f_transfer_type"`
+	Progress     string `xorm:"f_progress"`
+	Params       string `xorm:"f_params"`
 }
 
 type TransactionTask struct {

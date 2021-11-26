@@ -1,12 +1,12 @@
 package sign
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"golang.org/x/crypto/sha3"
 	"math/big"
 	"testing"
-	"fmt"
 )
 
 var EncryptData string

@@ -3,7 +3,6 @@ package part_rebalance
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -52,16 +51,9 @@ func (c *crossHandler) MoveToNextState(task *types.PartReBalanceTask, nextState 
 
 		//create next state task
 		if nextState == types.PartReBalanceTransferIn {
-			var assetTransfer *types.AssetTransferTask
-			assetTransfer, execErr = c.createTransferInTask(task)
+			execErr = CreateTransferInTask(task, c.db)
 			if execErr != nil {
 				logrus.Errorf("create assetTransfer task error:%v task:[%v]", execErr, task)
-				return
-			}
-
-			execErr = c.db.SaveAssetTransferTask(session, assetTransfer)
-			if execErr != nil {
-				logrus.Errorf("save assetTransfer task error:%v task:[%v]", execErr, task)
 				return
 			}
 		}
@@ -79,7 +71,7 @@ func (c *crossHandler) MoveToNextState(task *types.PartReBalanceTask, nextState 
 	return
 }
 
-func (c *crossHandler) createTransferInTask(task *types.PartReBalanceTask) (assetTransfer *types.AssetTransferTask, err error) {
+func CreateTransferInTask(task *types.PartReBalanceTask, db types.IDB) (err error) {
 	params, err := task.ReadParams()
 	if err != nil {
 		return
@@ -91,12 +83,18 @@ func (c *crossHandler) createTransferInTask(task *types.PartReBalanceTask) (asse
 		return
 	}
 
-	assetTransfer = &types.AssetTransferTask{
+	assetTransfer := &types.AssetTransferTask{
 		BaseTask:     &types.BaseTask{State: types.AssetTransferInit},
 		RebalanceId:  task.ID,
 		TransferType: types.AssetTransferIn,
 		Params:       string(assetTransferParams),
 	}
-
+	err = db.SaveAssetTransferTask(db.GetSession(), assetTransfer)
+	if err != nil {
+		logrus.Errorf("save assetTransfer task error:%v task:[%v]", err, task)
+		return
+	}
 	return
 }
+
+

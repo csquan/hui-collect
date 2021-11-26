@@ -9,7 +9,7 @@ type CrossBalanceItem struct {
 	ToAddr       string `json:"to_addr"`
 	FromCurrency string `json:"from_currency"`
 	ToCurrency   string `json:"to_currency"`
-	Amount       string `json:"amount"`
+	Amount       string `json:"Amount"`
 }
 
 type Params struct {
@@ -23,8 +23,8 @@ type AssetTransferInParam struct {
 	ChainName string
 	From      string
 	To        string //合约地址
-	amount    uint64 //跨链资金大小
-	taskId    uint64 //链下跨链任务id
+	Amount    *big.Int //跨链资金大小
+	TaskId    *big.Int //链下跨链任务id
 }
 
 type InvestParam struct {

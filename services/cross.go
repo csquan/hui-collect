@@ -187,7 +187,7 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 				return true, nil
 			}
 		} else {
-			logrus.Warnf("cross task amount bigger than total taskId:%d,amount:%d,total:%s", parent.ID, parent.Amount)
+			//logrus.Warnf("cross task amount bigger than total taskId:%d,amount:%d,total:%s", parent.ID, parent.Amount) //TODO
 		}
 	}
 	return false, nil
@@ -211,7 +211,7 @@ func (c *CrossService) Run() error {
 		case types.ToCreateSubTask:
 			ok, err := c.addCrossSubTasks(task)
 			if err != nil {
-				logrus.Errorf("add subtasks err:v,task:%v", err, task)
+				logrus.Errorf("add subtasks err:v%,task:%v", err, task)
 				continue
 			} else if ok {
 				err := c.transferTaskState(task.ID, types.SubTaskCreated)
