@@ -13,10 +13,10 @@ import (
 const (
 	AssetTransferIn = iota
 	Invest
-
 )
 
 type AssetTransferState = int
+
 const (
 	AssetTransferInit AssetTransferState = iota
 	AssetTransferOngoing
@@ -68,34 +68,74 @@ func (t *AssetTransfer) Run() (err error) {
 	return
 }
 func getNonce() int {
+	//TODO
 	return 0
 }
 func (t *AssetTransfer) handleAssetTransferInit(task *types.AssetTransferTask) (err error) {
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) error {
-		params := make([]*types.AssetTransferInParam, 0)
-		if err := json.Unmarshal([]byte(task.Params), params); err != nil {
-			var txTasks []*types.TransactionTask
-			nonce := getNonce()
-			for _, param := range params {
-				if b, err := json.Marshal(param); err != nil {
-					return err
-				} else {
-					baseTask := &types.BaseTask{State: int(SignState)}
-					task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce, Params: string(b)}
-					nonce++
-					txTasks = append(txTasks, task)
-				}
-			}
-			if err := t.db.SaveTxTasks(txTasks); err != nil {
-				return err
-			}
-			task.State = int(AssetTransferOngoing)
-			return t.db.UpdateAssetTransferTask(task)
-		} else {
+		if task.TransferType == AssetTransferIn {
+			err = t.createTransferInTx(session, task)
+		} else if task.TransferType == Invest {
+			err = t.createInvestTx(session, task)
+		}
+		if err != nil {
 			return err
 		}
+		task.State = int(AssetTransferOngoing)
+		return t.db.UpdateAssetTransferTask(session, task)
 	})
+	if err != nil{
+		logrus.Errorf("handleAssetTransferInit err:%v task:%v", err, task)
+	}
 	return err
+}
+
+func (t *AssetTransfer) createTransferInTx(session *xorm.Session, task *types.AssetTransferTask) (err error) {
+	params := make([]*types.AssetTransferInParam, 0)
+	err = json.Unmarshal([]byte(task.Params), params)
+	if err != nil {
+		return err
+	}
+	var txTasks []*types.TransactionTask
+	nonce := getNonce()
+	for _, param := range params {
+		if b, err := json.Marshal(param); err != nil {
+			return err
+		} else {
+			baseTask := &types.BaseTask{State: int(SignState)}
+			task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce, Params: string(b), TransferType: AssetTransferIn}
+			nonce++
+			txTasks = append(txTasks, task)
+		}
+	}
+	if err := t.db.SaveTxTasks(session, txTasks); err != nil {
+		logrus.Errorf("createTransferInTx save txTasks:%v", err)
+	}
+	return
+}
+
+func (t *AssetTransfer) createInvestTx(session *xorm.Session, task *types.AssetTransferTask) (err error) {
+	params := make([]*types.InvestParam, 0)
+	err = json.Unmarshal([]byte(task.Params), params)
+	if err != nil {
+		return err
+	}
+	var txTasks []*types.TransactionTask
+	nonce := getNonce()
+	for _, param := range params {
+		if b, err := json.Marshal(param); err != nil {
+			return err
+		} else {
+			baseTask := &types.BaseTask{State: int(SignState)}
+			task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce, Params: string(b), TransferType: Invest}
+			nonce++
+			txTasks = append(txTasks, task)
+		}
+	}
+	if err := t.db.SaveTxTasks(session, txTasks); err != nil {
+		logrus.Errorf("createTransferInTx save txTasks:%v", err)
+	}
+	return
 }
 
 type Progress struct {
@@ -131,5 +171,5 @@ func (t *AssetTransfer) handleAssetTransferOngoing(task *types.AssetTransferTask
 		task.State = int(AssetTransferSuccess)
 	}
 	task.Progress = progress.toString()
-	return t.db.UpdateAssetTransferTask(task)
+	return t.db.UpdateAssetTransferTask(t.db.GetSession(), task)
 }

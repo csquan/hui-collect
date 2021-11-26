@@ -56,18 +56,11 @@ type TransactionTask struct {
 	SignData        []byte `xorm:"signed_data"`
 	Params          string `xorm:"params"`
 	Hash            string `xorm:"hash"`
-
-	Cipher      	string `xorm:"cipher"`
-	TxHash      	string `xorm:"txHash"`
-	EncryptData 	string `xorm:"encryptData"`
-	RawTx       	string `xorm:"rawTx"`
-}
-
-
-type InvestTask struct {
-	*Base
-	*BaseTask
-	RebalanceId uint64 `xorm:"rebalance_id"`
+	TransferType    uint8  `xorm:"transfer_type"`
+	Cipher          string `xorm:"cipher"`
+	TxHash          string `xorm:"txHash"`
+	EncryptData     string `xorm:"encryptData"`
+	RawTx           string `xorm:"rawTx"`
 }
 
 type CrossTask struct {

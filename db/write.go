@@ -35,7 +35,7 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 func (*Mysql) InsertAssetTransfer(itf xorm.Interface, task *types.AssetTransferTask) error {
 	return nil
 }
-func (*Mysql) UpdateAssetTransferTask(task *types.AssetTransferTask) error {
+func (*Mysql) UpdateAssetTransferTask(itf xorm.Interface, task *types.AssetTransferTask) error {
 	return nil
 }
 
@@ -55,7 +55,7 @@ func (*Mysql) UpdatePartReBalanceTask(itf xorm.Interface, task *types.PartReBala
 func (*Mysql) UpdateTransferTask(task *types.AssetTransferTask) error {
 	return nil
 }
-func (m *Mysql) SaveTxTasks([]*types.TransactionTask) error {
+func (m *Mysql) SaveTxTasks(xorm.Interface, []*types.TransactionTask) error {
 	return nil
 }
 func (m *Mysql) CreateAssetTransferTask(itf xorm.Interface, task *types.AssetTransferTask) (err error) {

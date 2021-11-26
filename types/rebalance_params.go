@@ -13,7 +13,7 @@ type CrossBalanceItem struct {
 type Params struct {
 	CrossBalances   []*CrossBalanceItem     `json:"cross_balances"`
 	AssetTransferIn []*AssetTransferInParam `json:"asset_transfer_in"`
-	Invest          *InvestParam            `json:"invest"`
+	Invest          []*InvestParam          `json:"invest"`
 }
 
 type AssetTransferInParam struct {

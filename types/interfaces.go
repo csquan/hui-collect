@@ -24,7 +24,7 @@ type IReader interface {
 
 type IWriter interface {
 	InsertAssetTransfer(itf xorm.Interface, task *AssetTransferTask) error
-	UpdateAssetTransferTask(task *AssetTransferTask) error
+	UpdateAssetTransferTask(itf xorm.Interface, task *AssetTransferTask) error
 	UpdateTransactionTask(task *TransactionTask) error
 
 	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
@@ -33,7 +33,7 @@ type IWriter interface {
 	UpdateTransferTask(task *AssetTransferTask) error
 
 	UpdateTxTask(itf xorm.Interface,task *TransactionTask) error
-	SaveTxTasks([]*TransactionTask) error
+	SaveTxTasks(*xorm.Session, []*TransactionTask) error
 
 	GetSession() *xorm.Session
 	GetEngine() *xorm.Engine
