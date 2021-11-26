@@ -143,7 +143,7 @@ func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
 				return
 			}
 
-			execErr = p.db.InsertAssetTransfer(session, assetTransfer)
+			execErr = p.db.SaveAssetTransferTask(session, assetTransfer)
 			if execErr != nil {
 				logrus.Errorf("save assetTransfer task error:%v task:[%v]", execErr, task)
 				return
@@ -228,7 +228,7 @@ func (p *PartReBalance) handleTransferIn(task *types.PartReBalanceTask) (err err
 				return
 			}
 
-			execErr = p.db.InsertAssetTransfer(session, invest)
+			execErr = p.db.SaveAssetTransferTask(session, invest)
 			if execErr != nil {
 				logrus.Errorf("save invest task error:%v task:[%v]", execErr, task)
 				return
@@ -291,7 +291,7 @@ func (p *PartReBalance) handleInvest(task *types.PartReBalanceTask) (err error) 
 				return
 			}
 
-			execErr = p.db.InsertAssetTransfer(session, invest)
+			execErr = p.db.SaveAssetTransferTask(session, invest)
 			if execErr != nil {
 				logrus.Errorf("save invest task error:%v task:[%v]", execErr, task)
 				return
