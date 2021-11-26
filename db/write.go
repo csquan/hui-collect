@@ -67,7 +67,7 @@ func (m *Mysql) CreateAssetTransferTask(itf xorm.Interface, task *types.AssetTra
 	return
 }
 
-func (m *Mysql)UpdateTxTask(itf xorm.Interface,task *types.TransactionTask) error {
+func (m *Mysql)UpdateTransactionTask(itf xorm.Interface,task *types.TransactionTask) error {
 	_, err := itf.ID(task.ID).Update(task)
 	return err
 }
@@ -85,9 +85,6 @@ func (m *Mysql) SaveCrossSubTasks([]*types.CrossSubTask) error {
 	return nil
 }
 
-func (*Mysql) UpdateTransactionTask(task *types.TransactionTask) error {
-	return nil
-}
 
 func (m *Mysql) UpdateCrossTaskState(id uint64, state int) error {
 	return nil
