@@ -1,8 +1,9 @@
+DROP TABLE IF EXISTS `part_rebalance_task`;
 CREATE TABLE `part_rebalance_task`
 (
     `id`         bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `state`      tinyint(4) NOT NULL DEFAULT '0' COMMENT 'init build ongoing success failed',
-    `params`     text      NOT NULL DEFAULT '' COMMENT '任务数据',
+    `params`     text      NOT NULL  COMMENT '任务数据',
     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
@@ -11,6 +12,7 @@ CREATE TABLE `part_rebalance_task`
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='小r任务表';
 
+DROP TABLE IF EXISTS `transfer_task`;
 CREATE TABLE `transfer_task`
 (
     `id`            bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -18,7 +20,7 @@ CREATE TABLE `transfer_task`
     `state`         tinyint(4) NOT NULL DEFAULT '0' COMMENT 'init build ongoing success failed',
     `transfer_type` tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:transferIn 1:invest',
     `progress`      varchar(20) NOT NULL DEFAULT '' COMMENT '当前状态的处理进度',
-    `params`        text        NOT NULL DEFAULT '' COMMENT '任务数据',
+    `params`        text        NOT NULL  COMMENT '任务数据',
     `created_at`    timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`    timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
@@ -27,6 +29,7 @@ CREATE TABLE `transfer_task`
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='资产转移';
 
+DROP TABLE IF EXISTS `transaction_task`;
 CREATE TABLE `transaction_task`
 (
     `id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -35,18 +38,17 @@ CREATE TABLE `transaction_task`
     `transfer_type`    tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:transferIn 1:invest',
     `nonce`            int(11)             NOT NULL DEFAULT '0' COMMENT 'nonce',
     `chain_id`         int(11)             NOT NULL DEFAULT '0' COMMENT 'chain_id',
-    `params`           text      NOT NULL DEFAULT '' COMMENT '任务数据',
+    `params`           text      NOT NULL  COMMENT '任务数据',
     `decimal`          int(11)             NOT NULL DEFAULT '0' COMMENT 'decimal',
     `from`             char(42)            NOT NULL DEFAULT '' COMMENT 'from addr',
     `to`               char(42)            NOT NULL DEFAULT '' COMMENT 'to addr',
     `state`            tinyint(4)          NOT NULL DEFAULT '0' COMMENT 'state',
     `contract_address` char(42)            NOT NULL DEFAULT '' COMMENT 'contract addr',
     `value`            int(11)             NOT NULL DEFAULT '0' COMMENT '数量',
-    `input_data`       text                NOT NULL DEFAULT '' COMMENT '合约的inputdata',
-    `Cipher`           text                NOT NULL DEFAULT '' COMMENT '加密数据的解密key',
-    `EncryptData`      text                NOT NULL DEFAULT '' COMMENT '加密后数据',
-    `signed_data`      text                NOT NULL DEFAULT '' COMMENT '签名后数据',
-    `params`           tinyint(4)          NOT NULL DEFAULT '0' COMMENT 'init unsinged signed broadcast',
+    `input_data`       text                NOT NULL  COMMENT '合约的inputdata',
+    `Cipher`           text                NOT NULL  COMMENT '加密数据的解密key',
+    `EncryptData`      text                NOT NULL  COMMENT '加密后数据',
+    `signed_data`      text                NOT NULL  COMMENT '签名后数据',
     `hash`             char(66)            NOT NULL DEFAULT '' COMMENT 'transaction hash',
     `created_at`       timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`       timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -56,26 +58,23 @@ CREATE TABLE `transaction_task`
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='交易';
 
-<<<<<<< HEAD
-CREATE TABLE `invest_task`
-(
-=======
+DROP TABLE IF EXISTS `order_id`;
 CREATE TABLE `order_id` (
-    `id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `auditId`          int(11)             NOT NULL DEFAULT '0' COMMENT '安审的订单ID，校验也用这个',
-     PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
-     KEY `idx_auditId` (`auditId`)
+                            `id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+                            `auditId`          int(11)             NOT NULL DEFAULT '0' COMMENT '安审的订单ID，校验也用这个',
+                            PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
+                            KEY `idx_auditId` (`auditId`)
 )
     ENGINE = InnoDB
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='订单ID';
 
+DROP TABLE IF EXISTS `invest_task`;
 CREATE TABLE `invest_task` (
->>>>>>> 425c3ddb2802b74eea13cfb5db1e05a9aa199b4c
     `id`           bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `rebalance_id` int(11) NOT NULL DEFAULT '0' COMMENT 'rebalance task id',
     `state`        tinyint(4) NOT NULL DEFAULT '0' COMMENT 'init build ongoing success failed',
-    `params`       text      NOT NULL DEFAULT '' COMMENT '任务数据',
+    `params`       text      NOT NULL  COMMENT '任务数据',
     `created_at`   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
@@ -84,6 +83,7 @@ CREATE TABLE `invest_task` (
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='组LP';
 
+DROP TABLE IF EXISTS `cross_task`;
 CREATE TABLE `cross_task`(
     `id`           bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `rebalance_id` int(11)             NOT NULL DEFAULT '0' COMMENT 'rebalance task id',
@@ -102,6 +102,7 @@ CREATE TABLE `cross_task`(
     KEY `idx_state` (`state`)
 )DEFAULT CHARSET = utf8mb4;
 
+DROP TABLE IF EXISTS `cross_sub_task`;
 CREATE TABLE `cross_sub_task`(
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `parent_id` bigint(20) unsigned NOT NULL DEFAULT 0,
