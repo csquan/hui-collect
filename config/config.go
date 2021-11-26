@@ -2,21 +2,20 @@ package config
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	remote "github.com/shima-park/agollo/viper-remote"
 	"github.com/spf13/viper"
 )
 
-
 type Conf struct {
 	App string
 	Vip *viper.Viper
 }
-
 
 type DataBaseConf struct {
 	DB string `mapstructure:"db"` //DB 连接信息
@@ -24,6 +23,13 @@ type DataBaseConf struct {
 
 type AlertConf struct {
 	url string `mapstructure:"url"`
+}
+
+type BridgeConf struct {
+	URL     string        `mapstructure:"url"`
+	Timeout time.Duration `mapstructure:"timeout"`
+	Ak      string        `mapstructure:"ak"`
+	Sk      string        `mapstructure:"sk"`
 }
 
 //func (o *DataBaseConf) init() {
@@ -38,6 +44,7 @@ type Config struct {
 	DataBase         DataBaseConf `mapstructure:"database"`
 	LogConf          Log          `mapstructure:"log"`
 	Alert            AlertConf    `mapstructure:"alert"`
+	BridgeConf       BridgeConf   `mapstructure:"bridge_conf"`
 }
 
 func (c *Config) init() {

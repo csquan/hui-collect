@@ -13,6 +13,14 @@ type CrossSubTaskService struct {
 	config    *config.Config
 }
 
+func NewCrossSubTaskService(db types.IDB, bCli *bridge.Bridge, c *config.Config) *CrossSubTaskService {
+	return &CrossSubTaskService{
+		db:        db,
+		bridgeCli: bCli,
+		config:    c,
+	}
+}
+
 func (c *CrossSubTaskService) Run() error {
 	parentTasks, err := c.db.GetOpenedCrossTasks()
 	if err != nil {
@@ -78,4 +86,8 @@ func (c *CrossSubTaskService) Run() error {
 		}
 	}
 	return nil
+}
+
+func (c *CrossSubTaskService) Name() string {
+	return "cross_sub"
 }

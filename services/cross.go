@@ -17,11 +17,12 @@ type CrossService struct {
 	config    *config.Config
 }
 
-func min(a, b uint64) uint64 {
-	if a <= b {
-		return a
+func NewCrossService(db types.IDB, bCli *bridge.Bridge, c *config.Config) *CrossService {
+	return &CrossService{
+		db:        db,
+		bridgeCli: bCli,
+		config:    c,
 	}
-	return a
 }
 
 func (c *CrossService) estimateCrossTask(fromAccountId, toAccountId uint64, fromCurrencyId, toCurrencyId int, amount string) (total, single string, err error) {
@@ -243,4 +244,8 @@ func (c *CrossService) Run() error {
 		}
 	}
 	return nil
+}
+
+func (c CrossService) Name() string {
+	return "cross"
 }
