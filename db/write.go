@@ -106,3 +106,9 @@ func (m *Mysql) SaveCrossSubTask(subTask *types.CrossSubTask) error {
 func (m *Mysql) UpdateCrossSubTaskState(id uint64, state int) error {
 	return nil
 }
+
+func (m *Mysql)UpdateOrderID(id int) error {
+	return nil
+}
+
+

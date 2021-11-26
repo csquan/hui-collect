@@ -44,3 +44,13 @@ func (*Mysql) GetCrossSubTasks(crossTaskId uint64) ([]*types.CrossSubTask, error
 func (m *Mysql) GetOpenedCrossSubTasks(uint64) ([]*types.CrossSubTask, error) {
 	return nil, nil
 }
+
+func (m *Mysql) GetOrderID() (int, error) {
+	OrderId := 0
+	_, err := m.engine.Get(&OrderId)
+	if err!=nil{
+		return OrderId,err
+	}
+	return OrderId,nil
+
+}

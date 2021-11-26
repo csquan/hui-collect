@@ -36,7 +36,7 @@ CREATE TABLE `transaction_task` (
     `decimal`          int(11)             NOT NULL DEFAULT '0' COMMENT 'decimal',
     `from`             char(42)            NOT NULL DEFAULT '' COMMENT 'from addr',
     `to`               char(42)            NOT NULL DEFAULT '' COMMENT 'to addr',
-    `state`            tinyint(4)          NOT NULL DEFAULT '0' COMMENT '',
+    `state`            tinyint(4)          NOT NULL DEFAULT '0' COMMENT 'state',
     `contract_address` char(42)            NOT NULL DEFAULT '' COMMENT 'contract addr',
     `value`            int(11)             NOT NULL DEFAULT '0' COMMENT '数量',
     `input_data`       text                NOT NULL DEFAULT '' COMMENT '合约的inputdata',
@@ -53,6 +53,16 @@ CREATE TABLE `transaction_task` (
     ENGINE = InnoDB
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='交易';
+
+CREATE TABLE `order_id` (
+    `id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `auditId`          int(11)             NOT NULL DEFAULT '0' COMMENT '安审的订单ID，校验也用这个',
+     PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
+     KEY `idx_auditId` (`auditId`)
+)
+    ENGINE = InnoDB
+    DEFAULT CHARSET = utf8mb4
+    COLLATE = utf8mb4_bin COMMENT ='订单ID';
 
 CREATE TABLE `invest_task` (
     `id`           bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',

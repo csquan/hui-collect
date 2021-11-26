@@ -20,6 +20,7 @@ type IReader interface {
 	GetCrossSubTasks(crossTaskId uint64) ([]*CrossSubTask, error)
 	GetOpenedCrossSubTasks(uint64) ([]*CrossSubTask, error)
 
+	GetOrderID() (int, error)
 }
 
 type IWriter interface {
@@ -51,6 +52,8 @@ type IWriter interface {
 
 	//update cross sub task state
 	UpdateCrossSubTaskState(id uint64, state int) error
+
+	UpdateOrderID(id int) error
 }
 
 type IDB interface {

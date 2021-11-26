@@ -48,19 +48,18 @@ type TransactionTask struct {
 	TransferId      uint   `xorm:"transfer_id"`
 	Nonce           int    `xorm:"nonce"`
 	ChainId         int    `xorm:"chain_id"`
+	Decimal         int    `xorm:"decimal"`
 	From            string `xorm:"from"`
 	To              string `xorm:"to"`
+	State	        int    `xorm:"state"`
 	ContractAddress string `xorm:"contract_address"`
 	Value           int    `xorm:"value"`
-	UnSignData      string `xorm:"unsigned_data"`
+	Input_data      string `xorm:"input_data"`
+ 	Cipher          string `xorm:"cipher"`
+    EncryptData     string `xorm:"encryptData"`
 	SignData        []byte `xorm:"signed_data"`
 	Params          string `xorm:"params"`
 	Hash            string `xorm:"hash"`
-
-	Cipher      	string `xorm:"cipher"`
-	TxHash      	string `xorm:"txHash"`
-	EncryptData 	string `xorm:"encryptData"`
-	RawTx       	string `xorm:"rawTx"`
 }
 
 

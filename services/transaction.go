@@ -68,18 +68,17 @@ func (t *Transaction) Run() (err error) {
 	return
 }
 
-
 func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
-	input := ""  //temp def
-	decimal := 0
-	nonce :=0
-	from := ""
-	to := ""
+	input := task.Input_data
+	decimal := task.Decimal
+	nonce := task.Nonce
+	from := task.From  //这个是签名机固定的地址？？
+	to := task.To
 	GasLimit :=""
 	GasPrice :=""
-	Amount :=""
-	quantity:=""
-	receiver:=""
+	Amount := "0"
+	quantity:= string(task.Value)
+	receiver:= task.To  //和to一致
 
 	signRet,err := signer.SignTx(input, decimal, nonce, from, to, GasLimit, GasPrice, Amount, quantity, receiver)
 	if err != nil {
@@ -89,7 +88,7 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 			task.State = int(AuditState)
 			task.Cipher = signRet.Data.Extra.Cipher
 			task.EncryptData = signRet.Data.EncryptData
-			task.TxHash = signRet.Data.Extra.TxHash
+			task.Hash = signRet.Data.Extra.TxHash
 
 			execErr = t.db.UpdateTxTask(session, task)
 			if execErr != nil {
@@ -103,10 +102,12 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 }
 
 func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
-	input := ""  //temp def
-	quantity:=""
-	receiver:=""
-	orderID :=0
+	input := task.Input_data
+	quantity := string(task.Value)
+	receiver := task.To
+	orderID,_ := t.db.GetOrderID()
+
+	defer t.db.UpdateOrderID(orderID+1)
 
 	_, err = signer.AuditTx(input,receiver,quantity,orderID)
 	if err != nil {
@@ -126,10 +127,12 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 }
 
 func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
-	input := ""  //temp def
-	quantity:=""
-	orderID :=0
-	to := ""
+	input := task.Input_data
+	quantity := string(task.Value)
+	orderID,_ := t.db.GetOrderID()
+	to := task.To
+
+	defer t.db.UpdateOrderID(orderID+1)
 
 	vRet,err := signer.ValidatorTx(input, to, quantity,orderID)
 	if err != nil  {
@@ -137,7 +140,7 @@ func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 	}else{
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 			task.State = int(TxSigned)
-			task.RawTx = vRet.RawTx
+			task.Input_data = vRet.RawTx
 			execErr = t.db.UpdateTxTask(session, task)
 			if execErr != nil {
 				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
