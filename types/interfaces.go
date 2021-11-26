@@ -32,7 +32,7 @@ type IWriter interface {
 	CreateAssetTransferTask(itf xorm.Interface, task *AssetTransferTask) error
 	UpdateTransferTask(task *AssetTransferTask) error
 
-	UpdateTxTask(task *TransactionTask) error
+	UpdateTxTask(itf xorm.Interface,task *TransactionTask) error
 	SaveTxTasks([]*TransactionTask) error
 
 	GetSession() *xorm.Session
@@ -42,9 +42,9 @@ type IWriter interface {
 	//update cross task state
 	UpdateCrossTaskState(id uint64, state int) error
 	//update cross task task_no cur and amount cur
-	UpdateCrossTaskNoAndAmount(itf xorm.Interface, id, taskNo, amount uint64) error
+	UpdateCrossTaskNo(itf xorm.Interface, id, taskNo uint64) error
 	//add bridge task id to sub task
-	UpdateCrossSubTaskBridgeID(itf xorm.Interface, id, bridgeTaskId uint64) error
+	UpdateCrossSubTaskBridgeIDAndState(itf xorm.Interface, id, bridgeTaskId uint64, state int) error
 
 	//save cross sub task
 	SaveCrossSubTask(subTask *CrossSubTask) error

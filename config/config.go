@@ -11,6 +11,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+
+type Conf struct {
+	App string
+	Vip *viper.Viper
+}
+
+
 type DataBaseConf struct {
 	DB string `mapstructure:"db"` //DB 连接信息
 }
@@ -122,6 +129,23 @@ func localConfig(filename string, v *viper.Viper) error {
 	}
 
 	return err
+}
+
+func RemoteSignerConfig(appId string) (conf *Conf) {
+	remote.SetAppID(appId)
+	v := viper.New()
+	v.SetConfigType("yaml")
+
+	v.AddRemoteProvider("apollo", "http://apollo-config.system-service.huobiapps.com", "config.yaml")
+
+	v.ReadRemoteConfig()
+
+	v.WatchRemoteConfigOnChannel() // 启动一个goroutine来同步配置更改
+
+	return &Conf{
+		App: appId,
+		Vip: v,
+	}
 }
 
 const (

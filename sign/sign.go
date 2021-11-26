@@ -2,22 +2,17 @@ package sign
 
 import (
 	"bytes"
-	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	"math/big"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -128,85 +123,6 @@ type RespEx struct {
 }
 
 
-func fetchNonce(ctx context.Context, archnode, addr string) (int, error) {
-	client, err := ethclient.Dial(archnode)
-	if err != nil {
-		return 0, err
-	}
-	defer client.Close()
-	//addr in hex string
-	commonAddr := common.HexToAddress(addr)
-	nonce, err := client.NonceAt(ctx, commonAddr, nil)
-	if err != nil {
-		return 0, err
-	}
-	return int(nonce), nil
-}
-
-//fetchPendingNonce for sending raw tx
-func fetchPendingNonce(ctx context.Context, archnode, addr string) (int, error) {
-	client, err := ethclient.Dial(archnode)
-	if err != nil {
-		logrus.Errorf("There is dialing error %v", err)
-		return 0, err
-	}
-	defer client.Close()
-	//addr in hex string
-	commonAddr := common.HexToAddress(addr)
-	nonce, err := client.PendingNonceAt(ctx, commonAddr)
-	if err != nil {
-		return 0, err
-	}
-	return int(nonce), nil
-}
-
-//estimate the gas before sending to chain
-func EstimateGas(archNode, datastr, value, chain string, conf *Conf) (uint64, error) {
-	//archNode := viper.GetString("RPCserver." + chain + ".nodeUrl")
-	client, err := ethclient.Dial(archNode)
-	if err != nil {
-		return 0, err
-	}
-	toaddr := common.HexToAddress(conf.Vip.GetString("common.bridgeContract." + chain))
-
-	va, _ := new(big.Int).SetString(value, 10)
-
-	da, err := hexutil.Decode("0x" + datastr)
-	if err != nil {
-		return 0, err
-	}
-
-	msg := ethereum.CallMsg{
-		From:     common.HexToAddress(conf.Vip.GetString("gateway." + chain + ".sysAddr")),
-		To:       &toaddr,
-		GasPrice: big.NewInt(40000000000),
-		Value:    va,
-		Data:     da,
-	}
-
-	gas, err1 := client.EstimateGas(context.TODO(), msg)
-	//if there is error when estimate the gas, make it 400000 as default
-	if err1 != nil {
-		return uint64(400000), err1
-	}
-	return gas, nil
-}
-
-//estimate GasPrice on chain before sending
-func EstimateGasPrice12(archNode string) (uint64, error) {
-	client, err := ethclient.Dial(archNode)
-	if err != nil {
-		//if there is error when estimate the gas, make it 150Gwei as default
-		return uint64(150000000000), err
-	}
-	price, err1 := client.SuggestGasPrice(context.TODO())
-	//if there is error when estimate the gas, make it 150Gwei as default
-	if err1 != nil {
-		return uint64(150000000000), err1
-	}
-	return price.Uint64() * 6 / 5, nil
-}
-
 type UnData struct {
 	FromAddr string
 	Gas      int
@@ -247,7 +163,7 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 	case "eth":
 		chain = "eth"
 	}
-	conf := RemoteConfig(appId)
+	conf := config.RemoteSignerConfig(appId)
 	//reqData := signReq.SiReq
 	reqData := ReqData{
 		Asset: conf.Vip.GetString("gateway." + chain + ".asset"),

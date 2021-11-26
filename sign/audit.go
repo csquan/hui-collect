@@ -5,9 +5,8 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	remote "github.com/shima-park/agollo/viper-remote"
+	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -15,23 +14,6 @@ import (
 	"time"
 )
 
-
-func RemoteConfig(appId string) (conf *Conf) {
-	remote.SetAppID(appId)
-	v := viper.New()
-	v.SetConfigType("yaml")
-
-	v.AddRemoteProvider("apollo", "http://apollo-config.system-service.huobiapps.com", "config.yaml")
-
-	v.ReadRemoteConfig()
-
-	v.WatchRemoteConfigOnChannel() // 启动一个goroutine来同步配置更改
-
-	return &Conf{
-		App: appId,
-		Vip: v,
-	}
-}
 
 type BusData struct {
 	Chain    string `json:"chain"`
@@ -86,7 +68,7 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 	request.BusData.ToAddress = strings.ToLower(request.BusData.ToAddress)
 
 	//fetch the audit url
-	conf := RemoteConfig(appId)
+	conf := config.RemoteSignerConfig(appId)
 	Url := conf.Vip.GetString("audit.url")
 
 	//map the offset Id with appId here

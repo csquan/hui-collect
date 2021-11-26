@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/config"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -39,7 +40,7 @@ type VaReq struct {
 
 func ValidateEnc(vaReq ValidatorReq, appId string) (vaResp *VaResp, err error) {
 	encData := vaReq
-	conf := RemoteConfig(appId)
+	conf := config.RemoteSignerConfig(appId)
 	targetUrl := conf.Vip.GetString("validator.v1url")
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
@@ -123,7 +124,7 @@ type ValidErr struct {
 
 func Validator(vaReq ValidReq, appId string) (vaResp *VaResp, err error) {
 	//encData := vaReq
-	conf := RemoteConfig(appId)
+	conf := config.RemoteSignerConfig(appId)
 	targetUrl := conf.Vip.GetString("validator.url")
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
