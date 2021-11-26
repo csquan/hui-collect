@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/starslabhq/hermes-rebalance/services/part_rebalance"
+
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -32,7 +34,7 @@ func NewServiceScheduler(conf *config.Config, db types.IDB, closeCh <-chan os.Si
 }
 
 func (t *ServiceScheduler) Start() {
-	partReBalance, err := NewPartReBalanceService(t.db, t.conf)
+	partReBalance, err := part_rebalance.NewPartReBalanceService(t.db, t.conf)
 	if err != nil {
 		logrus.Fatalf("new re balance service error: %v", err)
 	}
