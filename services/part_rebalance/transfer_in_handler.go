@@ -14,7 +14,7 @@ type transferInHandler struct {
 }
 
 func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
-	state, err := getTransferState(t.db, task, types.Invest)
+	state, err := getTransferState(t.db, task, types.AssetTransferIn)
 	if err != nil {
 		return
 	}
@@ -59,7 +59,7 @@ func (t *transferInHandler) createInvestTask(task *types.PartReBalanceTask) (ass
 func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextState types.PartReBalanceState) (err error) {
 
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		if nextState == types.AssetTransferSuccess {
+		if nextState == types.PartReBalanceInvest {
 			var invest *types.AssetTransferTask
 
 			invest, execErr = t.createInvestTask(task)

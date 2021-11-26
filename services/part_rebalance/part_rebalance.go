@@ -85,7 +85,16 @@ func (p *PartReBalance) Run() (err error) {
 	return
 }
 
-//getTransferSatae
+//func getTransferTaskCount(db types.IDB, task *types.PartReBalanceTask, transferType int) (int, error) {
+//	atTasks, err := db.GetAssetTransferTasksWithReBalanceId(task.ID, transferType)
+//	if err != nil {
+//		logrus.Errorf("get asset transfer task error:%v", err)
+//		return 0, err
+//	}
+//	return len(atTasks), nil
+//}
+
+//getTransferState
 func getTransferState(db types.IDB, task *types.PartReBalanceTask, transferType int) (state int, err error) {
 	atTasks, err := db.GetAssetTransferTasksWithReBalanceId(task.ID, transferType)
 	if err != nil {
