@@ -58,7 +58,7 @@ func (*Mysql) UpdateTransferTask(task *types.AssetTransferTask) error {
 func (m *Mysql) SaveTxTasks([]*types.TransactionTask) error {
 	return nil
 }
-func (m *Mysql) CreateAssetTransferTask(itf xorm.Interface, task *types.AssetTransferTask) (err error) {
+func (m *Mysql) SaveAssetTransferTask(itf xorm.Interface, task *types.AssetTransferTask) (err error) {
 	_, err = itf.InsertOne(task)
 	if err != nil {
 		logrus.Errorf("insert transfer task error:%v", err)
