@@ -20,6 +20,9 @@ type BaseTask struct {
 
 type PartReBalanceState = int
 
+type CrossState = int
+type CrossSubState int
+
 const (
 	PartReBalanceInit PartReBalanceState = iota
 	PartReBalanceCross
@@ -27,6 +30,13 @@ const (
 	PartReBalanceInvest
 	PartReBalanceSuccess
 	PartReBalanceFailed
+
+	ToCreateSubTask CrossState = iota
+	SubTaskCreated
+	TaskSuc               //all sub task suc
+	ToCross CrossSubState = iota
+	Crossing
+	Crossed
 )
 
 type PartReBalanceTask struct {

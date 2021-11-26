@@ -7,14 +7,6 @@ import (
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
-type crossSubState int
-
-const (
-	toCross crossSubState = iota
-	crossing
-	crossed
-)
-
 type CrossSubTaskService struct {
 	db        types.IDB
 	bridgeCli *bridge.Bridge
@@ -36,19 +28,19 @@ func (c *CrossSubTaskService) Run() error {
 			continue
 		}
 		for _, subTask := range childTasks {
-			switch crossSubState(subTask.State) {
-			case toCross:
+			switch types.CrossSubState(subTask.State) {
+			case types.ToCross:
 				//do cross
 				t := &bridge.Task{}
 				taskId, err := c.bridgeCli.AddTask(t)
 				if err != nil && taskId != 0 {
 					//update bridge taskId
-					err1 := c.db.UpdateCrossSubTaskBridgeIDAndState(subTask.ID, taskId, int(crossing))
+					err1 := c.db.UpdateCrossSubTaskBridgeIDAndState(subTask.ID, taskId, int(types.Crossing))
 					if err != nil {
 						logrus.Warnf("update cross sub task err:%v,subTaskId:%d", err1, subTask.ID)
 					}
 				}
-			case crossing:
+			case types.Crossing:
 				//watch
 				bridgeTask, err := c.bridgeCli.GetTaskDetail(subTask.BridgeTaskId)
 				if err != nil {
@@ -61,7 +53,7 @@ func (c *CrossSubTaskService) Run() error {
 					logrus.Infof("bridge task crossing bridgeTaskId:%d", subTask.BridgeTaskId)
 				case 2:
 					logrus.Infof("bridge task crossed bridgeTaskId:%d", subTask.BridgeTaskId)
-					err = c.db.UpdateCrossSubTaskState(subTask.ID, int(crossed))
+					err = c.db.UpdateCrossSubTaskState(subTask.ID, int(types.Crossed))
 					if err != nil {
 						continue
 					}

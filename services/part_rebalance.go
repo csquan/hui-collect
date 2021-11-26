@@ -77,7 +77,7 @@ func (p *PartReBalance) handleInit(task *types.PartReBalanceTask) (err error) {
 	crossTasks := make([]*types.CrossTask, 0, len(crossBalances))
 	for _, param := range crossBalances {
 		crossTasks = append(crossTasks, &types.CrossTask{
-			BaseTask:      &types.BaseTask{State: toCreateSubTask},
+			BaseTask:      &types.BaseTask{State: types.ToCreateSubTask},
 			RebalanceId:   task.ID,
 			ChainFrom:     param.FromChain,
 			ChainTo:       param.ToChain,
@@ -124,13 +124,13 @@ func (p *PartReBalance) handleCross(task *types.PartReBalanceTask) (err error) {
 
 	success := true
 	for _, crossTask := range crossTasks {
-		if crossTask.State != taskSuc {
+		if crossTask.State != types.TaskSuc {
 			logrus.Debugf("cross task [%v] is not finished", crossTask)
 
 			return
 		}
 
-		success = success && crossTask.State == taskSuc
+		success = success && crossTask.State == types.TaskSuc
 	}
 
 	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {

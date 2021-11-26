@@ -11,14 +11,6 @@ import (
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
-type crossState = int
-
-const (
-	toCreateSubTask crossState = iota
-	subTaskCreated
-	taskSuc //all sub task suc
-)
-
 type CrossService struct {
 	db        types.IDB
 	bridgeCli *bridge.Bridge
@@ -65,10 +57,10 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 			return subTasks[i].TaskNo < subTasks[j].TaskNo
 		})
 		latestSub := subTasks[len(subTasks)-1]
-		switch crossSubState(latestSub.State) {
-		case crossing:
+		switch types.CrossSubState(latestSub.State) {
+		case types.Crossing:
 			fallthrough
-		case crossed:
+		case types.Crossed:
 			var totalAmount uint64
 			for _, sub := range subTasks {
 				a, _ := strconv.ParseUint(sub.Amount, 10, 64)
@@ -108,7 +100,7 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 			} else {
 				logrus.Fatalf("unexpected amount taskID:%d,task:%v", parent.ID, parent)
 			}
-		case toCross:
+		case types.ToCross:
 			return false, nil
 		default:
 			logrus.Fatalf("unexpected task state:%d,sub_task id:%d", latestSub.State, latestSub.ID)
@@ -144,7 +136,7 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 	return false, nil
 }
 
-func (c *CrossService) transferTaskState(taskId uint64, nextState crossState) error {
+func (c *CrossService) transferTaskState(taskId uint64, nextState types.CrossState) error {
 	return c.db.UpdateCrossTaskState(taskId, int(nextState))
 }
 
@@ -158,31 +150,31 @@ func (c *CrossService) Run() error {
 	}
 
 	for _, task := range tasks {
-		switch crossState(task.State) {
-		case toCreateSubTask:
+		switch types.CrossState(task.State) {
+		case types.ToCreateSubTask:
 			ok, err := c.addCrossSubTasks(task)
 			if err != nil {
 				logrus.Errorf("add subtasks err:v,task:%v", err, task)
 				continue
 			} else if ok {
-				err := c.transferTaskState(task.ID, subTaskCreated)
+				err := c.transferTaskState(task.ID, types.SubTaskCreated)
 				if err != nil {
 					logrus.Errorf("update cross task state err:%v,task:%v", err, task)
 				}
 			}
-		case subTaskCreated:
+		case types.SubTaskCreated:
 			subTasks, err := c.db.GetOpenedCrossSubTasks(task.ID)
 			if err != nil {
 				continue
 			} else {
 				var sucCnt int
 				for _, subT := range subTasks {
-					if subT.State == int(crossed) {
+					if subT.State == int(types.Crossed) {
 						sucCnt++
 					}
 				}
 				if sucCnt == len(subTasks) {
-					err = c.transferTaskState(task.ID, taskSuc)
+					err = c.transferTaskState(task.ID, types.TaskSuc)
 					if err != nil {
 						continue
 					}
