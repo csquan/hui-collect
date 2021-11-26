@@ -10,19 +10,7 @@ import (
 	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
-const (
-	AssetTransferIn = iota
-	Invest
-)
 
-type AssetTransferState = int
-
-const (
-	AssetTransferInit AssetTransferState = iota
-	AssetTransferOngoing
-	AssetTransferSuccess
-	AssetTransferFailed
-)
 
 type AssetTransfer struct {
 	db     types.IDB
@@ -56,10 +44,10 @@ func (t *AssetTransfer) Run() (err error) {
 		logrus.Errorf("more than one transfer services are being processed. tasks:%v", tasks)
 	}
 
-	switch AssetTransferState(tasks[0].State) {
-	case AssetTransferInit:
+	switch types.AssetTransferState(tasks[0].State) {
+	case types.AssetTransferInit:
 		return t.handleAssetTransferInit(tasks[0])
-	case AssetTransferOngoing:
+	case types.AssetTransferOngoing:
 		return t.handleAssetTransferOngoing(tasks[0])
 	default:
 		logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
@@ -73,15 +61,15 @@ func getNonce() int {
 }
 func (t *AssetTransfer) handleAssetTransferInit(task *types.AssetTransferTask) (err error) {
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) error {
-		if task.TransferType == AssetTransferIn {
+		if task.TransferType == types.AssetTransferIn {
 			err = t.createTransferInTx(session, task)
-		} else if task.TransferType == Invest {
+		} else if task.TransferType == types.Invest {
 			err = t.createInvestTx(session, task)
 		}
 		if err != nil {
 			return err
 		}
-		task.State = int(AssetTransferOngoing)
+		task.State = int(types.AssetTransferOngoing)
 		return t.db.UpdateAssetTransferTask(session, task)
 	})
 	if err != nil{
@@ -103,7 +91,7 @@ func (t *AssetTransfer) createTransferInTx(session *xorm.Session, task *types.As
 			return err
 		} else {
 			baseTask := &types.BaseTask{State: int(SignState)}
-			task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce, Params: string(b), TransferType: AssetTransferIn}
+			task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce, Params: string(b), TransferType: types.AssetTransferIn}
 			nonce++
 			txTasks = append(txTasks, task)
 		}
@@ -127,7 +115,7 @@ func (t *AssetTransfer) createInvestTx(session *xorm.Session, task *types.AssetT
 			return err
 		} else {
 			baseTask := &types.BaseTask{State: int(SignState)}
-			task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce, Params: string(b), TransferType: Invest}
+			task := &types.TransactionTask{BaseTask: baseTask, Nonce: nonce, Params: string(b), TransferType: types.Invest}
 			nonce++
 			txTasks = append(txTasks, task)
 		}
@@ -164,11 +152,11 @@ func (t *AssetTransfer) handleAssetTransferOngoing(task *types.AssetTransferTask
 		}
 		if tx.State == int(TxFailed) {
 			progress.FailedCount++
-			task.State = int(AssetTransferFailed)
+			task.State = int(types.AssetTransferFailed)
 		}
 	}
 	if progress.SuccessCount == progress.AllCount {
-		task.State = int(AssetTransferSuccess)
+		task.State = int(types.AssetTransferSuccess)
 	}
 	task.Progress = progress.toString()
 	return t.db.UpdateAssetTransferTask(t.db.GetSession(), task)

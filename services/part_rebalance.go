@@ -180,9 +180,9 @@ func (p *PartReBalance) createTransferInTask(task *types.PartReBalanceTask) (ass
 	}
 
 	assetTransfer = &types.AssetTransferTask{
-		BaseTask:     &types.BaseTask{State: AssetTransferInit},
+		BaseTask:     &types.BaseTask{State: types.AssetTransferInit},
 		RebalanceId:  task.ID,
-		TransferType: AssetTransferIn,
+		TransferType: types.AssetTransferIn,
 		Params:       string(assetTransferParams),
 	}
 
@@ -202,9 +202,9 @@ func (p *PartReBalance) createInvestTask(task *types.PartReBalanceTask) (assetTr
 	}
 
 	assetTransfer = &types.AssetTransferTask{
-		BaseTask:     &types.BaseTask{State: AssetTransferInit},
+		BaseTask:     &types.BaseTask{State: types.AssetTransferInit},
 		RebalanceId:  task.ID,
-		TransferType: Invest,
+		TransferType: types.Invest,
 		Params:       string(investParams),
 	}
 
@@ -214,13 +214,13 @@ func (p *PartReBalance) createInvestTask(task *types.PartReBalanceTask) (assetTr
 // handleTransferIn check transferIn task state and create invest task after transferIn finished
 func (p *PartReBalance) handleTransferIn(task *types.PartReBalanceTask) (err error) {
 
-	state, err := p.getTransferState(task, AssetTransferIn)
+	state, err := p.getTransferState(task, types.AssetTransferIn)
 	if err != nil {
 		return err
 	}
 
 	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {
-		if state == AssetTransferSuccess {
+		if state == types.AssetTransferSuccess {
 			var invest *types.AssetTransferTask
 
 			invest, execErr = p.createInvestTask(task)
@@ -234,7 +234,7 @@ func (p *PartReBalance) handleTransferIn(task *types.PartReBalanceTask) (err err
 				return
 			}
 			task.State = types.PartReBalanceInvest
-		} else if state == AssetTransferFailed {
+		} else if state == types.AssetTransferFailed {
 			//TODO
 			task.State = types.PartReBalanceFailed
 		}
@@ -263,28 +263,28 @@ func (p *PartReBalance) getTransferState(task *types.PartReBalanceTask, transfer
 	}
 	success := true
 	for _, at := range atTasks {
-		if at.State == AssetTransferFailed {
-			state = AssetTransferFailed
+		if at.State == types.AssetTransferFailed {
+			state = types.AssetTransferFailed
 			return
 		}
-		success = success && (at.State == AssetTransferSuccess)
+		success = success && (at.State == types.AssetTransferSuccess)
 	}
 	if success {
-		state = AssetTransferSuccess
+		state = types.AssetTransferSuccess
 	} else {
-		state = AssetTransferOngoing
+		state = types.AssetTransferOngoing
 	}
 	return
 }
 
 func (p *PartReBalance) handleInvest(task *types.PartReBalanceTask) (err error) {
-	state, err := p.getTransferState(task, Invest)
+	state, err := p.getTransferState(task, types.Invest)
 	if err != nil {
 		return err
 	}
 
 	err = utils.CommitWithSession(p.db, func(session *xorm.Session) (execErr error) {
-		if state == AssetTransferSuccess {
+		if state == types.AssetTransferSuccess {
 			var invest *types.AssetTransferTask
 			invest, execErr = p.createInvestTask(task)
 			if execErr != nil {
@@ -297,7 +297,7 @@ func (p *PartReBalance) handleInvest(task *types.PartReBalanceTask) (err error) 
 				return
 			}
 			task.State = types.PartReBalanceSuccess
-		} else if state == AssetTransferFailed {
+		} else if state == types.AssetTransferFailed {
 			//TODO
 			task.State = types.PartReBalanceFailed
 		}

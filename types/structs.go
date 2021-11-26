@@ -23,6 +23,8 @@ type PartReBalanceState = int
 type CrossState = int
 type CrossSubState int
 
+type AssetTransferState = int
+
 const (
 	PartReBalanceInit PartReBalanceState = iota
 	PartReBalanceCross
@@ -37,8 +39,15 @@ const (
 	ToCross CrossSubState = iota
 	Crossing
 	Crossed
-)
 
+	AssetTransferIn = iota
+	Invest
+
+	AssetTransferInit AssetTransferState = iota
+	AssetTransferOngoing
+	AssetTransferSuccess
+	AssetTransferFailed
+)
 type PartReBalanceTask struct {
 	*Base
 	*BaseTask
