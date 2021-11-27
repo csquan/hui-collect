@@ -6,12 +6,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
-	"github.com/starslabhq/hermes-rebalance/types"
 	signer "github.com/starslabhq/hermes-rebalance/sign"
+	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"github.com/go-xorm/xorm"
 	"time"
 )
 
@@ -91,13 +91,13 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	if err != nil {
 		return err
 	}else {
-		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+		err = utils.CommitWithSession(t.db, func(*xorm.Session) (execErr error) {
 			task.State = int(AuditState)
 			task.Cipher = signRet.Data.Extra.Cipher
 			task.EncryptData = signRet.Data.EncryptData
 			task.Hash = signRet.Data.Extra.TxHash
 
-			execErr = t.db.UpdateTransactionTask(session, task)
+			execErr = t.db.UpdateTransactionTask(task)
 			if execErr != nil {
 				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
 				return
@@ -114,8 +114,9 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	receiver := task.To
 	orderID := int(time.Now().Unix())
 
-	defer utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		t.db.UpdateOrderID(session,orderID)  //只在这里更新
+	defer utils.CommitWithSession(t.db, func(*xorm.Session) (execErr error) {
+		task.OrderId = orderID
+		t.db.UpdateTransactionTask(task)  //只在这里更新
 		return
 	})
 
@@ -123,9 +124,9 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	if err != nil {
 		return err
 	}else{
-		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+		err = utils.CommitWithSession(t.db, func(*xorm.Session) (execErr error) {
 			task.State = int(ValidatorState)
-			execErr = t.db.UpdateTransactionTask(session, task)
+			execErr = t.db.UpdateTransactionTask(task)
 			if execErr != nil {
 				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
 				return
@@ -146,10 +147,10 @@ func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 	if err != nil  {
 		return err
 	}else{
-		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+		err = utils.CommitWithSession(t.db, func(*xorm.Session) (execErr error) {
 			task.State = int(TxSigned)
 			task.Input_data = vRet.RawTx
-			execErr = t.db.UpdateTransactionTask(session, task)
+			execErr = t.db.UpdateTransactionTask(task)
 			if execErr != nil {
 				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
 				return
@@ -170,9 +171,9 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 		return err
 	}
 
-	err := utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+	err := utils.CommitWithSession(t.db, func(*xorm.Session) (execErr error) {
 		task.State = int(TxCheckReceipt)
-		execErr = t.db.UpdateTransactionTask(session, task)
+		execErr = t.db.UpdateTransactionTask(task)
 		if execErr != nil {
 			logrus.Errorf("update part audit task error:%v task:[%v]", execErr, task)
 			return execErr
@@ -197,8 +198,8 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 		task.State = int(TxFailed)
 	}
 
-	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		execErr = t.db.UpdateTransactionTask(session, task)
+	err = utils.CommitWithSession(t.db, func(*xorm.Session) (execErr error) {
+		execErr = t.db.UpdateTransactionTask(task)
 		if execErr != nil {
 			logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
 			return execErr

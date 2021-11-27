@@ -67,7 +67,7 @@ func (m *Mysql) SaveAssetTransferTask(itf xorm.Interface, task *types.AssetTrans
 	return
 }
 
-func (m *Mysql) UpdateTransactionTask(itf xorm.Interface, task *types.TransactionTask) error {
+func (m *Mysql) UpdateTransactionTask(task *types.TransactionTask) error {
 	_, err := m.engine.Table("t_transaction_task").Update(task)
 	return err
 }
@@ -111,10 +111,5 @@ func (m *Mysql) UpdateCrossSubTaskBridgeIDAndState(id, bridgeTaskId uint64, stat
 			BridgeTaskId: bridgeTaskId,
 			State:        state,
 		})
-	return err
-}
-
-func (m *Mysql) UpdateOrderID(itf xorm.Interface, id int) error {
-	_, err := itf.Update(id)
 	return err
 }

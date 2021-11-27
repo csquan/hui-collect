@@ -34,7 +34,7 @@ type IWriter interface {
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error
 	InsertAssetTransfer(itf xorm.Interface, task *AssetTransferTask) error
 
-	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
+	UpdateTransactionTask(task *TransactionTask) error
 
 	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
 	//update cross task state
@@ -48,8 +48,6 @@ type IWriter interface {
 
 	//update cross sub task state
 	UpdateCrossSubTaskState(id uint64, state int) error
-
-	UpdateOrderID(itf xorm.Interface, id int) error
 }
 
 type IDB interface {
