@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/starslabhq/hermes-rebalance/bridge"
 	"github.com/starslabhq/hermes-rebalance/services/part_rebalance"
 
 	"github.com/sirupsen/logrus"
@@ -36,7 +37,7 @@ func NewServiceScheduler(conf *config.Config, db types.IDB, closeCh <-chan os.Si
 func (t *ServiceScheduler) Start() {
 	partReBalance, err := part_rebalance.NewPartReBalanceService(t.db, t.conf)
 	if err != nil {
-		logrus.Fatalf("new re balance service error: %v", err)
+		logrus.Fatalf("new rebalance service error: %v", err)
 	}
 	t.services = append(t.services, partReBalance)
 
@@ -44,7 +45,23 @@ func (t *ServiceScheduler) Start() {
 	if err != nil {
 		logrus.Fatalf("new transfer service error: %v", err)
 	}
-	t.services = append(t.services, transaction)
+
+	//create cross service
+	bridgeConf := t.conf.BridgeConf
+	bridgeCli, err := bridge.NewBridge(bridgeConf.URL, bridgeConf.Ak, bridgeConf.Sk, bridgeConf.Timeout)
+	if err != nil {
+		logrus.Fatalf("new bridge cli err:%v", err)
+	}
+	crossService := NewCrossService(t.db, bridgeCli, t.conf)
+	crossSubService := NewCrossSubTaskService(t.db, bridgeCli, t.conf)
+	//create cross service
+
+	t.services = []types.IAsyncService{
+		partReBalance,
+		transaction,
+		crossService,
+		crossSubService,
+	}
 
 	timer := time.NewTimer(t.conf.QueryInterval)
 	for {

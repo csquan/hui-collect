@@ -28,6 +28,13 @@ type AlertConf struct {
 	url string `mapstructure:"url"`
 }
 
+type BridgeConf struct {
+	URL     string        `mapstructure:"url"`
+	Timeout time.Duration `mapstructure:"timeout"`
+	Ak      string        `mapstructure:"ak"`
+	Sk      string        `mapstructure:"sk"`
+}
+
 //func (o *DataBaseConf) init() {
 //	o.RetryInterval = time.Duration(o.RetryIntervalInt) * time.Millisecond
 //}
@@ -40,6 +47,7 @@ type Config struct {
 	DataBase         DataBaseConf          `mapstructure:"database"`
 	LogConf          Log                   `mapstructure:"log"`
 	Alert            AlertConf             `mapstructure:"alert"`
+	BridgeConf       BridgeConf            `mapstructure:"bridge_conf"`
 	Chains           map[string]*ChainInfo `mapstructure:"chains"`
 	ClientMap        map[string]*ethclient.Client
 }

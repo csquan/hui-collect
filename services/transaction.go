@@ -107,8 +107,10 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	receiver := task.To
 	orderID := int(time.Now().Unix())
 
+
 	defer utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		t.db.UpdateOrderID(session, orderID) //只在这里更新
+		task.OrderId = orderID
+		t.db.UpdateTransactionTask(session, task)  //只在这里更新
 		return
 	})
 
@@ -139,6 +141,7 @@ func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 	//TODO 验证返回值  vRet.OK
 	if err != nil {
 		return err
+
 	} else {
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 			task.State = int(types.TxSignedState)

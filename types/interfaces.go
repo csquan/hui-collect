@@ -27,7 +27,9 @@ type IWriter interface {
 
 	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error
+
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
+
 	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
 	//update cross task state
 	UpdateCrossTaskState(id uint64, state int) error
@@ -37,7 +39,7 @@ type IWriter interface {
 	SaveCrossSubTask(subTask *CrossSubTask) error
 	//update cross sub task state
 	UpdateCrossSubTaskState(id uint64, state int) error
-	UpdateOrderID(itf xorm.Interface, id int) error
+
 }
 
 type IDB interface {

@@ -101,8 +101,3 @@ func (m *Mysql) UpdateCrossSubTaskBridgeIDAndState(id, bridgeTaskId uint64, stat
 		})
 	return err
 }
-
-func (m *Mysql) UpdateOrderID(itf xorm.Interface, id int) error {
-	_, err := itf.Update(id)
-	return err
-}

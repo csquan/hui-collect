@@ -27,6 +27,9 @@ type Bridge struct {
 }
 
 func NewBridge(url, ak, sk string, rpcTimeout time.Duration) (*Bridge, error) {
+	if url == "" || ak == "" || sk == "" {
+		return nil, fmt.Errorf("parma not enough for bridge")
+	}
 	cli := &http.Client{
 		Timeout: rpcTimeout,
 	}
