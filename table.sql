@@ -13,46 +13,25 @@ CREATE TABLE `t_part_rebalance_task`
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='小r任务表';
 
-DROP TABLE IF EXISTS `t_transfer_task`;
-CREATE TABLE `t_transfer_task`
-(
-    `f_id`            bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `f_rebalance_id`  int(11) NOT NULL DEFAULT '0' COMMENT 'rebalance task id',
-    `f_message`       text        NOT NULL COMMENT '',
-    `f_state`         tinyint(4) NOT NULL DEFAULT '0' COMMENT 'init build ongoing success failed',
-    `f_transfer_type` tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:transferIn 1:invest',
-    `f_progress`      varchar(20) NOT NULL DEFAULT '' COMMENT '当前状态的处理进度',
-    `f_params`        text        NOT NULL COMMENT '任务数据',
-    `f_created_at`    timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `f_updated_at`    timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
-    KEY               `idx_state` (`f_state`)
-) ENGINE = InnoDB
-    DEFAULT CHARSET = utf8mb4
-    COLLATE = utf8mb4_bin COMMENT ='资产转移';
-
 DROP TABLE IF EXISTS `t_transaction_task`;
 CREATE TABLE `t_transaction_task`
 (
     `f_id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_rebalance_id`     int(11) NOT NULL DEFAULT '0' COMMENT 'rebalance id',
     `f_message`          text      NOT NULL COMMENT '',
-    `f_transfer_id`      int(11) NOT NULL DEFAULT '0' COMMENT 'transfer id',
-    `f_transfer_type`    tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:transferIn 1:invest',
-    `f_nonce`            int(11) NOT NULL DEFAULT '0' COMMENT 'nonce',
-    `f_chain_id`         int(11) NOT NULL DEFAULT '0' COMMENT 'chain_id',
+    `f_type`             tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:transferIn 1:invest',
     `f_params`           text      NOT NULL COMMENT '任务数据',
     `f_state`            tinyint(4) NOT NULL DEFAULT '0' COMMENT '',
-    `f_decimal`          int(11) NOT NULL DEFAULT '0' COMMENT 'decimal',
+    `f_chain_id`         int(11) NOT NULL DEFAULT '0' COMMENT 'chain_id',
+    `f_chain_name`       char(20)  NOT NULL DEFAULT '' COMMENT 'chain name',
     `f_from`             char(42)  NOT NULL DEFAULT '' COMMENT 'from addr',
     `f_to`               char(42)  NOT NULL DEFAULT '' COMMENT 'to addr',
     `f_contract_address` char(42)  NOT NULL DEFAULT '' COMMENT 'contract addr',
-    `f_value`            char(42)  NOT NULL DEFAULT '' COMMENT '数量,以最大精度计算',
     `f_input_data`       text      NOT NULL COMMENT '合约的inputdata',
-    `f_Cipher`           text      NOT NULL COMMENT '加密数据的解密key',
-    `f_EncryptData`      text      NOT NULL COMMENT '加密后数据',
+    `f_cipher`           text      NOT NULL COMMENT '加密数据的解密key',
+    `f_encrypt_data`     text      NOT NULL COMMENT '加密后数据',
     `f_signed_data`      text      NOT NULL COMMENT '签名后数据',
-    `f_order_id`         int(11) NOT NULL COMMENT '订单ID',
+    `f_order_id`         int(11) NOT NULL DEFAULT 0 COMMENT '订单ID',
     `f_hash`             char(66)  NOT NULL DEFAULT '' COMMENT 'transaction hash',
     `f_created_at`       timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `f_updated_at`       timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

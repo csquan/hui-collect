@@ -51,9 +51,9 @@ func (c *crossHandler) MoveToNextState(task *types.PartReBalanceTask, nextState 
 
 		//create next state task
 		if nextState == types.PartReBalanceTransferIn {
-			execErr = CreateTransferInTask(task, c.db)
+			execErr = CreateReceiveFromBridgeTask(task, c.db)
 			if execErr != nil {
-				logrus.Errorf("create assetTransfer task error:%v task:[%v]", execErr, task)
+				logrus.Errorf("create transaction task error:%v task:[%v]", execErr, task)
 				return
 			}
 		}
@@ -67,34 +67,45 @@ func (c *crossHandler) MoveToNextState(task *types.PartReBalanceTask, nextState 
 		}
 		return
 	})
-
 	return
 }
 
-func CreateTransferInTask(task *types.PartReBalanceTask, db types.IDB) (err error) {
+func CreateReceiveFromBridgeTask(task *types.PartReBalanceTask, db types.IDB) (err error) {
 	params, err := task.ReadParams()
 	if err != nil {
 		return
 	}
-
-	assetTransferParams, err := json.Marshal(params.AssetTransferIn)
-	if err != nil {
-		logrus.Errorf("marshal AssetTransferInParams params error:%v task:[%v]", err, task)
-		return
+	var tasks []*types.TransactionTask
+	var paramData, inputData []byte
+	for _, param := range params.ReceiveFromBridgeParams {
+		paramData, err = json.Marshal(param)
+		if err != nil {
+			logrus.Errorf("CreateTransactionTask param marshal err:%v", err)
+			return
+		}
+		inputData, err = utils.ReceiveFromBridgeInput(param)
+		if err != nil {
+			logrus.Errorf("ReceiveFromBridgeInput err:%v", err)
+			return
+		}
+		task := &types.TransactionTask{
+			BaseTask:        &types.BaseTask{State: int(types.TxUnInitState)},
+			RebalanceId:     task.ID,
+			TransactionType: int(types.ReceiveFromBridge),
+			ChainId:         param.ChainId,
+			ChainName:       param.ChainName,
+			From:            param.From,
+			To:              param.To,
+			ContractAddress: param.To,
+			Params:          string(paramData),
+			InputData:       string(inputData),
+		}
+		tasks = append(tasks, task)
 	}
-
-	assetTransfer := &types.AssetTransferTask{
-		BaseTask:     &types.BaseTask{State: types.AssetTransferInit},
-		RebalanceId:  task.ID,
-		TransferType: types.AssetTransferIn,
-		Params:       string(assetTransferParams),
-	}
-	err = db.SaveAssetTransferTask(db.GetSession(), assetTransfer)
+	err = db.SaveTxTasks(db.GetSession(), tasks)
 	if err != nil {
-		logrus.Errorf("save assetTransfer task error:%v task:[%v]", err, task)
+		logrus.Errorf("save transaction task error:%v tasks:[%v]", err, tasks)
 		return
 	}
 	return
 }
-
-

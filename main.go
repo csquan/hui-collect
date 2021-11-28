@@ -27,7 +27,6 @@ func init() {
 }
 
 func main() {
-
 	flag.Parse()
 	logrus.Info(confFile)
 	conf, err := config.LoadConf(confFile)

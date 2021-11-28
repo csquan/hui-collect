@@ -12,18 +12,18 @@ type investHandler struct {
 }
 
 func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
-	state, err := getTransferState(i.db, task, types.Invest)
+	state, err := getTransactionState(i.db, task, types.Invest)
 	if err != nil {
 		return
 	}
 
-	if state != types.AssetTransferSuccess && state != types.AssetTransferFailed {
+	if state != types.StateFailed && state != types.StateSuccess {
 		return
 	}
 
 	finished = true
 
-	if state == types.AssetTransferSuccess {
+	if state == types.StateSuccess {
 		nextState = types.PartReBalanceSuccess
 	} else {
 		nextState = types.PartReBalanceFailed

@@ -5,8 +5,8 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/config"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -136,7 +136,7 @@ func AuditTx(input string,to string,quantity string,orderID int) (AuditResponse,
 	AuditInput.AuReq.BusId = fmt.Sprintf("%d", orderID)  //ID保持和validator中的id一样,确保每次调用增1
 	AuditInput.AuReq.BusData = bus
 	AuditInput.AuReq.Result = 1 //推荐值，不修改
-
+	//TODO 检验返回结果 resp.Success
 	resp, err := PostAuditInfo(AuditInput.AuReq, appId)
 	if err != nil {
 		return resp,err

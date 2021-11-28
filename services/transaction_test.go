@@ -20,24 +20,24 @@ func TestCreateTreansfer(t *testing.T) {
 		panic(fmt.Sprintf("c mysql cli err:%v", err))
 	}
 	params := &types.Params{
-		AssetTransferIn: []*types.AssetTransferInParam{
-		&types.AssetTransferInParam{
-			Amount:    new(big.Int).SetInt64(1000),
-			TaskId:    new(big.Int).SetInt64(1),
-			ChainId:   1,
-			ChainName: "bsc",
-			From:      "0000000000000000000000",
-			To:        "1111111111111111111111",
+		ReceiveFromBridgeParams: []*types.ReceiveFromBridgeParam{
+			&types.ReceiveFromBridgeParam{
+				ChainId:   1,
+				ChainName: "bsc",
+				From:      "0x0000000000000",
+				To:        "0x0000000000000",
+				Amount:    new(big.Int).SetInt64(100),
+				TaskID:    new(big.Int).SetUint64(1),
+			},
+			&types.ReceiveFromBridgeParam{
+				ChainId:   2,
+				ChainName: "poly",
+				From:      "0x0000000000001",
+				To:        "0x0000000000001",
+				Amount:    new(big.Int).SetInt64(100),
+				TaskID:    new(big.Int).SetUint64(2),
+			},
 		},
-		&types.AssetTransferInParam{
-			Amount:    new(big.Int).SetInt64(1000),
-			TaskId:    new(big.Int).SetInt64(1),
-			ChainId:   2,
-			ChainName: "poly",
-			From:      "0000000000000000000000",
-			To:        "1111111111111111111111",
-		},
-	},
 	}
 	data, err := json.Marshal(params)
 
@@ -46,5 +46,5 @@ func TestCreateTreansfer(t *testing.T) {
 		Base:     &types.Base{ID: 1},
 		Params:   string(data),
 	}
-	part_rebalance.CreateTransferInTask(task, dbtest)
+	part_rebalance.CreateReceiveFromBridgeTask(task, dbtest)
 }

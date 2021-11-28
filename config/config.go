@@ -2,7 +2,11 @@ package config
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -11,12 +15,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-
 type Conf struct {
 	App string
 	Vip *viper.Viper
 }
-
 
 type DataBaseConf struct {
 	DB string `mapstructure:"db"` //DB 连接信息
@@ -34,14 +36,34 @@ type Config struct {
 	AppName          string `mapstructure:"app_name"`
 	ProfPort         int    `mapstructure:"prof_port"`
 	QueryInterval    time.Duration
-	QueryIntervalInt uint64       `mapstructure:"query_interval"` //ms
-	DataBase         DataBaseConf `mapstructure:"database"`
-	LogConf          Log          `mapstructure:"log"`
-	Alert            AlertConf    `mapstructure:"alert"`
+	QueryIntervalInt uint64                `mapstructure:"query_interval"` //ms
+	DataBase         DataBaseConf          `mapstructure:"database"`
+	LogConf          Log                   `mapstructure:"log"`
+	Alert            AlertConf             `mapstructure:"alert"`
+	Chains           map[string]*ChainInfo `mapstructure:"chains"`
+	ClientMap        map[string]*ethclient.Client
+}
+
+type ChainInfo struct {
+	RpcUrl  string `mapstructure:"rpc_url"`
+	Timeout int    `mapstructure:"timeout"`
 }
 
 func (c *Config) init() {
 	c.QueryInterval = time.Duration(c.QueryIntervalInt) * time.Millisecond
+	c.ClientMap = make(map[string]*ethclient.Client)
+	for k, chain := range c.Chains {
+		client, err := rpc.DialHTTPWithClient(chain.RpcUrl, &http.Client{
+			Transport: &http.Transport{
+				DisableKeepAlives: true,
+			},
+			Timeout: time.Duration(chain.Timeout) * time.Millisecond,
+		})
+		if err != nil {
+			logrus.Fatalf("config init err:%v", err)
+		}
+		c.ClientMap[k] = ethclient.NewClient(client)
+	}
 }
 
 type Log struct {

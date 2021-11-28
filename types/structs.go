@@ -23,8 +23,6 @@ type PartReBalanceState = int
 type CrossState = int
 type CrossSubState int
 
-type AssetTransferState = int
-
 const (
 	PartReBalanceInit PartReBalanceState = iota
 	PartReBalanceCross
@@ -32,21 +30,36 @@ const (
 	PartReBalanceInvest
 	PartReBalanceSuccess
 	PartReBalanceFailed
-
+)
+const (
 	ToCreateSubTask CrossState = iota
 	SubTaskCreated
 	TaskSuc               //all sub task suc
 	ToCross CrossSubState = iota
 	Crossing
 	Crossed
-
-	AssetTransferIn = iota
+)
+type TransactionType int
+const (
+	ReceiveFromBridge TransactionType = iota
 	Invest
+)
 
-	AssetTransferInit AssetTransferState = iota
-	AssetTransferOngoing
-	AssetTransferSuccess
-	AssetTransferFailed
+type TaskState int
+const (
+	StateSuccess TaskState = iota
+	StateOngoing
+	StateFailed
+)
+type TransactionState int
+const (
+	TxUnInitState TransactionState = iota
+	TxAuditState
+	TxValidatorState
+	TxSignedState
+	TxCheckReceiptState
+	TxSuccessState
+	TxFailedState
 )
 
 type PartReBalanceTask struct {
@@ -69,45 +82,31 @@ func (p *PartReBalanceTask) ReadParams() (params *Params, err error) {
 	return
 }
 
-type AssetTransferTask struct {
+
+type TransactionTask struct {
 	*Base        `xorm:"extends"`
 	*BaseTask    `xorm:"extends"`
 	RebalanceId  uint64 `xorm:"f_rebalance_id"`
-	TransferType uint8  `xorm:"f_transfer_type"`
-	Progress     string `xorm:"f_progress"`
-	Params       string `xorm:"f_params"`
-}
-
-type TransactionTask struct {
-	*Base           `xorm:"extends"`
-	*BaseTask       `xorm:"extends"`
-	RebalanceId     uint64 `xorm:"f_rebalance_id"`
-	TransferId      uint   `xorm:"f_transfer_id"`
-	TransferType    uint8  `xorm:"f_transfer_type"`
-	Nonce           int    `xorm:"f_nonce"`
-	ChainId         int    `xorm:"f_chain_id"`
+	TransactionType int  `xorm:"f_type"`
+	//Nonce           int    `xorm:"f_nonce"`
+	ChainId   int    `xorm:"f_chain_id"`
+	ChainName string `xorm:"f_chain_name"`
 	Params          string `xorm:"f_params"`
-	Decimal         int    `xorm:"f_decimal"`
+	//Decimal         int    `xorm:"f_decimal"`
 	From            string `xorm:"f_from"`
 	To              string `xorm:"f_to"`
 	ContractAddress string `xorm:"f_contract_address"`
-	Value           string `xorm:"f_value"`
-	Input_data      string `xorm:"f_input_data"`
+	//Value           string `xorm:"f_value"`
+	InputData       string `xorm:"f_input_data"`
 	Cipher          string `xorm:"f_cipher"`
-	EncryptData     string `xorm:"f_encryptData"`
-	SignData        []byte `xorm:"f_signed_data"`
+	EncryptData     string `xorm:"f_encrypt_data"`
+	SignData        string `xorm:"f_signed_data"`
 	OrderId         int    `xorm:"f_order_id"`
 	Hash            string `xorm:"f_hash"`
 }
 
 func (t *TransactionTask) TableName() string {
 	return "t_transaction_task"
-}
-
-type InvestTask struct {
-	*Base
-	*BaseTask
-	RebalanceId uint64 `xorm:"rebalance_id"`
 }
 
 type CrossTask struct {

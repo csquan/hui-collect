@@ -39,11 +39,7 @@ func (t *ServiceScheduler) Start() {
 		logrus.Fatalf("new re balance service error: %v", err)
 	}
 	t.services = append(t.services, partReBalance)
-	assetTransfer, err := NewAssetTransferService(t.db, t.conf)
-	if err != nil {
-		logrus.Fatalf("new transfer service error: %v", err)
-	}
-	t.services = append(t.services, assetTransfer)
+
 	transaction, err := NewTransactionService(t.db, t.conf)
 	if err != nil {
 		logrus.Fatalf("new transfer service error: %v", err)

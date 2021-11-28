@@ -32,13 +32,6 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 	return
 }
 
-func (*Mysql) InsertAssetTransfer(itf xorm.Interface, task *types.AssetTransferTask) error {
-	return nil
-}
-func (*Mysql) UpdateAssetTransferTask(itf xorm.Interface, task *types.AssetTransferTask) error {
-	return nil
-}
-
 func (m *Mysql) GetEngine() *xorm.Engine {
 	return m.engine
 }
@@ -52,23 +45,18 @@ func (*Mysql) UpdatePartReBalanceTask(itf xorm.Interface, task *types.PartReBala
 	return err
 }
 
-func (*Mysql) UpdateTransferTask(task *types.AssetTransferTask) error {
-	return nil
-}
-func (m *Mysql) SaveTxTasks(xorm.Interface, []*types.TransactionTask) error {
-	return nil
-}
-func (m *Mysql) SaveAssetTransferTask(itf xorm.Interface, task *types.AssetTransferTask) (err error) {
-	_, err = itf.Table("t_transfer_task").InsertOne(task)
+
+func (m *Mysql) SaveTxTasks(itf xorm.Interface, tasks []*types.TransactionTask) (err error) {
+	_, err = itf.Insert(tasks)
 	if err != nil {
-		logrus.Errorf("insert transfer task error:%v", err)
+		logrus.Errorf("insert transaction task error:%v, tasks:%v", err, tasks)
 	}
 
 	return
 }
 
 func (m *Mysql) UpdateTransactionTask(itf xorm.Interface, task *types.TransactionTask) error {
-	_, err := m.engine.Table("t_transaction_task").Update(task)
+	_, err := m.engine.Table("t_transaction_task").Where("f_id = ?", task.ID).Update(task)
 	return err
 }
 

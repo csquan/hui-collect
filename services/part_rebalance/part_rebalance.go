@@ -85,39 +85,28 @@ func (p *PartReBalance) Run() (err error) {
 	return
 }
 
-//func getTransferTaskCount(db types.IDB, task *types.PartReBalanceTask, transferType int) (int, error) {
-//	atTasks, err := db.GetAssetTransferTasksWithReBalanceId(task.ID, transferType)
-//	if err != nil {
-//		logrus.Errorf("get asset transfer task error:%v", err)
-//		return 0, err
-//	}
-//	return len(atTasks), nil
-//}
-
-//getTransferState
-func getTransferState(db types.IDB, task *types.PartReBalanceTask, transferType int) (state int, err error) {
-	atTasks, err := db.GetAssetTransferTasksWithReBalanceId(task.ID, transferType)
+//getTransactionState
+func getTransactionState(db types.IDB, task *types.PartReBalanceTask, transferType types.TransactionType) (state types.TaskState, err error) {
+	txTasks, err := db.GetTransactionTasksWithReBalanceId(task.ID, transferType)
 	if err != nil {
-		logrus.Errorf("get asset transfer task error:%v", err)
+		logrus.Errorf("get transaction task error:%v", err)
 		return
 	}
-
-	if len(atTasks) == 0 {
+	if len(txTasks) == 0 {
 		err = fmt.Errorf("part rebalance task [%v] has no transfer in task", task)
 		return
 	}
 	success := true
-	for _, at := range atTasks {
-		if at.State == types.AssetTransferFailed {
-			state = types.AssetTransferFailed
+	for _, tx := range txTasks {
+		if tx.State == int(types.TxFailedState) {
+			state = types.StateFailed
 			return
 		}
-		success = success && (at.State == types.AssetTransferSuccess)
+		success = success && (tx.State == int(types.TxSuccessState))
 	}
 	if success {
-		state = types.AssetTransferSuccess
-	} else {
-		state = types.AssetTransferOngoing
+		state = types.StateSuccess
 	}
+	state = types.StateOngoing
 	return
 }

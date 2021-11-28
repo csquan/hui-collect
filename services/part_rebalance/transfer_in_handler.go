@@ -2,7 +2,6 @@ package part_rebalance
 
 import (
 	"encoding/json"
-
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -14,43 +13,21 @@ type transferInHandler struct {
 }
 
 func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
-	state, err := getTransferState(t.db, task, types.AssetTransferIn)
+	state, err := getTransactionState(t.db, task, types.ReceiveFromBridge)
 	if err != nil {
 		return
 	}
 
-	if state != types.AssetTransferSuccess && state != types.AssetTransferFailed {
+	if state != types.StateSuccess && state != types.StateFailed {
 		return
 	}
 
 	finished = true
 
-	if state == types.AssetTransferSuccess {
+	if state == types.StateSuccess {
 		nextState = types.PartReBalanceInvest
 	} else {
 		nextState = types.PartReBalanceFailed
-	}
-
-	return
-}
-
-func (t *transferInHandler) createInvestTask(task *types.PartReBalanceTask) (assetTransfer *types.AssetTransferTask, err error) {
-	params, err := task.ReadParams()
-	if err != nil {
-		return
-	}
-
-	investParams, err := json.Marshal(params.Invest)
-	if err != nil {
-		logrus.Errorf("marshal AssetTransferInParams params error:%v task:[%v]", err, task)
-		return
-	}
-
-	assetTransfer = &types.AssetTransferTask{
-		BaseTask:     &types.BaseTask{State: types.AssetTransferInit},
-		RebalanceId:  task.ID,
-		TransferType: types.Invest,
-		Params:       string(investParams),
 	}
 
 	return
@@ -60,17 +37,12 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 		if nextState == types.PartReBalanceInvest {
-			var invest *types.AssetTransferTask
-
-			invest, execErr = t.createInvestTask(task)
-			if execErr != nil {
-				return
-			}
-
-			execErr = t.db.SaveAssetTransferTask(session, invest)
-			if execErr != nil {
-				logrus.Errorf("save investHandler task error:%v task:[%v]", execErr, task)
-				return
+			if nextState == types.PartReBalanceInvest {
+				execErr = CreateInvestTask(task, t.db)
+				if execErr != nil {
+					logrus.Errorf("create transaction task error:%v task:[%v]", execErr, task)
+					return
+				}
 			}
 		}
 
@@ -83,5 +55,45 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 		return
 	})
 
+	return
+}
+
+func CreateInvestTask(task *types.PartReBalanceTask, db types.IDB) (err error) {
+	params, err := task.ReadParams()
+	if err != nil {
+		return
+	}
+	var tasks []*types.TransactionTask
+	var data, inputData []byte
+	for _, param := range params.InvestParams {
+		data, err = json.Marshal(param)
+		if err != nil {
+			logrus.Errorf("CreateTransactionTask param marshal err:%v", err)
+			return
+		}
+		inputData, err = utils.InvestInput(param)
+		if err != nil {
+			logrus.Errorf("ReceiveFromBridgeInput err:%v", err)
+			return
+		}
+		task := &types.TransactionTask{
+			BaseTask:        &types.BaseTask{State: int(types.TxUnInitState)},
+			RebalanceId:     task.ID,
+			TransactionType: int(types.Invest),
+			ChainId:         param.ChainId,
+			ChainName:       param.ChainName,
+			From:            param.From,
+			To:              param.To,
+			ContractAddress: param.To,
+			Params:          string(data),
+			InputData: string(inputData),
+		}
+		tasks = append(tasks, task)
+	}
+	err = db.SaveTxTasks(db.GetSession(), tasks)
+	if err != nil {
+		logrus.Errorf("save transaction task error:%v tasks:[%v]", err, tasks)
+		return
+	}
 	return
 }

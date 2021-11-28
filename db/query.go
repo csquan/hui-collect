@@ -14,26 +14,22 @@ func (m *Mysql) GetOpenedPartReBalanceTasks() (tasks []*types.PartReBalanceTask,
 	return
 }
 
-func (*Mysql) GetOpenedAssetTransferTasks() ([]*types.AssetTransferTask, error) {
-	return nil, nil
-}
-
-func (m *Mysql) GetAssetTransferTasksWithReBalanceId(reBalanceId uint64, transferType int) (tasks []*types.AssetTransferTask, err error) {
-	tasks = make([]*types.AssetTransferTask, 0)
-	_, err = m.engine.Where("rebalance_id = ? and transfer_type = ?", reBalanceId, transferType).Get(&tasks)
+func (m *Mysql) GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType types.TransactionType) (tasks []*types.TransactionTask, err error) {
+	tasks = make([]*types.TransactionTask, 0)
+	_, err = m.engine.Where("f_rebalance_id = ? and f_type = ?", reBalanceId, transactionType).Get(&tasks)
 	return
 }
 
 func (m *Mysql) GetOpenedTransactionTask() (tasks []*types.TransactionTask, err error) {
-	//在交易表中找到所有状态不为SignState的交易任务
 	tasks = make([]*types.TransactionTask, 0)
-	err = m.engine.Table("t_transaction_task").Where("state < ?", 4).Find(&tasks)
+	err = m.engine.Where("f_state != ? and f_state != ?",
+		types.TxSuccessState,
+		types.TxFailedState).
+		Desc("f_state").
+		Find(&tasks)
 	return
 }
 
-func (*Mysql) GetTxTasks(uint64) ([]*types.TransactionTask, error) {
-	return nil, nil
-}
 
 func (m *Mysql) GetOpenedCrossTasks() ([]*types.CrossTask, error) {
 	tasks := make([]*types.CrossTask, 0) //state:0等待创建子任务

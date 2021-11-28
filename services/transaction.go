@@ -6,38 +6,26 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
-	"github.com/starslabhq/hermes-rebalance/types"
 	signer "github.com/starslabhq/hermes-rebalance/sign"
+	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"github.com/go-xorm/xorm"
 	"time"
 )
 
-type TransactionState int
-
-const (
-	TxInit TransactionState = iota
-	SignState
-	AuditState
-	ValidatorState
-	TxSigned
-	TxCheckReceipt
-	TxSuccess
-	TxFailed
-)
-
 type Transaction struct {
-	db     types.IDB
-	config *config.Config
-	client ethclient.Client
+	db        types.IDB
+	config    *config.Config
+	clientMap map[string]*ethclient.Client
 }
 
 func NewTransactionService(db types.IDB, conf *config.Config) (p *Transaction, err error) {
 	p = &Transaction{
-		db:     db,
-		config: conf,
+		db:        db,
+		config:    conf,
+		clientMap: conf.ClientMap,
 	}
 	return
 }
@@ -55,48 +43,53 @@ func (t *Transaction) Run() (err error) {
 		return
 	}
 
-	if len(tasks) > 1 {
-		logrus.Errorf("more than one transaction tasks are being processed. tasks:%v", tasks)
+	for _, task := range tasks {
+		switch types.TransactionState(task.State) {
+		case types.TxUnInitState:
+			return t.handleSign(task)
+		case types.TxAuditState:
+			return t.handleAudit(task)
+		case types.TxValidatorState:
+			return t.handleValidator(task)
+		case types.TxSignedState:
+			return t.handleTransactionSigned(task)
+		default:
+			logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
+		}
 	}
-
-	switch TransactionState(tasks[0].State) {
-	case SignState:
-		return t.handleSign(tasks[0])
-	case AuditState:
-		return t.handleAudit(tasks[0])
-	case ValidatorState:
-		return t.handleValidator(tasks[0])
-	case TxSigned:
-		return t.handleTransactionSigned(tasks[0])
-	default:
-		logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
-	}
-
 	return
 }
 
 func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
-	input := task.Input_data
-	decimal := task.Decimal
-	nonce := task.Nonce
-	from := task.From  //这个是签名机固定的地址？？
+	if err = t.approval(); err != nil{
+		logrus.Errorf("handleSign approval err:%v", err)
+		return
+	}
+	nonce, err := t.getNonce(task)
+	if err != nil {
+		logrus.Errorf("handleSign get nonce err:%v", err)
+		return
+	}
+	input := task.InputData
+	decimal := 18
+	from := task.From //这个是签名机固定的地址？？
 	to := task.To
 	GasLimit := "2000000"
 	GasPrice := "15000000000"
 	Amount := "0"
-	quantity:= string(task.Value)
-	receiver:= task.To  //和to一致
+	quantity := "0"
+	receiver := task.To //和to一致
 
-	signRet,err := signer.SignTx(input, decimal, nonce, from, to, GasLimit, GasPrice, Amount, quantity, receiver)
+	signRet, err := signer.SignTx(input, decimal, int(nonce), from, to, GasLimit, GasPrice, Amount, quantity, receiver)
+	//TODO 结果验证 signRet.Result
 	if err != nil {
 		return err
-	}else {
+	} else {
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-			task.State = int(AuditState)
+			task.State = int(types.TxAuditState)
 			task.Cipher = signRet.Data.Extra.Cipher
 			task.EncryptData = signRet.Data.EncryptData
 			task.Hash = signRet.Data.Extra.TxHash
-
 			execErr = t.db.UpdateTransactionTask(session, task)
 			if execErr != nil {
 				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
@@ -109,22 +102,22 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 }
 
 func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
-	input := task.Input_data
-	quantity := string(task.Value)
+	input := task.InputData
+	quantity := "0"
 	receiver := task.To
 	orderID := int(time.Now().Unix())
 
 	defer utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		t.db.UpdateOrderID(session,orderID)  //只在这里更新
+		t.db.UpdateOrderID(session, orderID) //只在这里更新
 		return
 	})
 
-	_, err = signer.AuditTx(input,receiver,quantity,orderID)
+	_, err = signer.AuditTx(input, receiver, quantity, orderID)
 	if err != nil {
 		return err
-	}else{
+	} else {
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-			task.State = int(ValidatorState)
+			task.State = int(types.TxValidatorState)
 			execErr = t.db.UpdateTransactionTask(session, task)
 			if execErr != nil {
 				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
@@ -137,18 +130,19 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 }
 
 func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
-	input := task.Input_data
-	quantity := string(task.Value)
+	input := task.InputData
+	quantity := "0"
 	orderID := task.OrderId
 	to := task.To
 
-	vRet,err := signer.ValidatorTx(input, to, quantity,orderID)
-	if err != nil  {
+	vRet, err := signer.ValidatorTx(input, to, quantity, orderID)
+	//TODO 验证返回值  vRet.OK
+	if err != nil {
 		return err
-	}else{
+	} else {
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-			task.State = int(TxSigned)
-			task.Input_data = vRet.RawTx
+			task.State = int(types.TxSignedState)
+			task.SignData = vRet.RawTx //TODO 是不是应该给Sign
 			execErr = t.db.UpdateTransactionTask(session, task)
 			if execErr != nil {
 				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
@@ -160,18 +154,21 @@ func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 	return nil
 }
 
-
 func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error {
+	client, ok := t.clientMap[task.ChainName]
+	if !ok {
+		logrus.Fatalf("not find chain client, task:%v", task)
+	}
 	transaction := &etypes.Transaction{}
-	if err := json.Unmarshal(task.SignData, transaction); err != nil {
+	if err := json.Unmarshal([]byte(task.SignData), transaction); err != nil {
 		return err
 	}
-	if err := t.client.SendTransaction(context.Background(), transaction); err != nil {
+	if err := client.SendTransaction(context.Background(), transaction); err != nil {
 		return err
 	}
 
 	err := utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		task.State = int(TxCheckReceipt)
+		task.State = int(types.TxCheckReceiptState)
 		execErr = t.db.UpdateTransactionTask(session, task)
 		if execErr != nil {
 			logrus.Errorf("update part audit task error:%v task:[%v]", execErr, task)
@@ -183,7 +180,11 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 }
 
 func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error {
-	receipt, err := t.client.TransactionReceipt(context.Background(), common.HexToHash(task.Hash))
+	client, ok := t.clientMap[task.ChainName]
+	if !ok {
+		logrus.Fatalf("not find chain client, task:%v", task)
+	}
+	receipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(task.Hash))
 	if err != nil {
 		return err
 	}
@@ -192,9 +193,9 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 		return nil
 	}
 	if receipt.Status == 1 {
-		task.State = int(TxSuccess)
+		task.State = int(types.TxSuccessState)
 	} else if receipt.Status == 0 {
-		task.State = int(TxFailed)
+		task.State = int(types.TxFailedState)
 	}
 
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
@@ -208,9 +209,15 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 	return err
 }
 
-func broadcast(task *types.TransactionTask) error {
-	return nil
+func (t *Transaction) getNonce(task *types.TransactionTask) (uint64, error) {
+	client, ok := t.clientMap[task.ChainName]
+	if !ok {
+		logrus.Fatalf("not find chain client, task:%v", task)
+	}
+	return client.NonceAt(context.Background(), common.HexToAddress(task.From), nil)
 }
-func txCheck(task *types.TransactionTask) bool {
-	return true
+
+func (t *Transaction) approval() error {
+	//TODO
+	return nil
 }

@@ -12,31 +12,28 @@ type CrossBalanceItem struct {
 	Amount       string `json:"Amount"`
 }
 
-type Params struct {
-	CrossBalances   []*CrossBalanceItem     `json:"cross_balances"`
-	AssetTransferIn []*AssetTransferInParam `json:"asset_transfer_in"`
-	Invest          []*InvestParam          `json:"invest"`
-}
-
-type AssetTransferInParam struct {
+type ReceiveFromBridgeParam struct {
 	ChainId   int
 	ChainName string
 	From      string
 	To        string //合约地址
-	Amount    *big.Int //跨链资金大小
-	TaskId    *big.Int //链下跨链任务id
-}
 
+	Amount *big.Int
+	TaskID *big.Int
+}
 type InvestParam struct {
 	ChainId   int
 	ChainName string
 	From      string
 	To        string //合约地址
-	Data      *InvestData
+
+	Address       []string
+	Token1Amounts []*big.Int
+	Token2Amounts []*big.Int
 }
 
-type InvestData struct {
-	address    []string
-	token1List []*big.Int
-	token2List []*big.Int
+type Params struct {
+	CrossBalances           []*CrossBalanceItem       `json:"cross_balances"`
+	ReceiveFromBridgeParams []*ReceiveFromBridgeParam `json:"receive_from_bridge_params"`
+	InvestParams            []*InvestParam            `json:"invest_params"`
 }
