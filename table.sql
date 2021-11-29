@@ -26,6 +26,8 @@ CREATE TABLE `t_transaction_task`
     `f_chain_name`       char(20)  NOT NULL DEFAULT '' COMMENT 'chain name',
     `f_from`             char(42)  NOT NULL DEFAULT '' COMMENT 'from addr',
     `f_to`               char(42)  NOT NULL DEFAULT '' COMMENT 'to addr',
+    `f_nonce`            int(11) NOT NULL DEFAULT 0 COMMENT 'nonce',
+    `f_gas_price`            int(11) NOT NULL DEFAULT 0 COMMENT 'gas_price',
     `f_contract_address` char(42)  NOT NULL DEFAULT '' COMMENT 'contract addr',
     `f_input_data`       text      NOT NULL COMMENT '合约的inputdata',
     `f_cipher`           text      NOT NULL COMMENT '加密数据的解密key',
@@ -74,8 +76,8 @@ CREATE TABLE `t_cross_task`
     `f_created_at`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `f_updated_at`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`f_id`),
-    KEY               `idx_rebalance_id` (`f_rebalance_id`),
-    KEY               `idx_state` (`f_state`)
+    KEY                 `idx_rebalance_id` (`f_rebalance_id`),
+    KEY                 `idx_state` (`f_state`)
 ) DEFAULT CHARSET = utf8mb4;
 
 DROP TABLE IF EXISTS `t_cross_sub_task`;
@@ -90,5 +92,5 @@ CREATE TABLE `t_cross_sub_task`
     `f_created_at`     timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `f_updated_at`     timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`f_id`),
-    UNIQUE              `uk_parent_id_task_no` (`f_parent_id`,`f_task_no`)
+    UNIQUE `uk_parent_id_task_no` (`f_parent_id`,`f_task_no`)
 ) DEFAULT CHARSET = utf8mb4;

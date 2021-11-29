@@ -57,7 +57,7 @@ func (c *crossHandler) MoveToNextState(task *types.PartReBalanceTask, nextState 
 			logrus.Errorf("CreateReceiveFromBridgeTask error:%v task:[%v]", err, task)
 			return
 		}
-		if tasks, err = c.SetNonceAndGasPrice(tasks); err != nil{ //包含http，放在事物外面
+		if tasks, err = c.SetNonceAndGasPrice(tasks); err != nil { //包含http，放在事物外面
 			logrus.Errorf("SetNonceAndGasPrice error:%v task:[%v]", err, task)
 			return
 		}
