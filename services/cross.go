@@ -116,9 +116,7 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 		})
 		latestSub := subTasks[len(subTasks)-1]
 		switch types.CrossSubState(latestSub.State) {
-		case types.Crossing:
-			fallthrough
-		case types.Crossed:
+		case types.Crossing, types.Crossed:
 			var totalAmount decimal.Decimal
 			for _, sub := range subTasks {
 				subAmount, err := decimal.NewFromString(sub.Amount)
