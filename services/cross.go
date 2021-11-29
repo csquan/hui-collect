@@ -64,23 +64,23 @@ func getBridgeID(bridgeCli bridge.IBridge, task *types.CrossTask) (*bridgeId, er
 	}
 	toChainId, ok := bridgeCli.GetChainId(task.ChainTo)
 	if !ok {
-		return nil, fmt.Errorf("fromChainId not found")
+		return nil, fmt.Errorf("toChainId not found")
 	}
 	fromAccountId, ok := bridgeCli.GetAccountId(task.ChainFromAddr, fromChainId)
 	if !ok {
-		return nil, fmt.Errorf("fromChainId not found")
+		return nil, fmt.Errorf("fromAccountId not found")
 	}
 	toAccountId, ok := bridgeCli.GetAccountId(task.ChainToAddr, toChainId)
 	if !ok {
-		return nil, fmt.Errorf("fromChainId not found")
+		return nil, fmt.Errorf("toAccountId not found")
 	}
 	fromCurrencyId, ok := bridgeCli.GetCurrencyID(task.CurrencyFrom)
 	if !ok {
-		return nil, fmt.Errorf("fromChainId not found")
+		return nil, fmt.Errorf("fromCurrencyId not found")
 	}
 	toCurrencyId, ok := bridgeCli.GetCurrencyID(task.CurrencyTo)
 	if !ok {
-		return nil, fmt.Errorf("fromChainId not found")
+		return nil, fmt.Errorf("toCurrencyId not found")
 	}
 	return &bridgeId{
 		fromChainId:    fromChainId,
