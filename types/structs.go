@@ -100,6 +100,7 @@ type TransactionTask struct {
 	//Decimal         int    `xorm:"f_decimal"`
 	From            string `xorm:"f_from"`
 	To              string `xorm:"f_to"`
+	ContractAddress string `xorm:"f_contract_address"` //当交易类型为授权时，此字段保存spender
 	//Value           string `xorm:"f_value"`
 	InputData   string `xorm:"f_input_data"`
 	Cipher      string `xorm:"f_cipher"`

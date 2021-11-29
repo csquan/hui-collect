@@ -61,10 +61,6 @@ func (t *Transaction) Run() (err error) {
 }
 
 func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
-	if err = t.approval(); err != nil{
-		logrus.Errorf("handleSign approval err:%v", err)
-		return
-	}
 	nonce, err := t.getNonce(task)
 	if err != nil {
 		logrus.Errorf("handleSign get nonce err:%v", err)
@@ -85,7 +81,7 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	if err != nil {
 		return err
 	} else {
-		if  signRet.Result == true{
+		if signRet.Result == true {
 			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 				task.State = int(types.TxAuditState)
 				task.Cipher = signRet.Data.Extra.Cipher
@@ -109,10 +105,9 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	receiver := task.To
 	orderID := int(time.Now().Unix())
 
-
 	defer utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 		task.OrderId = orderID
-		t.db.UpdateTransactionTask(session, task)  //只在这里更新
+		t.db.UpdateTransactionTask(session, task) //只在这里更新
 		return
 	})
 
@@ -120,7 +115,7 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	if err != nil {
 		return err
 	} else {
-		if auditRet.Success == true{
+		if auditRet.Success == true {
 			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 				task.State = int(types.TxValidatorState)
 				execErr = t.db.UpdateTransactionTask(session, task)
@@ -146,7 +141,7 @@ func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 		return err
 
 	} else {
-		if vRet.OK == true{
+		if vRet.OK == true {
 			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 				task.State = int(types.TxSignedState)
 				task.SignData = vRet.RawTx
@@ -196,7 +191,7 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 	if err != nil {
 		return err
 	}
-	// TODO 如何判断交易已经被记录到链上，如果判断成功或失败。
+	// TODO 如何判断交易已经被记录到链上，如何判断成功或失败。
 	if receipt == nil {
 		return nil
 	}
@@ -207,6 +202,13 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 	}
 
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+		if task.TransactionType == int(types.Approve) && task.State == int(types.TxSuccessState) {
+			execErr = t.db.SaveApprove(&types.ApproveRecord{Spender: task.ContractAddress, Token: task.To, From: task.To})
+			if execErr != nil {
+				logrus.Fatalf("SaveApprove err:%v", err)
+				return
+			}
+		}
 		execErr = t.db.UpdateTransactionTask(session, task)
 		if execErr != nil {
 			logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
@@ -224,9 +226,4 @@ func (t *Transaction) getNonce(task *types.TransactionTask) (uint64, error) {
 	}
 	//TODO client.PendingNonceAt() ?
 	return client.NonceAt(context.Background(), common.HexToAddress(task.From), nil)
-}
-
-func (t *Transaction) approval() error {
-	//TODO
-	return nil
 }

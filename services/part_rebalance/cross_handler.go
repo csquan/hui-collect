@@ -141,6 +141,7 @@ func CreateApproveTask(taskID uint64, param *types.ReceiveFromBridgeParam) (task
 		ChainName:       param.ChainName,
 		From:            param.From,
 		To:              common.Address.String(param.Erc20ContractAddr),
+		ContractAddress: param.To,
 		Params:          string(paramData),
 		InputData:       string(inputData),
 	}
