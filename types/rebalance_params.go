@@ -23,7 +23,7 @@ type ReceiveFromBridgeParam struct {
 
 	Erc20ContractAddr common.Address //erc20 token地址，用于授权
 
-	Amount *big.Int
+	Amount *big.Int //链上精度值的amount，需要提前转换
 	TaskID *big.Int
 }
 type InvestParam struct {
