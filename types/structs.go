@@ -39,19 +39,25 @@ const (
 	Crossing
 	Crossed
 )
+
 type TransactionType int
+
 const (
 	ReceiveFromBridge TransactionType = iota
 	Invest
+	Approve
 )
 
 type TaskState int
+
 const (
 	StateSuccess TaskState = iota
 	StateOngoing
 	StateFailed
 )
+
 type TransactionState int
+
 const (
 	TxUnInitState TransactionState = iota
 	TxAuditState
@@ -82,27 +88,25 @@ func (p *PartReBalanceTask) ReadParams() (params *Params, err error) {
 	return
 }
 
-
 type TransactionTask struct {
-	*Base        `xorm:"extends"`
-	*BaseTask    `xorm:"extends"`
-	RebalanceId  uint64 `xorm:"f_rebalance_id"`
-	TransactionType int  `xorm:"f_type"`
+	*Base           `xorm:"extends"`
+	*BaseTask       `xorm:"extends"`
+	RebalanceId     uint64 `xorm:"f_rebalance_id"`
+	TransactionType int    `xorm:"f_type"`
 	//Nonce           int    `xorm:"f_nonce"`
 	ChainId   int    `xorm:"f_chain_id"`
 	ChainName string `xorm:"f_chain_name"`
-	Params          string `xorm:"f_params"`
+	Params    string `xorm:"f_params"`
 	//Decimal         int    `xorm:"f_decimal"`
 	From            string `xorm:"f_from"`
 	To              string `xorm:"f_to"`
-	ContractAddress string `xorm:"f_contract_address"`
 	//Value           string `xorm:"f_value"`
-	InputData       string `xorm:"f_input_data"`
-	Cipher          string `xorm:"f_cipher"`
-	EncryptData     string `xorm:"f_encrypt_data"`
-	SignData        string `xorm:"f_signed_data"`
-	OrderId         int    `xorm:"f_order_id"`
-	Hash            string `xorm:"f_hash"`
+	InputData   string `xorm:"f_input_data"`
+	Cipher      string `xorm:"f_cipher"`
+	EncryptData string `xorm:"f_encrypt_data"`
+	SignData    string `xorm:"f_signed_data"`
+	OrderId     int    `xorm:"f_order_id"`
+	Hash        string `xorm:"f_hash"`
 }
 
 func (t *TransactionTask) TableName() string {
@@ -133,4 +137,15 @@ type CrossSubTask struct {
 	// CurrencyTo   string
 	Amount string `xorm:"amount"`
 	State  int    `xorm:"state"`
+}
+
+type ApproveRecord struct {
+	*Base   `xorm:"extends"`
+	From    string `xorm:"f_from"`
+	Token   string `xorm:"f_token"`
+	Spender string `xorm:"f_spender"`
+}
+
+func (t *ApproveRecord) TableName() string {
+	return "t_approve"
 }

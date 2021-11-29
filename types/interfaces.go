@@ -12,7 +12,7 @@ type IReader interface {
 	GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType TransactionType) ([]*TransactionTask, error)
 
 	GetOpenedTransactionTask() ([]*TransactionTask, error)
-
+	GetApprove(token, spender string) (*ApproveRecord, error)
 	GetOrderID() (int, error)
 
 	GetOpenedCrossTasks() ([]*CrossTask, error)
@@ -27,8 +27,8 @@ type IWriter interface {
 
 	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error
-
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
+	SaveApprove(approve *ApproveRecord) error
 
 	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
 	//update cross task state

@@ -222,6 +222,7 @@ func (t *Transaction) getNonce(task *types.TransactionTask) (uint64, error) {
 	if !ok {
 		logrus.Fatalf("not find chain client, task:%v", task)
 	}
+	//TODO client.PendingNonceAt() ?
 	return client.NonceAt(context.Background(), common.HexToAddress(task.From), nil)
 }
 

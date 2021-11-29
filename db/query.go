@@ -16,7 +16,7 @@ func (m *Mysql) GetOpenedPartReBalanceTasks() (tasks []*types.PartReBalanceTask,
 
 func (m *Mysql) GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType types.TransactionType) (tasks []*types.TransactionTask, err error) {
 	tasks = make([]*types.TransactionTask, 0)
-	_, err = m.engine.Where("f_rebalance_id = ? and f_type = ?", reBalanceId, transactionType).Get(&tasks)
+	_, err = m.engine.Where("f_rebalance_id = ? and f_type= ?", reBalanceId, transactionType).Get(&tasks)
 	return
 }
 
@@ -25,7 +25,7 @@ func (m *Mysql) GetOpenedTransactionTask() (tasks []*types.TransactionTask, err 
 	err = m.engine.Where("f_state != ? and f_state != ?",
 		types.TxSuccessState,
 		types.TxFailedState).
-		Desc("f_state").
+		Desc("f_state").  //根据state倒叙可以确保授权task先执行
 		Find(&tasks)
 	return
 }
@@ -70,4 +70,13 @@ func (m *Mysql) GetOrderID() (int, error) {
 	}
 	return OrderId, nil
 
+}
+
+func (m *Mysql) GetApprove(token, spender string) (*types.ApproveRecord, error) {
+	approve := &types.ApproveRecord{}
+	_, err := m.engine.Where("token = ? and spender = ?",token, spender).Get(approve)
+	if err != nil {
+		return nil, err
+	}
+	return approve, nil
 }
