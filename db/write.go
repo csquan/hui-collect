@@ -45,7 +45,6 @@ func (*Mysql) UpdatePartReBalanceTask(itf xorm.Interface, task *types.PartReBala
 	return err
 }
 
-
 func (m *Mysql) SaveTxTasks(itf xorm.Interface, tasks []*types.TransactionTask) (err error) {
 	_, err = itf.Insert(tasks)
 	if err != nil {
@@ -70,7 +69,7 @@ func (m *Mysql) SaveCrossTasks(itf xorm.Interface, tasks []*types.CrossTask) err
 }
 
 func (m *Mysql) UpdateCrossTaskState(id uint64, state int) error {
-	_, err := m.engine.Table("cross_task").Where("id = ?", id).Cols("state").Update(
+	_, err := m.engine.Table("t_cross_task").Where("f_id = ?", id).Cols("f_state").Update(
 		&types.CrossTask{
 			State: state,
 		},
@@ -79,12 +78,12 @@ func (m *Mysql) UpdateCrossTaskState(id uint64, state int) error {
 }
 
 func (m *Mysql) SaveCrossSubTask(subTask *types.CrossSubTask) error {
-	_, err := m.engine.Table("cross_sub_task").Insert(subTask)
+	_, err := m.engine.Table("t_cross_sub_task").Insert(subTask)
 	return err
 }
 
 func (m *Mysql) UpdateCrossSubTaskState(id uint64, state int) error {
-	_, err := m.engine.Table("cross_sub_task").Where("id = ?", id).Cols("state").Update(
+	_, err := m.engine.Table("t_cross_sub_task").Where("f_id = ?", id).Cols("f_state").Update(
 		&types.CrossSubTask{
 			State: state,
 		},
@@ -93,11 +92,16 @@ func (m *Mysql) UpdateCrossSubTaskState(id uint64, state int) error {
 }
 
 func (m *Mysql) UpdateCrossSubTaskBridgeIDAndState(id, bridgeTaskId uint64, state int) error {
-	_, err := m.engine.Table("cross_sub_task").Where("id = ?", id).
-		Cols("bridge_task_id", "state").Update(
+	_, err := m.engine.Table("t_cross_sub_task").Where("f_id = ?", id).
+		Cols("f_bridge_task_id", "f_state").Update(
 		&types.CrossSubTask{
 			BridgeTaskId: bridgeTaskId,
 			State:        state,
 		})
+	return err
+}
+
+func (m *Mysql) SaveApprove(approve *types.ApproveRecord) error {
+	_, err := m.engine.Table("t_approve").Insert(approve)
 	return err
 }

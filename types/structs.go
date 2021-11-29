@@ -34,24 +34,32 @@ const (
 const (
 	ToCreateSubTask CrossState = iota
 	SubTaskCreated
-	TaskSuc               //all sub task suc
+	TaskSuc //all sub task suc
+)
+const (
 	ToCross CrossSubState = iota
 	Crossing
 	Crossed
 )
+
 type TransactionType int
+
 const (
 	ReceiveFromBridge TransactionType = iota
 	Invest
+	Approve
 )
 
 type TaskState int
+
 const (
 	StateSuccess TaskState = iota
 	StateOngoing
 	StateFailed
 )
+
 type TransactionState int
+
 const (
 	TxUnInitState TransactionState = iota
 	TxAuditState
@@ -82,21 +90,21 @@ func (p *PartReBalanceTask) ReadParams() (params *Params, err error) {
 	return
 }
 
-
 type TransactionTask struct {
-	*Base        `xorm:"extends"`
-	*BaseTask    `xorm:"extends"`
-	RebalanceId  uint64 `xorm:"f_rebalance_id"`
-	TransactionType int  `xorm:"f_type"`
+	*Base           `xorm:"extends"`
+	*BaseTask       `xorm:"extends"`
+	RebalanceId     uint64 `xorm:"f_rebalance_id"`
+	TransactionType int    `xorm:"f_type"`
 	//Nonce           int    `xorm:"f_nonce"`
 	ChainId   int    `xorm:"f_chain_id"`
 	ChainName string `xorm:"f_chain_name"`
-	Params          string `xorm:"f_params"`
-	//Decimal         int    `xorm:"f_decimal"`  //todo:之后需不需要单独抽个参数？
+	Params    string `xorm:"f_params"`
+	//Decimal         int    `xorm:"f_decimal"` //todo:之后需不需要单独抽个参数？
 	From            string `xorm:"f_from"`
 	To              string `xorm:"f_to"`
-	ContractAddress string `xorm:"f_contract_address"`
+	ContractAddress string `xorm:"f_contract_address"` //当交易类型为授权时，此字段保存spender
 	//Value           string `xorm:"f_value"`
+
 	InputData       string `xorm:"f_input_data"`
 	Cipher          string `xorm:"f_cipher"`
 	EncryptData     string `xorm:"f_encrypt_data"`
@@ -111,26 +119,37 @@ func (t *TransactionTask) TableName() string {
 
 type CrossTask struct {
 	*Base         `xorm:"extends"`
-	RebalanceId   uint64 `xorm:"rebalance_id"`
-	ChainFrom     string `xorm:"chain_from"`
-	ChainFromAddr string `xorm:"chain_from_addr"`
-	ChainTo       string `xorm:"chain_to"`
-	ChainToAddr   string `xorm:"chain_to_addr"`
-	CurrencyFrom  string `xorm:"currency_from"`
-	CurrencyTo    string `xorm:"currency_to"`
-	Amount        string `xorm:"amount"`
-	State         int    `xorm:"state"`
+	RebalanceId   uint64 `xorm:"f_rebalance_id"`
+	ChainFrom     string `xorm:"f_chain_from"`
+	ChainFromAddr string `xorm:"f_chain_from_addr"`
+	ChainTo       string `xorm:"f_chain_to"`
+	ChainToAddr   string `xorm:"f_chain_to_addr"`
+	CurrencyFrom  string `xorm:"f_currency_from"`
+	CurrencyTo    string `xorm:"f_currency_to"`
+	Amount        string `xorm:"f_amount"`
+	State         int    `xorm:"f_state"`
 }
 
 type CrossSubTask struct {
 	*Base        `xorm:"extends"`
-	TaskNo       uint64 `xorm:"task_no"`
-	BridgeTaskId uint64 `xorm:"bridge_task_id"` //跨链桥task_id
-	ParentTaskId uint64 `xorm:"parent_id"`      //父任务id
+	TaskNo       uint64 `xorm:"f_task_no"`
+	BridgeTaskId uint64 `xorm:"f_bridge_task_id"` //跨链桥task_id
+	ParentTaskId uint64 `xorm:"f_parent_id"`      //父任务id
 	// ChainFrom    string
 	// ChainTo      string
 	// CurrencyFrom string
 	// CurrencyTo   string
-	Amount string `xorm:"amount"`
-	State  int    `xorm:"state"`
+	Amount string `xorm:"f_amount"`
+	State  int    `xorm:"f_state"`
+}
+
+type ApproveRecord struct {
+	*Base   `xorm:"extends"`
+	From    string `xorm:"f_from"`
+	Token   string `xorm:"f_token"`
+	Spender string `xorm:"f_spender"`
+}
+
+func (t *ApproveRecord) TableName() string {
+	return "t_approve"
 }

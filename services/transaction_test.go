@@ -3,12 +3,13 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"testing"
+
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/db"
 	"github.com/starslabhq/hermes-rebalance/services/part_rebalance"
 	"github.com/starslabhq/hermes-rebalance/types"
-	"math/big"
-	"testing"
 )
 
 func TestCreateTreansfer(t *testing.T) {
@@ -24,16 +25,16 @@ func TestCreateTreansfer(t *testing.T) {
 			&types.ReceiveFromBridgeParam{
 				ChainId:   1,
 				ChainName: "bsc",
-				From:      "0x0000000000000",
-				To:        "0x0000000000000",
+				From:      "606288c605942f3c84a7794c0b3257b56487263c",
+				To:        "a929022c9107643515f5c777ce9a910f0d1e490c",
 				Amount:    new(big.Int).SetInt64(100),
 				TaskID:    new(big.Int).SetUint64(1),
 			},
 			&types.ReceiveFromBridgeParam{
 				ChainId:   2,
 				ChainName: "poly",
-				From:      "0x0000000000001",
-				To:        "0x0000000000001",
+				From:      "a929022c9107643515f5c777ce9a910f0d1e490c",
+				To:        "a929022c9107643515f5c777ce9a910f0d1e490c",
 				Amount:    new(big.Int).SetInt64(100),
 				TaskID:    new(big.Int).SetUint64(2),
 			},
@@ -46,5 +47,6 @@ func TestCreateTreansfer(t *testing.T) {
 		Base:     &types.Base{ID: 1},
 		Params:   string(data),
 	}
-	part_rebalance.CreateReceiveFromBridgeTask(task, dbtest)
+	//TODO param not enough
+	part_rebalance.CreateReceiveFromBridgeTask(task, dbtest, nil)
 }

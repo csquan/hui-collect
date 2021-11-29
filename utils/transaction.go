@@ -3,6 +3,8 @@ package utils
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/starslabhq/hermes-rebalance/types"
+	"math"
+	"math/big"
 	"strings"
 )
 
@@ -21,8 +23,43 @@ func InvestInput(param *types.InvestParam) (input []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("invest", param)
+	return abi.Pack("invest", param.Address, param.Token1Amounts, param.Token2Amounts)
 }
+
+func ApproveInput(param *types.ReceiveFromBridgeParam) (input []byte, err error) {
+	r := strings.NewReader(erc20abi)
+	abi, err := abi.JSON(r)
+	if err != nil {
+		return nil, err
+	}
+	return abi.Pack("approve", param.To, new(big.Int).SetInt64(math.MaxInt64))
+}
+
+
+const erc20abi = `[
+{
+        "constant":false,
+        "inputs":[
+            {
+                "name":"_spender",
+                "type":"address"
+            },
+            {
+                "name":"_value",
+                "type":"uint256"
+            }
+        ],
+        "name":"approve",
+        "outputs":[
+            {
+                "name":"",
+                "type":"bool"
+            }
+        ],
+        "payable":false,
+        "stateMutability":"nonpayable",
+        "type":"function"
+    }]`
 
 var content = `[
     {

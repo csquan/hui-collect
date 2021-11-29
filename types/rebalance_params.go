@@ -1,6 +1,9 @@
 package types
 
-import "math/big"
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"math/big"
+)
 
 type CrossBalanceItem struct {
 	FromChain    string `json:"from_chain"`
@@ -18,7 +21,9 @@ type ReceiveFromBridgeParam struct {
 	From      string
 	To        string //合约地址
 
-	Amount *big.Int
+	Erc20ContractAddr common.Address //erc20 token地址，用于授权
+
+	Amount *big.Int //链上精度值的amount，需要提前转换
 	TaskID *big.Int
 }
 type InvestParam struct {
@@ -27,7 +32,7 @@ type InvestParam struct {
 	From      string
 	To        string //合约地址
 
-	Address       []string
+	Address       []*common.Address
 	Token1Amounts []*big.Int
 	Token2Amounts []*big.Int
 }

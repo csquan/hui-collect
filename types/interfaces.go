@@ -4,6 +4,7 @@ import (
 	"github.com/go-xorm/xorm"
 )
 
+//go:generate mockgen -source=$GOFILE -destination=./mock/mock_db.go -package=mock
 type IReader interface {
 	//GetPartReBalanceTasks(state types.PartReBalanceState) ([]*types.PartReBalanceTask, error)
 
@@ -12,6 +13,9 @@ type IReader interface {
 	GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType TransactionType) ([]*TransactionTask, error)
 
 	GetOpenedTransactionTask() ([]*TransactionTask, error)
+	GetApprove(token, spender string) (*ApproveRecord, error)
+	//GetOrderID() (int, error)
+
 
 	GetOpenedCrossTasks() ([]*CrossTask, error)
 	GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*CrossTask, error)
@@ -25,8 +29,8 @@ type IWriter interface {
 
 	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error
-
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
+	SaveApprove(approve *ApproveRecord) error
 
 	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
 	//update cross task state
@@ -37,7 +41,6 @@ type IWriter interface {
 	SaveCrossSubTask(subTask *CrossSubTask) error
 	//update cross sub task state
 	UpdateCrossSubTaskState(id uint64, state int) error
-
 }
 
 type IDB interface {

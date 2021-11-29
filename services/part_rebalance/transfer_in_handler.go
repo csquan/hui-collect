@@ -37,12 +37,10 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 		if nextState == types.PartReBalanceInvest {
-			if nextState == types.PartReBalanceInvest {
-				execErr = CreateInvestTask(task, t.db)
-				if execErr != nil {
-					logrus.Errorf("create transaction task error:%v task:[%v]", execErr, task)
-					return
-				}
+			execErr = CreateInvestTask(task, t.db)
+			if execErr != nil {
+				logrus.Errorf("create transaction task error:%v task:[%v]", execErr, task)
+				return
 			}
 		}
 
@@ -84,9 +82,8 @@ func CreateInvestTask(task *types.PartReBalanceTask, db types.IDB) (err error) {
 			ChainName:       param.ChainName,
 			From:            param.From,
 			To:              param.To,
-			ContractAddress: param.To,
 			Params:          string(data),
-			InputData: string(inputData),
+			InputData:       string(inputData),
 		}
 		tasks = append(tasks, task)
 	}
