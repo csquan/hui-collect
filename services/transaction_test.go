@@ -3,12 +3,13 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"testing"
+
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/db"
 	"github.com/starslabhq/hermes-rebalance/services/part_rebalance"
 	"github.com/starslabhq/hermes-rebalance/types"
-	"math/big"
-	"testing"
 )
 
 func TestCreateTreansfer(t *testing.T) {
@@ -46,5 +47,6 @@ func TestCreateTreansfer(t *testing.T) {
 		Base:     &types.Base{ID: 1},
 		Params:   string(data),
 	}
-	part_rebalance.CreateReceiveFromBridgeTask(task, dbtest)
+	//TODO param not enough
+	part_rebalance.CreateReceiveFromBridgeTask(task, dbtest, nil)
 }
