@@ -197,7 +197,7 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 }
 
 func (c *CrossService) transferTaskState(taskId uint64, nextState types.CrossState) error {
-	return c.db.UpdateCrossTaskState(taskId, int(nextState))
+	return c.db.UpdateCrossTaskState(taskId, nextState)
 }
 
 func (c *CrossService) Run() error {
@@ -205,45 +205,50 @@ func (c *CrossService) Run() error {
 	if err != nil {
 		return fmt.Errorf("get cross tasks err:%v", err)
 	}
+
 	if len(tasks) == 0 {
 		logrus.Infof("no cross tasks")
 		return nil
 	}
 
 	for _, task := range tasks {
-		switch types.CrossState(task.State) {
+		switch task.State {
 		case types.ToCreateSubTask:
 			ok, err := c.addCrossSubTasks(task)
 			if err != nil {
 				logrus.Errorf("add subtasks err:%v,task:%v", err, task)
 				continue
-			} else if ok {
+			}
+
+			if ok {
 				err := c.transferTaskState(task.ID, types.SubTaskCreated)
 				if err != nil {
 					logrus.Errorf("update cross task state err:%v,task:%v", err, task)
 				}
 			}
 		case types.SubTaskCreated:
-			subTasks, err := c.db.GetOpenedCrossSubTasks(task.ID)
+			subTasks, err := c.db.GetCrossSubTasks(task.ID)
 			if err != nil {
+				logrus.Errorf("get cross sub tasks error: %v", err)
 				continue
-			} else {
-				var sucCnt int
-				for _, subT := range subTasks {
-					if subT.State == int(types.Crossed) {
-						sucCnt++
-					}
-				}
-				if sucCnt == len(subTasks) {
-					err = c.transferTaskState(task.ID, types.TaskSuc)
-					if err != nil {
-						continue
-					}
+			}
+
+			var sucCnt int
+			for _, subT := range subTasks {
+				if subT.State == int(types.Crossed) {
+					sucCnt++
 				}
 			}
 
+			logrus.Infof("cross task: %v progress:%v/%v", task, sucCnt, len(subTasks))
+			if sucCnt == len(subTasks) {
+				err = c.transferTaskState(task.ID, types.TaskSuc)
+				if err != nil {
+					continue
+				}
+			}
 		default:
-			return fmt.Errorf("state not define taskId:%d", task.ID)
+			return fmt.Errorf("state:[%v] not defined taskId:%d", task.State, task.ID)
 		}
 	}
 	return nil
