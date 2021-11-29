@@ -13,8 +13,6 @@ type IReader interface {
 
 	GetOpenedTransactionTask() ([]*TransactionTask, error)
 
-	GetOrderID() (int, error)
-
 	GetOpenedCrossTasks() ([]*CrossTask, error)
 	GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*CrossTask, error)
 	GetCrossSubTasks(crossTaskId uint64) ([]*CrossSubTask, error)

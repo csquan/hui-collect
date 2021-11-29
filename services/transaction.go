@@ -136,12 +136,7 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 }
 
 func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
-	input := task.InputData
-	quantity := "0"
-	orderID := task.OrderId
-	to := task.To
-
-	vRet, err := signer.ValidatorTx(input, to, quantity, orderID)
+	vRet, err := signer.ValidatorTx(task)
 	if err != nil {
 		return err
 
