@@ -2,6 +2,7 @@ package part_rebalance
 
 import (
 	"fmt"
+	"github.com/starslabhq/hermes-rebalance/utils"
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
@@ -28,8 +29,8 @@ func NewPartReBalanceService(db types.IDB, conf *config.Config) (p *PartReBalanc
 				db: db,
 			},
 			types.PartReBalanceCross: &crossHandler{
-				db: db,
-				clientMap: conf.ClientMap,
+				db:        db,
+				clientMap: utils.ClientMap,
 			},
 			types.PartReBalanceTransferIn: &transferInHandler{
 				db: db,

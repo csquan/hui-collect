@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-xorm/xorm"
@@ -157,14 +158,45 @@ func (c *crossHandler) SetNonceAndGasPrice(tasks []*types.TransactionTask) (resu
 }
 
 func (c *crossHandler) CreateApproveTask(taskID uint64, param *types.ReceiveFromBridgeParam) (task *types.TransactionTask, err error) {
-	var approve *types.ApproveRecord
-	if approve, err = c.db.GetApprove(common.Address.String(param.Erc20ContractAddr), param.To); err != nil {
-		logrus.Errorf("GetApprove err:%v", err)
+	client, ok := c.clientMap[param.ChainName]
+	if !ok {
+		err = fmt.Errorf("rpc client for chain:[%v] not found", param.ChainName)
 		return
 	}
-	if approve != nil {
+
+	data, err := utils.AllowanceInput(param)
+	if err != nil {
+		err = fmt.Errorf("encode allowance input error:%v", err)
+		return
+	}
+
+	outBytes, err := client.CallContract(context.Background(), ethereum.CallMsg{
+		To:   &param.Erc20ContractAddr,
+		Data: data,
+	}, nil)
+	if err != nil {
+		err = fmt.Errorf("get allowance error:%v", err)
+		return
+	}
+
+	out, err := utils.AllowanceOutput(outBytes)
+	if err != nil {
+		err = fmt.Errorf("decode allowance error:%v", err)
+		return
+	}
+
+	// do not need to approve
+	if out[0].(*big.Int).Cmp(param.Amount) >= 0 {
 		return nil, nil
 	}
+
+	//if approve, err = c.db.GetApprove(common.Address.String(param.Erc20ContractAddr), param.To); err != nil {
+	//	logrus.Errorf("GetApprove err:%v", err)
+	//	return
+	//}
+	//if approve != nil {
+	//	return nil, nil
+	//}
 	inputData, err := utils.ApproveInput(param)
 	if err != nil {
 		logrus.Errorf("CreateApproveTask err:%v", err)
