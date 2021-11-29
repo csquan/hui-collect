@@ -2,6 +2,7 @@ package utils
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"math"
 	"math/big"
@@ -32,7 +33,7 @@ func ApproveInput(param *types.ReceiveFromBridgeParam) (input []byte, err error)
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("approve", param.To, new(big.Int).SetInt64(math.MaxInt64))
+	return abi.Pack("approve", common.HexToAddress(param.To), new(big.Int).SetInt64(math.MaxInt64))
 }
 
 
