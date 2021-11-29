@@ -72,7 +72,7 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	}
 	input := task.InputData
 	decimal := 18
-	from := task.From //这个是签名机固定的地址？？
+	from := task.From 
 	to := task.To
 	GasLimit := "2000000"
 	GasPrice := "15000000000"
@@ -85,18 +85,20 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	if err != nil {
 		return err
 	} else {
-		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-			task.State = int(types.TxAuditState)
-			task.Cipher = signRet.Data.Extra.Cipher
-			task.EncryptData = signRet.Data.EncryptData
-			task.Hash = signRet.Data.Extra.TxHash
-			execErr = t.db.UpdateTransactionTask(session, task)
-			if execErr != nil {
-				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
+		if  signRet.Result == true{
+			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+				task.State = int(types.TxAuditState)
+				task.Cipher = signRet.Data.Extra.Cipher
+				task.EncryptData = signRet.Data.EncryptData
+				task.Hash = signRet.Data.Extra.TxHash
+				execErr = t.db.UpdateTransactionTask(session, task)
+				if execErr != nil {
+					logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
+					return
+				}
 				return
-			}
-			return
-		})
+			})
+		}
 	}
 	return nil
 }
@@ -118,15 +120,17 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	if err != nil {
 		return err
 	} else {
-		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-			task.State = int(types.TxValidatorState)
-			execErr = t.db.UpdateTransactionTask(session, task)
-			if execErr != nil {
-				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
+		if signer.Success == true{
+			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+				task.State = int(types.TxValidatorState)
+				execErr = t.db.UpdateTransactionTask(session, task)
+				if execErr != nil {
+					logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
+					return
+				}
 				return
-			}
-			return
-		})
+			})
+		}
 	}
 	return nil
 }
@@ -138,21 +142,22 @@ func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 	to := task.To
 
 	vRet, err := signer.ValidatorTx(input, to, quantity, orderID)
-	//TODO 验证返回值  vRet.OK
 	if err != nil {
 		return err
 
 	} else {
-		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-			task.State = int(types.TxSignedState)
-			task.SignData = vRet.RawTx //TODO 是不是应该给Sign
-			execErr = t.db.UpdateTransactionTask(session, task)
-			if execErr != nil {
-				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
+		if vRet.OK == true{
+			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+				task.State = int(types.TxSignedState)
+				task.SignData = vRet.RawTx
+				execErr = t.db.UpdateTransactionTask(session, task)
+				if execErr != nil {
+					logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
+					return
+				}
 				return
-			}
-			return
-		})
+			})
+		}
 	}
 	return nil
 }
