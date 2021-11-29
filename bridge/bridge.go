@@ -365,7 +365,7 @@ func (b *Bridge) GetAccountId(addr string, chainId int) (uint64, bool) {
 	k := fmt.Sprintf("%d/%s", chainId, addr)
 	acoountId, ok := b.accounts[k]
 	if !ok {
-		logrus.Warnf("chainId not exist chainId:%s,accounts:%v", chainId, b.accounts)
+		logrus.Warnf("chainId not exist chainId:%d,accounts:%v", chainId, b.accounts)
 		return 0, false
 	}
 	return acoountId, true
@@ -383,7 +383,7 @@ func (b *Bridge) loadChains() ([]int, error) {
 	}
 	var ids []int
 	for _, chain := range chains {
-		logrus.Infof("chains name:%s,id:%s", chain.Name, chain.ChainId)
+		logrus.Infof("chains name:%s,id:%d", chain.Name, chain.ChainId)
 		b.chains[chain.Name] = chain.ChainId
 		ids = append(ids, chain.ChainId)
 	}
@@ -396,7 +396,7 @@ func (b *Bridge) loadCurrencies() error {
 		return err
 	}
 	for _, c := range cs {
-		logrus.Infof("currency name:%s,id:%s", c.Currency, c.CurrencyId)
+		logrus.Infof("currency name:%s,id:%d", c.Currency, c.CurrencyId)
 		b.currencies[c.Currency] = int(c.CurrencyId)
 	}
 	return nil

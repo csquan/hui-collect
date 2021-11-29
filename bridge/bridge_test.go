@@ -43,11 +43,10 @@ func TestAddAccount(t *testing.T) {
 	a := &AccountAdd{
 		AccounType: 2,
 		ChainId:    128,
-		Account:    strings.ToLower("0x70d1B6F6536Bb31ecC375eA600089C3631A51Ff5"),
+		IsMaster:   0,
+		Account:    strings.ToLower("0x9a0d58f60dba36d495c0ea8d1b3f8c82b03c3f8d"),
 	}
-	if b == nil {
-		panic("---")
-	}
+
 	id, err := b.AddAccount(a)
 	if err != nil {
 		t.Fatalf("add account err:%v", err)
