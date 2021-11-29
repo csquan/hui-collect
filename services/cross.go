@@ -25,7 +25,9 @@ func NewCrossService(db types.IDB, bCli bridge.IBridge, c *config.Config) *Cross
 	}
 }
 
-func (c *CrossService) estimateCrossTask(fromAccountId, toAccountId uint64, fromCurrencyId, toCurrencyId int, amount string) (total, single string, err error) {
+func (c *CrossService) estimateCrossTask(fromAccountId, toAccountId uint64,
+	fromCurrencyId, toCurrencyId int,
+	amount string) (total, single, minAmount string, err error) {
 	btask := &bridge.Task{
 		FromAccountId:  fromAccountId,
 		ToAccountId:    toAccountId,
@@ -35,9 +37,9 @@ func (c *CrossService) estimateCrossTask(fromAccountId, toAccountId uint64, from
 	}
 	estimateResult, err := c.bridgeCli.EstimateTask(btask)
 	if err != nil {
-		return "0", "0", err
+		return "0", "0", "", err
 	}
-	return estimateResult.TotalQuota, estimateResult.SingleQuota, nil
+	return estimateResult.TotalQuota, estimateResult.SingleQuota, estimateResult.MinAmount, nil
 }
 
 func mustStrToDecimal(num string) decimal.Decimal {
@@ -129,16 +131,24 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 			// if totalAmount < amount {
 			if totalAmount.LessThan(amount) {
 				amountLeft := amount.Sub(totalAmount)
-				totalStr, singleStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
+				totalStr, singleStr, minStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
 					bridgeId.fromCurrencyId, bridgeId.toCurrencyId, amountLeft.String())
 				if err != nil {
 					return false, fmt.Errorf("estimate task err:%v,parent:%d", err, parent.ID)
 				}
+				if singleStr == "" || singleStr == "0" {
+					return false, fmt.Errorf("singleQuota 0")
+				}
 				total := mustStrToDecimal(totalStr)
 				single := mustStrToDecimal(singleStr)
+				minAmount := mustStrToDecimal(minStr)
 
 				if total.LessThan(amountLeft) {
 					logrus.Fatalf("unexpectd esimate total parentId:%d,total:%d,amount:%d", parent.ID, total, amountLeft)
+				}
+
+				if amountLeft.LessThan(minAmount) {
+					return false, fmt.Errorf("amountLeft less than min")
 				}
 
 				amountLeft = decimal.Min(amountLeft, single)
@@ -166,13 +176,22 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 			logrus.Fatalf("unexpected task state:%d,sub_task id:%d", latestSub.State, latestSub.ID)
 		}
 	} else { // the first sub task
-		totalStr, singleStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
+		totalStr, singleStr, minAmountStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
 			bridgeId.fromCurrencyId, bridgeId.toCurrencyId, amount.String())
 		if err != nil {
 			return false, err
 		}
+		if singleStr == "" || singleStr == "0" {
+			return false, fmt.Errorf("singleQuota 0")
+		}
 		total := mustStrToDecimal(totalStr)
 		signal := mustStrToDecimal(singleStr)
+		minAmount := mustStrToDecimal(minAmountStr)
+
+		if amount.LessThan(minAmount) {
+			return false, fmt.Errorf("amount less than minAmount")
+		}
+
 		if amount.LessThanOrEqual(total) {
 			amountCur := decimal.Min(amount, signal)
 			subTask := &types.CrossSubTask{
@@ -254,4 +273,23 @@ func (c *CrossService) Run() error {
 
 func (c CrossService) Name() string {
 	return "cross"
+}
+
+func getAmount(min, max, amount uint64) (uint64, error) {
+	if amount <= max && amount >= min {
+		return amount, nil
+	}
+	if amount < min {
+		return 0, fmt.Errorf("amount less than min")
+	}
+	if amount-max > min {
+		return max, nil
+	} else {
+		if amount-min >= min {
+			return amount - min, nil
+		} else {
+			return amount - min, fmt.Errorf("left min")
+		}
+	}
+
 }

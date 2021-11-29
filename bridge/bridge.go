@@ -40,6 +40,7 @@ func NewBridge(url, ak, sk string, rpcTimeout time.Duration) (*Bridge, error) {
 		cli:        cli,
 		chains:     make(map[string]int),
 		currencies: make(map[string]int),
+		accounts:   make(map[string]uint64),
 	}
 	chainIds, err := b.loadChains()
 	if err != nil {
@@ -53,6 +54,12 @@ func NewBridge(url, ak, sk string, rpcTimeout time.Duration) (*Bridge, error) {
 	if err != nil {
 		return nil, err
 	}
+	chains, _ := json.Marshal(b.chains)
+	currencies, _ := json.Marshal(b.currencies)
+	accounts, _ := json.Marshal(b.accounts)
+	logrus.Infof("chains:%s", chains)
+	logrus.Infof("currencies:%s", currencies)
+	logrus.Infof("accounts:%s", accounts)
 	return b, nil
 }
 
@@ -195,7 +202,7 @@ func (b *Bridge) GetAccountList(chainId int) ([]*Account, error) {
 	now := time.Now().Unix()
 	form.Add("timestamp", fmt.Sprintf("%d", now))
 	form.Add("chainId", fmt.Sprintf("%d", chainId))
-	params := []string{"method", "timestamp", "type", "chainId"}
+	params := []string{"method", "timestamp", "chainId"}
 	sort.Slice(params, func(i, j int) bool {
 		return params[i] > params[j]
 	})
@@ -287,7 +294,6 @@ func (b *Bridge) EstimateTask(t *Task) (*EstimateTaskResult, error) {
 	form.Add("fromCurrencyId", fmt.Sprintf("%d", t.FromCurrencyId))
 	form.Add("toCurrencyId", fmt.Sprintf("%d", t.ToCurrencyId))
 	params := []string{"method", "timestamp", "fromAccountId", "toAccountId", "fromCurrencyId", "toCurrencyId"}
-
 	sort.Slice(params, func(i, j int) bool {
 		return params[i] > params[j]
 	})
@@ -295,7 +301,7 @@ func (b *Bridge) EstimateTask(t *Task) (*EstimateTaskResult, error) {
 	for _, p := range params {
 		rawStr += fmt.Sprintf("&%s=%s", p, form.Get(p))
 	}
-	rawStr += "secret_key=%s" + b.secretKey
+	rawStr += "&secret_key=" + b.secretKey
 	sign := md5SignHex(rawStr)
 	req, err := http.NewRequest("POST", b.url, strings.NewReader(form.Encode()))
 	if err != nil {
@@ -314,7 +320,7 @@ func (b *Bridge) EstimateTask(t *Task) (*EstimateTaskResult, error) {
 		return nil, err
 	}
 	defer res.Body.Close()
-
+	log.Printf("estimate ret:%s", body)
 	ret := &EstimateTaskRet{}
 	err = json.Unmarshal(body, ret)
 	if err != nil {

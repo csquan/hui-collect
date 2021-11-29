@@ -48,10 +48,12 @@ func TestCrossRun(t *testing.T) {
 	bridgeCli.EXPECT().EstimateTask(gomock.Any()).Return(&bridge.EstimateTaskResult{
 		TotalQuota:  "1000",
 		SingleQuota: "50",
+		MinAmount:   "0",
 	}, nil)
 	bridgeCli.EXPECT().EstimateTask(gomock.Any()).Return(&bridge.EstimateTaskResult{
 		TotalQuota:  "1000",
 		SingleQuota: "50",
+		MinAmount:   "0",
 	}, nil)
 	// query task status
 	bridgeCli.EXPECT().GetTaskDetail(taskId1).Return(&bridge.TaskDetailResult{
