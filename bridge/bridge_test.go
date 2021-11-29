@@ -95,3 +95,15 @@ func TestEstimateTask(t *testing.T) {
 	})
 	t.Logf("estimate ret:%v,err:%v", ret, err)
 }
+
+func TestAddTask(t *testing.T) {
+	ret, err := b.AddTask(&Task{
+		TaskNo:         0,
+		FromAccountId:  80,
+		ToAccountId:    76,
+		FromCurrencyId: 1,
+		ToCurrencyId:   1,
+		Amount:         "0.1",
+	})
+	t.Logf("add task ret:%v,err:%v", ret, err)
+}

@@ -257,7 +257,7 @@ func (b *Bridge) AddTask(t *Task) (uint64, error) {
 	for _, p := range params {
 		rawStr += fmt.Sprintf("&%s=%s", p, form.Get(p))
 	}
-	rawStr += "secret_key=%s" + b.secretKey
+	rawStr += "&secret_key=" + b.secretKey
 	sign := md5SignHex(rawStr)
 	req, err := http.NewRequest("POST", b.url, strings.NewReader(form.Encode()))
 	if err != nil {
@@ -273,15 +273,24 @@ func (b *Bridge) AddTask(t *Task) (uint64, error) {
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
+
 	if err != nil {
 		return 0, err
 	}
+	log.Printf("add task ret:%s", body)
 	ret := &TaskAddRet{}
 	err = json.Unmarshal(body, ret)
 	if err != nil {
 		return 0, err
 	}
-	return ret.Data.TaskId, nil
+	if ret.Code != 0 {
+		return 0, fmt.Errorf("code ret:%s", body)
+	}
+	if ret.Data != nil {
+		return ret.Data.TaskId, nil
+	} else {
+		return 0, fmt.Errorf("data empty")
+	}
 }
 
 func (b *Bridge) EstimateTask(t *Task) (*EstimateTaskResult, error) {
