@@ -101,7 +101,7 @@ type TransactionTask struct {
 	Cipher          string `xorm:"f_cipher"`
 	EncryptData     string `xorm:"f_encrypt_data"`
 	SignData        string `xorm:"f_signed_data"`
-	OrderId         int    `xorm:"f_order_id"`
+	OrderId         int64  `xorm:"f_order_id"`
 	Hash            string `xorm:"f_hash"`
 }
 

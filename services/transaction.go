@@ -106,14 +106,7 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	input := task.InputData
 	quantity := "0"
 	receiver := task.To
-	orderID := int(time.Now().Unix())
-
-
-	defer utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		task.OrderId = orderID
-		t.db.UpdateTransactionTask(session, task)  //只在这里更新
-		return
-	})
+	orderID := time.Now().UnixNano() / 1e6    //毫秒
 
 	auditRet, err := signer.AuditTx(input, receiver, quantity, orderID)
 	if err != nil {
@@ -122,6 +115,7 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 		if auditRet.Success == true{
 			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 				task.State = int(types.TxValidatorState)
+				task.OrderId = orderID
 				execErr = t.db.UpdateTransactionTask(session, task)
 				if execErr != nil {
 					logrus.Errorf("update part audit task error:%v task:[%v]", err, task)

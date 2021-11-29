@@ -54,9 +54,7 @@ func Sign(request *http.Request, secID string, secrKey string) {
 	prepareRequestV2(request, secID)
 
 	stringToSign := stringToSignV2(request)
-	//fmt.Println("before signatureV2:\n", stringToSign)
 	signature := signatureV2(stringToSign, secrKey)
-	//fmt.Println("after signatureV2:\n", signature)
 
 	values := url.Values{}
 	values.Set("Signature", signature)
@@ -194,7 +192,7 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 	return result, nil
 }
 
-func AuditTx(input string,to string,quantity string,orderID int) (AuditResponse, error)  {
+func AuditTx(input string,to string,quantity string,orderID int64) (AuditResponse, error)  {
 	var bus BusData
 	bus.Chain = chain
 	bus.Quantity = quantity //保持和签名请求中的一致
@@ -212,8 +210,7 @@ func AuditTx(input string,to string,quantity string,orderID int) (AuditResponse,
 	if err != nil {
 		return resp,err
 	}
-	fmt.Println(resp)
-
+	logrus.Info(resp)
 	return resp,nil
 }
 
