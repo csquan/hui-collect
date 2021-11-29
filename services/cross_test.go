@@ -35,8 +35,8 @@ func TestCrossRun(t *testing.T) {
 	bridgeCli := mock.NewMockIBridge(ctrl)
 	var taskId1 uint64 = 1
 	var taskId2 uint64 = 2
-	bridgeCli.EXPECT().AddTask(gomock.Any()).Return(taskId1, nil)
-	bridgeCli.EXPECT().AddTask(gomock.Any()).Return(taskId2, nil)
+	bridgeCli.EXPECT().AddTask(gomock.Any()).Return(taskId1, nil).AnyTimes()
+	bridgeCli.EXPECT().AddTask(gomock.Any()).Return(taskId2, nil).AnyTimes()
 
 	//id
 	bridgeCli.EXPECT().GetChainId(gomock.Any()).Return(1, true).AnyTimes()
@@ -54,14 +54,14 @@ func TestCrossRun(t *testing.T) {
 		SingleQuota: "50",
 	}, nil)
 	// query task status
-	bridgeCli.EXPECT().GetTaskDetail(1).Return(&bridge.TaskDetailResult{
-		TaskId: 1,
+	bridgeCli.EXPECT().GetTaskDetail(taskId1).Return(&bridge.TaskDetailResult{
+		TaskId: taskId1,
 		Status: 2,
-	}, nil)
-	bridgeCli.EXPECT().GetTaskDetail(1).Return(&bridge.TaskDetailResult{
-		TaskId: 2,
+	}, nil).AnyTimes()
+	bridgeCli.EXPECT().GetTaskDetail(taskId2).Return(&bridge.TaskDetailResult{
+		TaskId: taskId2,
 		Status: 2,
-	}, nil)
+	}, nil).AnyTimes()
 
 	c := NewCrossService(dbtest, bridgeCli, nil)
 

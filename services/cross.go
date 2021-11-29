@@ -133,19 +133,21 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 				amountLeft := amount.Sub(totalAmount)
 				totalStr, singleStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
 					bridgeId.fromCurrencyId, bridgeId.toCurrencyId, amountLeft.String())
+				if err != nil {
+					return false, fmt.Errorf("estimate task err:%v,parent:%d", err, parent.ID)
+				}
 				total := mustStrToDecimal(totalStr)
 				single := mustStrToDecimal(singleStr)
-				if true {
+
+				if total.LessThan(amountLeft) {
 					logrus.Fatalf("unexpectd esimate total parentId:%d,total:%d,amount:%d", parent.ID, total, amountLeft)
 				}
-				if err != nil {
-					return false, err
-				}
+
 				amountLeft = decimal.Min(amountLeft, single)
 				subTask := &types.CrossSubTask{
 					ParentTaskId: parent.ID,
 					TaskNo:       latestSub.TaskNo + 1,
-					Amount:       fmt.Sprintf("%d", amountLeft),
+					Amount:       amountLeft.String(),
 					State:        int(types.ToCross),
 				}
 				err = c.db.SaveCrossSubTask(subTask)
