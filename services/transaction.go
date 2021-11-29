@@ -72,7 +72,7 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	}
 	input := task.InputData
 	decimal := 18
-	from := task.From 
+	from := task.From
 	to := task.To
 	GasLimit := "2000000"
 	GasPrice := "15000000000"
@@ -116,11 +116,11 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 		return
 	})
 
-	_, err = signer.AuditTx(input, receiver, quantity, orderID)
+	auditRet, err := signer.AuditTx(input, receiver, quantity, orderID)
 	if err != nil {
 		return err
 	} else {
-		if signer.Success == true{
+		if auditRet.Success == true{
 			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 				task.State = int(types.TxValidatorState)
 				execErr = t.db.UpdateTransactionTask(session, task)
