@@ -13,11 +13,11 @@ import (
 
 type CrossService struct {
 	db        types.IDB
-	bridgeCli *bridge.Bridge
+	bridgeCli bridge.IBridge
 	config    *config.Config
 }
 
-func NewCrossService(db types.IDB, bCli *bridge.Bridge, c *config.Config) *CrossService {
+func NewCrossService(db types.IDB, bCli bridge.IBridge, c *config.Config) *CrossService {
 	return &CrossService{
 		db:        db,
 		bridgeCli: bCli,
@@ -57,7 +57,7 @@ type bridgeId struct {
 	toCurrencyId   int
 }
 
-func getBridgeID(bridgeCli *bridge.Bridge, task *types.CrossTask) (*bridgeId, error) {
+func getBridgeID(bridgeCli bridge.IBridge, task *types.CrossTask) (*bridgeId, error) {
 	fromChainId, ok := bridgeCli.GetChainId(task.ChainFrom)
 	if !ok {
 		return nil, fmt.Errorf("fromChainId not found")
@@ -109,7 +109,7 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 	}
 
 	subTasks, _ := c.db.GetCrossSubTasks(parent.ID)
-
+	logrus.Infof("get cross sub tasks size:%d,parent:%d", len(subTasks), parent.ID)
 	if len(subTasks) > 0 {
 		sort.Slice(subTasks, func(i, j int) bool {
 			return subTasks[i].TaskNo < subTasks[j].TaskNo
@@ -205,6 +205,7 @@ func (c *CrossService) Run() error {
 	}
 	if len(tasks) == 0 {
 		logrus.Infof("no cross tasks")
+		return nil
 	}
 
 	for _, task := range tasks {
@@ -212,7 +213,7 @@ func (c *CrossService) Run() error {
 		case types.ToCreateSubTask:
 			ok, err := c.addCrossSubTasks(task)
 			if err != nil {
-				logrus.Errorf("add subtasks err:v%,task:%v", err, task)
+				logrus.Errorf("add subtasks err:%v,task:%v", err, task)
 				continue
 			} else if ok {
 				err := c.transferTaskState(task.ID, types.SubTaskCreated)

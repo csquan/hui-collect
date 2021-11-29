@@ -9,11 +9,11 @@ import (
 
 type CrossSubTaskService struct {
 	db        types.IDB
-	bridgeCli *bridge.Bridge
+	bridgeCli bridge.IBridge
 	config    *config.Config
 }
 
-func NewCrossSubTaskService(db types.IDB, bCli *bridge.Bridge, c *config.Config) *CrossSubTaskService {
+func NewCrossSubTaskService(db types.IDB, bCli bridge.IBridge, c *config.Config) *CrossSubTaskService {
 	return &CrossSubTaskService{
 		db:        db,
 		bridgeCli: bCli,

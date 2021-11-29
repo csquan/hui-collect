@@ -4,6 +4,7 @@ import (
 	"github.com/go-xorm/xorm"
 )
 
+//go:generate mockgen -source=$GOFILE -destination=./mock/mock_db.go -package=mock
 type IReader interface {
 	//GetPartReBalanceTasks(state types.PartReBalanceState) ([]*types.PartReBalanceTask, error)
 
@@ -40,7 +41,6 @@ type IWriter interface {
 	SaveCrossSubTask(subTask *CrossSubTask) error
 	//update cross sub task state
 	UpdateCrossSubTaskState(id uint64, state int) error
-
 }
 
 type IDB interface {

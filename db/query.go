@@ -30,10 +30,9 @@ func (m *Mysql) GetOpenedTransactionTask() (tasks []*types.TransactionTask, err 
 	return
 }
 
-
 func (m *Mysql) GetOpenedCrossTasks() ([]*types.CrossTask, error) {
 	tasks := make([]*types.CrossTask, 0) //state:0等待创建子任务
-	err := m.engine.Where("state = ?", 0).Find(&tasks)
+	err := m.engine.Table("t_cross_task").Where("f_state = ?", 0).Find(&tasks)
 	if err != nil {
 		return nil, err
 	}
@@ -49,13 +48,18 @@ func (m *Mysql) GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*types.CrossTa
 	return tasks, err
 }
 
-func (*Mysql) GetCrossSubTasks(parentTaskId uint64) ([]*types.CrossSubTask, error) {
-	return nil, nil
+func (m *Mysql) GetCrossSubTasks(parentTaskId uint64) ([]*types.CrossSubTask, error) {
+	tasks := make([]*types.CrossSubTask, 0)
+	err := m.engine.Table("t_cross_sub_task").Where("f_parent_id = ?", parentTaskId).Find(&tasks)
+	if err != nil {
+		return nil, err
+	}
+	return tasks, err
 }
 
 func (m *Mysql) GetOpenedCrossSubTasks(parentTaskId uint64) ([]*types.CrossSubTask, error) {
 	tasks := make([]*types.CrossSubTask, 0)
-	err := m.engine.Where("parent_id = ? and state != ?", parentTaskId, 2).Find(&tasks) //state:2 跨链任务完成
+	err := m.engine.Where("f_parent_id = ? and f_state != ?", parentTaskId, 2).Find(&tasks) //state:2 跨链任务完成
 	if err != nil {
 		return nil, err
 	}

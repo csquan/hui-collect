@@ -34,7 +34,9 @@ const (
 const (
 	ToCreateSubTask CrossState = iota
 	SubTaskCreated
-	TaskSuc               //all sub task suc
+	TaskSuc //all sub task suc
+)
+const (
 	ToCross CrossSubState = iota
 	Crossing
 	Crossed
@@ -116,28 +118,28 @@ func (t *TransactionTask) TableName() string {
 
 type CrossTask struct {
 	*Base         `xorm:"extends"`
-	RebalanceId   uint64 `xorm:"rebalance_id"`
-	ChainFrom     string `xorm:"chain_from"`
-	ChainFromAddr string `xorm:"chain_from_addr"`
-	ChainTo       string `xorm:"chain_to"`
-	ChainToAddr   string `xorm:"chain_to_addr"`
-	CurrencyFrom  string `xorm:"currency_from"`
-	CurrencyTo    string `xorm:"currency_to"`
-	Amount        string `xorm:"amount"`
-	State         int    `xorm:"state"`
+	RebalanceId   uint64 `xorm:"f_rebalance_id"`
+	ChainFrom     string `xorm:"f_chain_from"`
+	ChainFromAddr string `xorm:"f_chain_from_addr"`
+	ChainTo       string `xorm:"f_chain_to"`
+	ChainToAddr   string `xorm:"f_chain_to_addr"`
+	CurrencyFrom  string `xorm:"f_currency_from"`
+	CurrencyTo    string `xorm:"f_currency_to"`
+	Amount        string `xorm:"f_amount"`
+	State         int    `xorm:"f_state"`
 }
 
 type CrossSubTask struct {
 	*Base        `xorm:"extends"`
-	TaskNo       uint64 `xorm:"task_no"`
-	BridgeTaskId uint64 `xorm:"bridge_task_id"` //跨链桥task_id
-	ParentTaskId uint64 `xorm:"parent_id"`      //父任务id
+	TaskNo       uint64 `xorm:"f_task_no"`
+	BridgeTaskId uint64 `xorm:"f_bridge_task_id"` //跨链桥task_id
+	ParentTaskId uint64 `xorm:"f_parent_id"`      //父任务id
 	// ChainFrom    string
 	// ChainTo      string
 	// CurrencyFrom string
 	// CurrencyTo   string
-	Amount string `xorm:"amount"`
-	State  int    `xorm:"state"`
+	Amount string `xorm:"f_amount"`
+	State  int    `xorm:"f_state"`
 }
 
 type ApproveRecord struct {
