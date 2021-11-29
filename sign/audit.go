@@ -2,13 +2,17 @@ package sign
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -44,6 +48,74 @@ type AuditResponse struct {
 	Message string `json:"message"`
 	Success bool `json:"success"`
 }
+
+// Sign ...
+func Sign(request *http.Request, secID string, secrKey string) {
+	prepareRequestV2(request, secID)
+
+	stringToSign := stringToSignV2(request)
+	//fmt.Println("before signatureV2:\n", stringToSign)
+	signature := signatureV2(stringToSign, secrKey)
+	//fmt.Println("after signatureV2:\n", signature)
+
+	values := url.Values{}
+	values.Set("Signature", signature)
+
+	augmentRequestQuery(request, values)
+}
+
+func signatureV2(strToSign string, keys string) string {
+	secKey := []byte(keys)
+	h := hmac.New(sha256.New, secKey)
+	_, _ = h.Write([]byte(strToSign))
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
+}
+
+func stringToSignV2(request *http.Request) string {
+	var host = strings.ToLower(request.URL.Host)
+	hosts := strings.Split(host, ":") // 去掉端口号
+	str := request.Method + "\n"
+	str += hosts[0] + "\n"
+	str += request.URL.Path + "\n"
+	str += canonicalQueryStringV2(request)
+	return str
+}
+
+func canonicalQueryStringV2(request *http.Request) string {
+	return request.URL.RawQuery
+}
+
+func prepareRequestV2(request *http.Request, secID string) *http.Request {
+	values := url.Values{}
+	values.Set("AWSAccessKeyId", secID)
+	values.Set("SignatureVersion", "2")
+	values.Set("SignatureMethod", "HmacSHA256")
+	values.Set("Timestamp", timestampV2())
+
+	augmentRequestQuery(request, values)
+
+	if request.URL.Path == "" {
+		request.URL.Path += "/"
+	}
+
+	return request
+}
+
+func timestampV2() string {
+	return time.Now().UTC().Format(timeFormatV2)
+}
+
+func augmentRequestQuery(request *http.Request, values url.Values) {
+	for key, array := range request.URL.Query() {
+		for _, value := range array {
+			values.Set(key, value)
+		}
+	}
+
+	request.URL.RawQuery = values.Encode()
+}
+
+const timeFormatV2 = "2006-01-02T15:04:05"
 
 func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 	//init the transport client
@@ -136,7 +208,6 @@ func AuditTx(input string,to string,quantity string,orderID int) (AuditResponse,
 	AuditInput.AuReq.BusId = fmt.Sprintf("%d", orderID)  //ID保持和validator中的id一样,确保每次调用增1
 	AuditInput.AuReq.BusData = bus
 	AuditInput.AuReq.Result = 1 //推荐值，不修改
-	//TODO 检验返回结果 resp.Success
 	resp, err := PostAuditInfo(AuditInput.AuReq, appId)
 	if err != nil {
 		return resp,err

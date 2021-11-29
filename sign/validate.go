@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/types"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -241,15 +242,14 @@ func ValidatorInfo() (*VaResp, error) {
 }
 
 //3.send to validator
-func ValidatorTx(input string,to string,quantity string,orderID int) (vaResp *VaResp, err error) {
+func ValidatorTx(task *types.TransactionTask) (vaResp *VaResp, err error) {
 	var vreq ValidReq
-	vreq.Id = orderID
+	vreq.Id = task.OrderId
 	vreq.Platform = platform
 	vreq.Chain = chain
 
-	//todo：增加db读取
-	//vreq.Encrypt =      //从db中获取该交易的SignRetData.Data.Encryption
-	//vreq.Cipherkey =    //从db中获取该交易的SignRetData.Data.Extra.Cipher
+	vreq.EncryptData = task.EncryptData     //从db中获取该交易的SignRetData.Data.Encryption
+	vreq.CipherKey = task.Cipher  //从db中获取该交易的SignRetData.Data.Extra.Cipher
 
 	resp, err := Validator(vreq, appId)
 	if err != nil{

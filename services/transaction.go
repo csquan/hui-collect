@@ -77,7 +77,6 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	receiver := task.To //和to一致
 
 	signRet, err := signer.SignTx(input, decimal, int(nonce), from, to, GasLimit, GasPrice, Amount, quantity, receiver)
-	//TODO 结果验证 signRet.Result
 	if err != nil {
 		return err
 	} else {
@@ -131,12 +130,7 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 }
 
 func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
-	input := task.InputData
-	quantity := "0"
-	orderID := task.OrderId
-	to := task.To
-
-	vRet, err := signer.ValidatorTx(input, to, quantity, orderID)
+	vRet, err := signer.ValidatorTx(task)
 	if err != nil {
 		return err
 

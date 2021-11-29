@@ -97,7 +97,7 @@ type TransactionTask struct {
 	ChainId   int    `xorm:"f_chain_id"`
 	ChainName string `xorm:"f_chain_name"`
 	Params    string `xorm:"f_params"`
-	//Decimal         int    `xorm:"f_decimal"`
+	//Decimal         int    `xorm:"f_decimal"` //todo:之后需不需要单独抽个参数？
 	From            string `xorm:"f_from"`
 	To              string `xorm:"f_to"`
 	ContractAddress string `xorm:"f_contract_address"` //当交易类型为授权时，此字段保存spender
