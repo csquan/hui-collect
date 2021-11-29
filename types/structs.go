@@ -91,12 +91,13 @@ func (p *PartReBalanceTask) ReadParams() (params *Params, err error) {
 type TransactionTask struct {
 	*Base           `xorm:"extends"`
 	*BaseTask       `xorm:"extends"`
-	RebalanceId     uint64 `xorm:"f_rebalance_id"`
-	TransactionType int    `xorm:"f_type"`
-	//Nonce           int    `xorm:"f_nonce"`
-	ChainId   int    `xorm:"f_chain_id"`
-	ChainName string `xorm:"f_chain_name"`
-	Params    string `xorm:"f_params"`
+	RebalanceId     uint64   `xorm:"f_rebalance_id"`
+	TransactionType int      `xorm:"f_type"`
+	Nonce           uint64   `xorm:"f_nonce"`
+	GasPrice        string `xorm:"f_gas_price"`
+	ChainId         int      `xorm:"f_chain_id"`
+	ChainName       string   `xorm:"f_chain_name"`
+	Params          string   `xorm:"f_params"`
 	//Decimal         int    `xorm:"f_decimal"` //todo:之后需不需要单独抽个参数？
 	From            string `xorm:"f_from"`
 	To              string `xorm:"f_to"`

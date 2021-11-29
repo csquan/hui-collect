@@ -61,17 +61,13 @@ func (t *Transaction) Run() (err error) {
 }
 
 func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
-	nonce, err := t.getNonce(task)
-	if err != nil {
-		logrus.Errorf("handleSign get nonce err:%v", err)
-		return
-	}
+	nonce := task.Nonce
 	input := task.InputData
 	decimal := 18
 	from := task.From
 	to := task.To
 	GasLimit := "2000000"
-	GasPrice := "15000000000"
+	GasPrice := task.GasPrice
 	Amount := "0"
 	quantity := "0"
 	receiver := task.To //和to一致
@@ -185,8 +181,14 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 	if err != nil {
 		return err
 	}
-	// TODO 如何判断交易已经被记录到链上，如何判断成功或失败。
 	if receipt == nil {
+		transaction := &etypes.Transaction{}
+		if err := json.Unmarshal([]byte(task.SignData), transaction); err != nil {
+			return err
+		}
+		if err := client.SendTransaction(context.Background(), transaction); err != nil {
+			return err
+		}
 		return nil
 	}
 	if receipt.Status == 1 {
@@ -194,7 +196,6 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 	} else if receipt.Status == 0 {
 		task.State = int(types.TxFailedState)
 	}
-
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 		if task.TransactionType == int(types.Approve) && task.State == int(types.TxSuccessState) {
 			execErr = t.db.SaveApprove(&types.ApproveRecord{Spender: task.ContractAddress, Token: task.To, From: task.To})
@@ -213,11 +214,5 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 	return err
 }
 
-func (t *Transaction) getNonce(task *types.TransactionTask) (uint64, error) {
-	client, ok := t.clientMap[task.ChainName]
-	if !ok {
-		logrus.Fatalf("not find chain client, task:%v", task)
-	}
-	//TODO client.PendingNonceAt() ?
-	return client.NonceAt(context.Background(), common.HexToAddress(task.From), nil)
-}
+
+

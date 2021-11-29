@@ -46,5 +46,5 @@ func TestCreateTreansfer(t *testing.T) {
 		Base:     &types.Base{ID: 1},
 		Params:   string(data),
 	}
-	part_rebalance.CreateReceiveFromBridgeTask(task, dbtest)
+	part_rebalance.CreateReceiveFromBridgeTask(task, dbtest, dbtest.GetSession())
 }

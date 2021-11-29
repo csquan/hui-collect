@@ -29,6 +29,7 @@ func NewPartReBalanceService(db types.IDB, conf *config.Config) (p *PartReBalanc
 			},
 			types.PartReBalanceCross: &crossHandler{
 				db: db,
+				clientMap: conf.ClientMap,
 			},
 			types.PartReBalanceTransferIn: &transferInHandler{
 				db: db,
