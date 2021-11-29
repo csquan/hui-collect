@@ -2,6 +2,7 @@ package part_rebalance
 
 import (
 	"encoding/json"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -83,7 +84,7 @@ func CreateInvestTask(task *types.PartReBalanceTask, db types.IDB) (err error) {
 			From:            param.From,
 			To:              param.To,
 			Params:          string(data),
-			InputData:       string(inputData),
+			InputData:       hexutil.Encode(inputData),
 		}
 		tasks = append(tasks, task)
 	}

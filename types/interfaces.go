@@ -13,9 +13,8 @@ type IReader interface {
 	GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType TransactionType) ([]*TransactionTask, error)
 
 	GetOpenedTransactionTask() ([]*TransactionTask, error)
-	GetApprove(token, spender string) (*ApproveRecord, error)
+	//GetApprove(token, spender string) (*ApproveRecord, error)
 	//GetOrderID() (int, error)
-
 
 	GetOpenedCrossTasks() ([]*CrossTask, error)
 	GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*CrossTask, error)

@@ -9,6 +9,7 @@ import (
 	"github.com/starslabhq/hermes-rebalance/db"
 	"github.com/starslabhq/hermes-rebalance/log"
 	"github.com/starslabhq/hermes-rebalance/services"
+	"github.com/starslabhq/hermes-rebalance/utils"
 	"os"
 	"os/signal"
 	"syscall"
@@ -69,6 +70,9 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("connect to dbConnection error:%v", err)
 	}
+
+	//setup rpc clients
+	utils.Init(conf)
 
 	//setup scheduler
 	scheduler, err := services.NewServiceScheduler(conf, dbConnection, sigCh)

@@ -2,11 +2,7 @@ package config
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -49,7 +45,6 @@ type Config struct {
 	Alert            AlertConf             `mapstructure:"alert"`
 	BridgeConf       BridgeConf            `mapstructure:"bridge_conf"`
 	Chains           map[string]*ChainInfo `mapstructure:"chains"`
-	ClientMap        map[string]*ethclient.Client
 }
 
 type ChainInfo struct {
@@ -59,19 +54,6 @@ type ChainInfo struct {
 
 func (c *Config) init() {
 	c.QueryInterval = time.Duration(c.QueryIntervalInt) * time.Millisecond
-	c.ClientMap = make(map[string]*ethclient.Client)
-	for k, chain := range c.Chains {
-		client, err := rpc.DialHTTPWithClient(chain.RpcUrl, &http.Client{
-			Transport: &http.Transport{
-				DisableKeepAlives: true,
-			},
-			Timeout: time.Duration(chain.Timeout) * time.Millisecond,
-		})
-		if err != nil {
-			logrus.Fatalf("config init err:%v", err)
-		}
-		c.ClientMap[k] = ethclient.NewClient(client)
-	}
 }
 
 type Log struct {

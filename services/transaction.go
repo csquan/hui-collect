@@ -25,7 +25,7 @@ func NewTransactionService(db types.IDB, conf *config.Config) (p *Transaction, e
 	p = &Transaction{
 		db:        db,
 		config:    conf,
-		clientMap: conf.ClientMap,
+		clientMap: utils.ClientMap,
 	}
 	return
 }
@@ -98,7 +98,7 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	input := task.InputData
 	quantity := "0"
 	receiver := task.To
-	orderID := time.Now().UnixNano() / 1e6    //毫秒
+	orderID := time.Now().UnixNano() / 1e6 //毫秒
 
 	auditRet, err := signer.AuditTx(input, receiver, quantity, orderID)
 	if err != nil {
@@ -208,6 +208,3 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 	})
 	return err
 }
-
-
-
