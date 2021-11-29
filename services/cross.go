@@ -13,11 +13,11 @@ import (
 
 type CrossService struct {
 	db        types.IDB
-	bridgeCli *bridge.Bridge
+	bridgeCli bridge.IBridge
 	config    *config.Config
 }
 
-func NewCrossService(db types.IDB, bCli *bridge.Bridge, c *config.Config) *CrossService {
+func NewCrossService(db types.IDB, bCli bridge.IBridge, c *config.Config) *CrossService {
 	return &CrossService{
 		db:        db,
 		bridgeCli: bCli,
@@ -57,30 +57,30 @@ type bridgeId struct {
 	toCurrencyId   int
 }
 
-func getBridgeID(bridgeCli *bridge.Bridge, task *types.CrossTask) (*bridgeId, error) {
+func getBridgeID(bridgeCli bridge.IBridge, task *types.CrossTask) (*bridgeId, error) {
 	fromChainId, ok := bridgeCli.GetChainId(task.ChainFrom)
 	if !ok {
 		return nil, fmt.Errorf("fromChainId not found")
 	}
 	toChainId, ok := bridgeCli.GetChainId(task.ChainTo)
 	if !ok {
-		return nil, fmt.Errorf("fromChainId not found")
+		return nil, fmt.Errorf("toChainId not found")
 	}
 	fromAccountId, ok := bridgeCli.GetAccountId(task.ChainFromAddr, fromChainId)
 	if !ok {
-		return nil, fmt.Errorf("fromChainId not found")
+		return nil, fmt.Errorf("fromAccountId not found")
 	}
 	toAccountId, ok := bridgeCli.GetAccountId(task.ChainToAddr, toChainId)
 	if !ok {
-		return nil, fmt.Errorf("fromChainId not found")
+		return nil, fmt.Errorf("toAccountId not found")
 	}
 	fromCurrencyId, ok := bridgeCli.GetCurrencyID(task.CurrencyFrom)
 	if !ok {
-		return nil, fmt.Errorf("fromChainId not found")
+		return nil, fmt.Errorf("fromCurrencyId not found")
 	}
 	toCurrencyId, ok := bridgeCli.GetCurrencyID(task.CurrencyTo)
 	if !ok {
-		return nil, fmt.Errorf("fromChainId not found")
+		return nil, fmt.Errorf("toCurrencyId not found")
 	}
 	return &bridgeId{
 		fromChainId:    fromChainId,
@@ -109,16 +109,14 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 	}
 
 	subTasks, _ := c.db.GetCrossSubTasks(parent.ID)
-
+	logrus.Infof("get cross sub tasks size:%d,parent:%d", len(subTasks), parent.ID)
 	if len(subTasks) > 0 {
 		sort.Slice(subTasks, func(i, j int) bool {
 			return subTasks[i].TaskNo < subTasks[j].TaskNo
 		})
 		latestSub := subTasks[len(subTasks)-1]
 		switch types.CrossSubState(latestSub.State) {
-		case types.Crossing:
-			fallthrough
-		case types.Crossed:
+		case types.Crossing, types.Crossed:
 			var totalAmount decimal.Decimal
 			for _, sub := range subTasks {
 				subAmount, err := decimal.NewFromString(sub.Amount)
@@ -133,19 +131,21 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 				amountLeft := amount.Sub(totalAmount)
 				totalStr, singleStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
 					bridgeId.fromCurrencyId, bridgeId.toCurrencyId, amountLeft.String())
+				if err != nil {
+					return false, fmt.Errorf("estimate task err:%v,parent:%d", err, parent.ID)
+				}
 				total := mustStrToDecimal(totalStr)
 				single := mustStrToDecimal(singleStr)
-				if true {
+
+				if total.LessThan(amountLeft) {
 					logrus.Fatalf("unexpectd esimate total parentId:%d,total:%d,amount:%d", parent.ID, total, amountLeft)
 				}
-				if err != nil {
-					return false, err
-				}
+
 				amountLeft = decimal.Min(amountLeft, single)
 				subTask := &types.CrossSubTask{
 					ParentTaskId: parent.ID,
 					TaskNo:       latestSub.TaskNo + 1,
-					Amount:       fmt.Sprintf("%d", amountLeft),
+					Amount:       amountLeft.String(),
 					State:        int(types.ToCross),
 				}
 				err = c.db.SaveCrossSubTask(subTask)
@@ -195,7 +195,7 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 }
 
 func (c *CrossService) transferTaskState(taskId uint64, nextState types.CrossState) error {
-	return c.db.UpdateCrossTaskState(taskId, int(nextState))
+	return c.db.UpdateCrossTaskState(taskId, nextState)
 }
 
 func (c *CrossService) Run() error {
@@ -203,44 +203,50 @@ func (c *CrossService) Run() error {
 	if err != nil {
 		return fmt.Errorf("get cross tasks err:%v", err)
 	}
+
 	if len(tasks) == 0 {
 		logrus.Infof("no cross tasks")
+		return nil
 	}
 
 	for _, task := range tasks {
-		switch types.CrossState(task.State) {
+		switch task.State {
 		case types.ToCreateSubTask:
 			ok, err := c.addCrossSubTasks(task)
 			if err != nil {
-				logrus.Errorf("add subtasks err:v%,task:%v", err, task)
+				logrus.Errorf("add subtasks err:%v,task:%v", err, task)
 				continue
-			} else if ok {
+			}
+
+			if ok {
 				err := c.transferTaskState(task.ID, types.SubTaskCreated)
 				if err != nil {
 					logrus.Errorf("update cross task state err:%v,task:%v", err, task)
 				}
 			}
 		case types.SubTaskCreated:
-			subTasks, err := c.db.GetOpenedCrossSubTasks(task.ID)
+			subTasks, err := c.db.GetCrossSubTasks(task.ID)
 			if err != nil {
+				logrus.Errorf("get cross sub tasks error: %v", err)
 				continue
-			} else {
-				var sucCnt int
-				for _, subT := range subTasks {
-					if subT.State == int(types.Crossed) {
-						sucCnt++
-					}
-				}
-				if sucCnt == len(subTasks) {
-					err = c.transferTaskState(task.ID, types.TaskSuc)
-					if err != nil {
-						continue
-					}
+			}
+
+			var sucCnt int
+			for _, subT := range subTasks {
+				if subT.State == int(types.Crossed) {
+					sucCnt++
 				}
 			}
 
+			logrus.Infof("cross task: %v progress:%v/%v", task, sucCnt, len(subTasks))
+			if sucCnt == len(subTasks) {
+				err = c.transferTaskState(task.ID, types.TaskSuc)
+				if err != nil {
+					continue
+				}
+			}
 		default:
-			return fmt.Errorf("state not define taskId:%d", task.ID)
+			return fmt.Errorf("state:[%v] not defined taskId:%d", task.State, task.ID)
 		}
 	}
 	return nil

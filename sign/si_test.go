@@ -1,9 +1,9 @@
 package sign
 
 import (
-	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 	"math/big"
 	"testing"
@@ -51,13 +51,13 @@ func TestSignGatewayEvmChain(t *testing.T) {
 	EncryptData  = resp.Data.EncryptData
 	CipherKey = resp.Data.Extra.Cipher
 
-	fmt.Println(resp)
+	logrus.Info(resp)
 
-	fmt.Println("EncryptData")
-	fmt.Println(EncryptData)
+	logrus.Info("EncryptData")
+	logrus.Info(EncryptData)
 
-	fmt.Println("CipherKey")
-	fmt.Println(CipherKey)
+	logrus.Info("CipherKey")
+	logrus.Info(CipherKey)
 }
 
 
@@ -82,7 +82,7 @@ func TestPostAuditInfo(t *testing.T) {
 		t.Error(err)
 	}
 	t.Log(resp.Code)
-	fmt.Println(resp)
+	logrus.Info(resp)
 }
 
 
@@ -96,15 +96,15 @@ func TestValidator(t *testing.T) {
 		CipherKey: CipherKey,
 	}
 
-	fmt.Println(req)
-	fmt.Println(appId)
+	logrus.Info(req)
+	logrus.Info(appId)
 
 	resp, err := Validator(req, appId)
 	if err != nil{
 		t.Error(err)
 	}
 	t.Log(resp.OK)
-	fmt.Println(resp)
+	logrus.Info(resp)
 }
 
 //发起跨链交易到签名机
@@ -120,22 +120,22 @@ func TestSendToBridge(t *testing.T) {
 	hash := sha3.NewLegacyKeccak256()
 	hash.Write(sendToBridgeSignature)
 	methodID := hash.Sum(nil)[:4]
-	fmt.Println(hexutil.Encode(methodID))//0x0f75dc8c
+	logrus.Info(hexutil.Encode(methodID))//0x0f75dc8c
 
 	paddedAddress := common.LeftPadBytes(toAddress.Bytes(), 32)
-	fmt.Println(hexutil.Encode(paddedAddress)) // 0x000000000000000000000000a929022c9107643515f5c777ce9a910f0d1e490c
+	logrus.Info(hexutil.Encode(paddedAddress)) // 0x000000000000000000000000a929022c9107643515f5c777ce9a910f0d1e490c
 
 	amount := new(big.Int)
 	amount.SetString("1000000000000000000000", 10) // sets the value to 1000 tokens, in the token denomination
 
 	paddedAmount := common.LeftPadBytes(amount.Bytes(), 32)
-	fmt.Println(hexutil.Encode(paddedAmount)) // 0x00000000000000000000000000000000000000000000003635c9adc5dea00000
+	logrus.Info(hexutil.Encode(paddedAmount)) // 0x00000000000000000000000000000000000000000000003635c9adc5dea00000
 
 	taskId := new(big.Int)
 	taskId.SetString("19", 10) // sets the value to 1000 tokens, in the token denomination
 
 	paddlesId := common.LeftPadBytes(taskId.Bytes(), 32)
-	fmt.Println(hexutil.Encode(paddlesId)) //0x0000000000000000000000000000000000000000000000000000000000000010
+	logrus.Info(hexutil.Encode(paddlesId)) //0x0000000000000000000000000000000000000000000000000000000000000010
 
 	var data []byte
 	data = append(data, methodID...)
@@ -144,12 +144,12 @@ func TestSendToBridge(t *testing.T) {
 	data = append(data, paddlesId...)
 
 	str := hexutil.Encode(data)
-	fmt.Println(str)
+	logrus.Info(str)
 
 	//然后将data的0x去除
 	toTag := str[2:]
 
-	fmt.Println(toTag)
+	logrus.Info(toTag)
 
 	siReq := SigReqData{
 		To:    receiverAddress,
@@ -183,7 +183,7 @@ func TestSendToBridge(t *testing.T) {
 	t.Log(signResp.Data.EncryptData)
 	t.Log(signResp.Data.Extra.Cipher)
 
-	fmt.Println(signResp)
+	logrus.Info(signResp)
 
 	//2.audit
 	auditReq := AuditRequest{
@@ -204,7 +204,7 @@ func TestSendToBridge(t *testing.T) {
 		t.Error(err)
 	}
 	t.Log(auditResp.Code)
-	fmt.Println(auditResp)
+	logrus.Info(auditResp)
 
 	//3.validator
 	vReq := ValidReq{
@@ -215,14 +215,14 @@ func TestSendToBridge(t *testing.T) {
 		CipherKey: signResp.Data.Extra.Cipher,
 	}
 
-	fmt.Println(vReq)
+	logrus.Info(vReq)
 
 	valResp, err := Validator(vReq, appId)
 	if err != nil{
 		t.Error(err)
 	}
 	t.Log(valResp.OK)
-	fmt.Println(valResp)
+	logrus.Info(valResp)
 }
 
 //接收跨链资产接口
@@ -237,19 +237,19 @@ func TestReceiveFromBridge(t *testing.T) {
 	hash := sha3.NewLegacyKeccak256()
 	hash.Write(receiveFromBridgeSignature)
 	methodID := hash.Sum(nil)[:4]
-	fmt.Println(hexutil.Encode(methodID)) //0xecb56f69
+	logrus.Info(hexutil.Encode(methodID)) //0xecb56f69
 
 	amount := new(big.Int)
 	amount.SetString("1000000000000000000000", 10) // sets the value to 1000 tokens, in the token denomination
 
 	paddedAmount := common.LeftPadBytes(amount.Bytes(), 32)
-	fmt.Println(hexutil.Encode(paddedAmount)) //0x00000000000000000000000000000000000000000000003635c9adc5dea00000
+	logrus.Info(hexutil.Encode(paddedAmount)) //0x00000000000000000000000000000000000000000000003635c9adc5dea00000
 
 	taskId := new(big.Int)
 	taskId.SetString("17", 10) // sets the value to 1000 tokens, in the token denomination
 
 	paddlesId := common.LeftPadBytes(taskId.Bytes(), 32)
-	fmt.Println(hexutil.Encode(paddlesId)) //0x0000000000000000000000000000000000000000000000000000000000000011
+	logrus.Info(hexutil.Encode(paddlesId)) //0x0000000000000000000000000000000000000000000000000000000000000011
 
 	var data []byte
 	data = append(data, methodID...)
@@ -257,12 +257,12 @@ func TestReceiveFromBridge(t *testing.T) {
 	data = append(data, paddlesId...)
 
 	str := hexutil.Encode(data)
-	fmt.Println(str)
+	logrus.Info(str)
 
 	//然后将data的0x去除
 	toTag := str[2:]
 
-	fmt.Println(toTag)
+	logrus.Info(toTag)
 
 	siReq := SigReqData{
 		To:    receiverAddress,
@@ -296,7 +296,7 @@ func TestReceiveFromBridge(t *testing.T) {
 	t.Log(signResp.Data.EncryptData)
 	t.Log(signResp.Data.Extra.Cipher)
 
-	fmt.Println(signResp)
+	logrus.Info(signResp)
 
 	//2.audit
 	auditReq := AuditRequest{
@@ -317,7 +317,7 @@ func TestReceiveFromBridge(t *testing.T) {
 		t.Error(err)
 	}
 	t.Log(auditResp.Code)
-	fmt.Println(auditResp)
+	logrus.Info(auditResp)
 
 	//3.validator
 	vReq := ValidReq{
@@ -328,14 +328,14 @@ func TestReceiveFromBridge(t *testing.T) {
 		CipherKey: signResp.Data.Extra.Cipher,
 	}
 
-	fmt.Println(vReq)
+	logrus.Info(vReq)
 
 	valResp, err := Validator(vReq, appId)
 	if err != nil{
 		t.Error(err)
 	}
 	t.Log(valResp.OK)
-	fmt.Println(valResp)
+	logrus.Info(valResp)
 }
 
 

@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
-	"fmt"
 )
 
 type DecParams struct {
@@ -104,7 +103,7 @@ type ValReq struct {
 }
 
 type ValidReq struct {
-	Id          int    `json:"id"`   //0 default
+	Id          int64    `json:"id"`   //0 default
 	Platform    string  `json:"platform"`
 	Chain       string   `json:"chain"`
 	EncryptData string `json:"encrypt_data"`
@@ -136,7 +135,7 @@ func Validator(vaReq ValidReq, appId string) (vaResp *VaResp, err error) {
 
 	//map offset with appId
 	offset := conf.Vip.GetInt("offset")
-	vaReq.Id = vaReq.Id + offset
+	vaReq.Id = vaReq.Id + int64(offset)
 	payloadBytes, err := json.Marshal(&vaReq)
 	if err != nil {
 		logrus.Errorf("validator decrytion error %v", err)
@@ -177,8 +176,8 @@ func Validator(vaReq ValidReq, appId string) (vaResp *VaResp, err error) {
 		return nil, err
 	}
 
-	fmt.Println(respBody)
-	fmt.Println(string(respBody))
+	logrus.Info(respBody)
+	logrus.Info(string(respBody))
 	logrus.Infof(" response body :%s",string(respBody))
 	logrus.Infof("unmarshall the response body")
 	var DecData ValidResp
@@ -255,6 +254,6 @@ func ValidatorTx(task *types.TransactionTask) (vaResp *VaResp, err error) {
 	if err != nil{
 		return resp,err
 	}
-	fmt.Println(resp)
+	logrus.Info(resp)
 	return resp,nil
 }

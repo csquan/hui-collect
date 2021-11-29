@@ -249,7 +249,6 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 		return
 	}
 
-	//fmt.Println(string(respBody))
 	//unmarshal the respBody
 	var result Response
 	err = json.Unmarshal(respBody, &result)
@@ -264,7 +263,6 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 		return
 	}
 
-	//fmt.Println("The encrypted data is:", result.Data.EncryptData)
 	encResp = result
 	return encResp, nil
 
@@ -373,7 +371,6 @@ func writeStringToSign(
 
 	writeRequest(r, signedHeadersMap, sp, isServer)
 	lastData.WriteString(hex.EncodeToString(sp.RequestSHA256))
-	// fmt.Fprintf(lastData, "%x", sp.RequestSHA256)
 
 	sp.All = lastData.Bytes()
 	sp.AllSHA256 = ghmac(sp.Key, sp.All)
@@ -513,7 +510,7 @@ func  SignTx(input string,decimal int,nonce int,from string,to string,GasLimit s
 
 	q := string(quantity)
 	if len(q) < decimal {
-			///精度不对，函数返回
+		logrus.Fatal("decimal and quantity not right,please check!")
 	}
 
 	var si SigReqData
@@ -543,13 +540,13 @@ func  SignTx(input string,decimal int,nonce int,from string,to string,GasLimit s
 		return signResp,err
 	}
 
-	fmt.Println(resp)
+	logrus.Info(resp)
 
-	fmt.Println("EncryptData")
-	fmt.Println(resp.Data.EncryptData)
+	logrus.Info("EncryptData")
+	logrus.Info(resp.Data.EncryptData)
 
-	fmt.Println("CipherKey")
-	fmt.Println(resp.Data.Extra.Cipher)
+	logrus.Info("CipherKey")
+	logrus.Info(resp.Data.Extra.Cipher)
 
 	return resp,nil
 }

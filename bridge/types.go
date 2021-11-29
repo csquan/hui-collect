@@ -1,5 +1,14 @@
 package bridge
 
+//go:generate mockgen -source=$GOFILE -destination=./mock/mock_bridge.go -package=mock
+type IBridge interface {
+	GetCurrencyID(currency string) (int, bool)
+	GetAccountId(addr string, chainId int) (uint64, bool)
+	GetChainId(chain string) (int, bool)
+	GetTaskDetail(taskID uint64) (*TaskDetailResult, error)
+	EstimateTask(t *Task) (*EstimateTaskResult, error)
+	AddTask(t *Task) (uint64, error)
+}
 type Task struct {
 	TaskNo         uint64
 	FromAccountId  uint64

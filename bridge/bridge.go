@@ -241,7 +241,7 @@ func (b *Bridge) AddTask(t *Task) (uint64, error) {
 	form.Add("toAccountId", fmt.Sprintf("%d", t.ToAccountId))
 	form.Add("fromCurrencyId", fmt.Sprintf("%d", t.FromCurrencyId))
 	form.Add("toCurrencyId", fmt.Sprintf("%d", t.ToCurrencyId))
-	form.Add("amount", fmt.Sprintf("%d", t.Amount))
+	form.Add("amount", t.Amount)
 	params := []string{"timestamp", "method", "taskNo", "fromAccountId", "toAccountId", "fromCurrencyId", "toCurrencyId", "amount"}
 	sort.Slice(params, func(i, j int) bool {
 		return params[i] > params[j]

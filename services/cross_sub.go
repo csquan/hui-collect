@@ -9,11 +9,11 @@ import (
 
 type CrossSubTaskService struct {
 	db        types.IDB
-	bridgeCli *bridge.Bridge
+	bridgeCli bridge.IBridge
 	config    *config.Config
 }
 
-func NewCrossSubTaskService(db types.IDB, bCli *bridge.Bridge, c *config.Config) *CrossSubTaskService {
+func NewCrossSubTaskService(db types.IDB, bCli bridge.IBridge, c *config.Config) *CrossSubTaskService {
 	return &CrossSubTaskService{
 		db:        db,
 		bridgeCli: bCli,
@@ -30,9 +30,11 @@ func (c *CrossSubTaskService) Run() error {
 	for _, pt := range parentTasks {
 		childTasks, err := c.db.GetOpenedCrossSubTasks(pt.ID)
 		if err != nil {
+			logrus.Errorf("get opened sub tasks err:%v,parent:%d", err, pt.ID)
 			continue
 		}
 		if len(childTasks) == 0 {
+			logrus.Infof("get opened sub tasks empty parent:%d", pt.ID)
 			continue
 		}
 		bridgeId, err := getBridgeID(c.bridgeCli, pt)
@@ -53,17 +55,20 @@ func (c *CrossSubTaskService) Run() error {
 					Amount:         subTask.Amount,
 				}
 				taskId, err := c.bridgeCli.AddTask(t)
-				if err != nil && taskId != 0 {
+				if err == nil && taskId != 0 {
 					//update bridge taskId
 					err1 := c.db.UpdateCrossSubTaskBridgeIDAndState(subTask.ID, taskId, int(types.Crossing))
-					if err != nil {
-						logrus.Warnf("update cross sub task err:%v,subTaskId:%d", err1, subTask.ID)
+					if err1 != nil {
+						logrus.Fatalf("sub task state:%d,id:%d,err1:%v", subTask.State, subTask.ID, err1)
 					}
+				} else {
+					logrus.Warnf("add task fail err:%v,taskNo:%d,subTaskId:%d,parent:%d", err, t.TaskNo, subTask.ID, pt.ID)
 				}
 			case types.Crossing:
 				//watch
 				bridgeTask, err := c.bridgeCli.GetTaskDetail(subTask.BridgeTaskId)
 				if err != nil {
+					logrus.Errorf("get task detail err:%v,bridgeId:%d,sub:%d", err, subTask.BridgeTaskId, subTask.ID)
 					continue
 				}
 				switch bridgeTask.Status {
@@ -78,7 +83,8 @@ func (c *CrossSubTaskService) Run() error {
 						continue
 					}
 				default:
-					logrus.Fatalf("unexpected bridge task state subtaskId:%d,bridge:%d,state:%d", subTask.ID, subTask.BridgeTaskId, subTask.State)
+					logrus.Fatalf("unexpected bridge task state subtaskId:%d,bridge:%d,state:%d,parent:%d",
+						subTask.ID, subTask.BridgeTaskId, subTask.State, pt.ID)
 				}
 			default:
 				logrus.Fatalf("unexpected sub task state sub_task id:%d,state:%d", subTask.ID, subTask.State)
