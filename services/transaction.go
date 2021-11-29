@@ -81,7 +81,6 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	receiver := task.To //和to一致
 
 	signRet, err := signer.SignTx(input, decimal, int(nonce), from, to, GasLimit, GasPrice, Amount, quantity, receiver)
-	//TODO 结果验证 signRet.Result
 	if err != nil {
 		return err
 	} else {
