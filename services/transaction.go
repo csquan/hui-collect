@@ -2,18 +2,14 @@ package services
 
 import (
 	"context"
-	"encoding/hex"
 	"github.com/ethereum/go-ethereum/common"
-	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	signer "github.com/starslabhq/hermes-rebalance/sign"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"strings"
 	"time"
 )
 
@@ -123,10 +119,11 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	}
 	return nil
 }
+
 //todo:code restruct
 func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 	vRet, err := signer.ValidatorTx(task)
-	if err != nil || vRet.OK ==false{
+	if err != nil || vRet.OK == false {
 		_ = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 			task.State = int(types.TxAuditState) //失败了则退回安审状态，下次重新安审
 
@@ -158,22 +155,16 @@ func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error {
 	client, ok := t.clientMap[task.ChainName]
 	if !ok {
-		logrus.Fatalf("not find chain client, task:%v", task)
+		logrus.Errorf("not find chain client, task:%v", task)
 	}
-	transaction := &etypes.Transaction{}
-	var input string
-
-	input = task.SignData
-
-	if strings.Contains(task.SignData, "0x") {
-		input = task.SignData[2:]
+	transaction, err := utils.DecodeTransaction(task.SignData)
+	if err != nil {
+		logrus.Errorf("DecodeTransaction err:%v task:%v", err, task)
+		return err
 	}
-
-	rawTxBytes, err := hex.DecodeString(input)
-
-	rlp.DecodeBytes(rawTxBytes, &transaction)
-
-	if err := client.SendTransaction(context.Background(), transaction); err != nil {
+	if err = client.SendTransaction(context.Background(), transaction); err != nil {
+		//TODO nonce too low, 重新走签名流程？
+		logrus.Errorf("SendTransaction err:%v task:%v", err, task)
 		return err
 	}
 
@@ -192,25 +183,20 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error {
 	client, ok := t.clientMap[task.ChainName]
 	if !ok {
-		logrus.Fatalf("not find chain client, task:%v", task)
+		logrus.Errorf("not find chain client, task:%v", task)
 	}
 	receipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(task.Hash))
 	if err != nil {
 		return err
 	}
 	if receipt == nil {
-		transaction := &etypes.Transaction{}
-		var input string
-
-		input = task.SignData
-		if strings.Contains(task.SignData, "0x") {
-			input = task.SignData[2:]
+		transaction, err := utils.DecodeTransaction(task.SignData)
+		if err != nil {
+			logrus.Errorf("DecodeTransaction err:%v task:%v", err, task)
+			return err
 		}
-		rawTxBytes, _ := hex.DecodeString(input)
-
-		rlp.DecodeBytes(rawTxBytes, &transaction)
-
 		if err := client.SendTransaction(context.Background(), transaction); err != nil {
+			logrus.Errorf("SendTransaction err:%v task:%v", err, task)
 			return err
 		}
 		return nil
@@ -224,7 +210,7 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 		if task.TransactionType == int(types.Approve) && task.State == int(types.TxSuccessState) {
 			execErr = t.db.SaveApprove(&types.ApproveRecord{Spender: task.ContractAddress, Token: task.To, From: task.To})
 			if execErr != nil {
-				logrus.Fatalf("SaveApprove err:%v", err)
+				logrus.Errorf("SaveApprove err:%v", err)
 				return
 			}
 		}

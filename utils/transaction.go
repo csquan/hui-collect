@@ -2,9 +2,10 @@ package utils
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	etypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"math"
 	"math/big"
@@ -55,6 +56,16 @@ func AllowanceOutput(result hexutil.Bytes) ([]interface{}, error) {
 	}
 
 	return abi.Unpack("allowance", result)
+}
+
+func DecodeTransaction(txRaw string) (transaction *etypes.Transaction, err error) {
+	transaction = &etypes.Transaction{}
+	b, err := hexutil.Decode(txRaw)
+	if err != nil {
+		return
+	}
+	err = rlp.DecodeBytes(b, &transaction)
+	return
 }
 
 const erc20abi = `[
