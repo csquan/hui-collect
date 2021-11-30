@@ -95,7 +95,7 @@ func getTransactionState(db types.IDB, task *types.PartReBalanceTask, transferTy
 		return
 	}
 	if len(txTasks) == 0 {
-		err = fmt.Errorf("part rebalance task [%v] has no transfer in task", task)
+		state = types.StateSuccess
 		return
 	}
 	success := true
@@ -108,7 +108,8 @@ func getTransactionState(db types.IDB, task *types.PartReBalanceTask, transferTy
 	}
 	if success {
 		state = types.StateSuccess
+	}else {
+		state = types.StateOngoing
 	}
-	state = types.StateOngoing
 	return
 }
