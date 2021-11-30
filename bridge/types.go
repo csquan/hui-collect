@@ -19,7 +19,7 @@ type Task struct {
 }
 
 type AccountAdd struct {
-	IsMaster        int    `json:"isMaster"`
+	IsMaster        int    `json:"isMaster"` //当前场景传1
 	MasterAccountId int    `json:"masterAccountId"`
 	SignerAccountId int    `json:"signerAccountId"`
 	AccounType      uint8  `json:"type"` //(1中转账户,2业务账户,3合约账户,4出入口钱包)
@@ -88,9 +88,10 @@ type TaskAddRet struct {
 }
 
 type EstimateTaskResult struct {
-	TotalQuota  string   `json:"totalQuota"`
-	SingleQuota string   `json:"singleQuota"`
-	Routes      []string `json:"routes"`
+	MinAmount   string           `json:"minAmount"`
+	TotalQuota  string           `json:"totalQuota"`
+	SingleQuota string           `json:"singleQuota"`
+	Routes      []map[string]int `json:"routes"`
 }
 
 type EstimateTaskRet struct {

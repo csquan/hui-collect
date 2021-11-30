@@ -40,6 +40,7 @@ func NewBridge(url, ak, sk string, rpcTimeout time.Duration) (*Bridge, error) {
 		cli:        cli,
 		chains:     make(map[string]int),
 		currencies: make(map[string]int),
+		accounts:   make(map[string]uint64),
 	}
 	chainIds, err := b.loadChains()
 	if err != nil {
@@ -53,6 +54,12 @@ func NewBridge(url, ak, sk string, rpcTimeout time.Duration) (*Bridge, error) {
 	if err != nil {
 		return nil, err
 	}
+	chains, _ := json.Marshal(b.chains)
+	currencies, _ := json.Marshal(b.currencies)
+	accounts, _ := json.Marshal(b.accounts)
+	logrus.Infof("chains:%s", chains)
+	logrus.Infof("currencies:%s", currencies)
+	logrus.Infof("accounts:%s", accounts)
 	return b, nil
 }
 
@@ -195,7 +202,7 @@ func (b *Bridge) GetAccountList(chainId int) ([]*Account, error) {
 	now := time.Now().Unix()
 	form.Add("timestamp", fmt.Sprintf("%d", now))
 	form.Add("chainId", fmt.Sprintf("%d", chainId))
-	params := []string{"method", "timestamp", "type", "chainId"}
+	params := []string{"method", "timestamp", "chainId"}
 	sort.Slice(params, func(i, j int) bool {
 		return params[i] > params[j]
 	})
@@ -250,7 +257,7 @@ func (b *Bridge) AddTask(t *Task) (uint64, error) {
 	for _, p := range params {
 		rawStr += fmt.Sprintf("&%s=%s", p, form.Get(p))
 	}
-	rawStr += "secret_key=%s" + b.secretKey
+	rawStr += "&secret_key=" + b.secretKey
 	sign := md5SignHex(rawStr)
 	req, err := http.NewRequest("POST", b.url, strings.NewReader(form.Encode()))
 	if err != nil {
@@ -266,15 +273,24 @@ func (b *Bridge) AddTask(t *Task) (uint64, error) {
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
+
 	if err != nil {
 		return 0, err
 	}
+	log.Printf("add task ret:%s", body)
 	ret := &TaskAddRet{}
 	err = json.Unmarshal(body, ret)
 	if err != nil {
 		return 0, err
 	}
-	return ret.Data.TaskId, nil
+	if ret.Code != 0 {
+		return 0, fmt.Errorf("code ret:%s", body)
+	}
+	if ret.Data != nil {
+		return ret.Data.TaskId, nil
+	} else {
+		return 0, fmt.Errorf("data empty")
+	}
 }
 
 func (b *Bridge) EstimateTask(t *Task) (*EstimateTaskResult, error) {
@@ -287,7 +303,6 @@ func (b *Bridge) EstimateTask(t *Task) (*EstimateTaskResult, error) {
 	form.Add("fromCurrencyId", fmt.Sprintf("%d", t.FromCurrencyId))
 	form.Add("toCurrencyId", fmt.Sprintf("%d", t.ToCurrencyId))
 	params := []string{"method", "timestamp", "fromAccountId", "toAccountId", "fromCurrencyId", "toCurrencyId"}
-
 	sort.Slice(params, func(i, j int) bool {
 		return params[i] > params[j]
 	})
@@ -295,7 +310,7 @@ func (b *Bridge) EstimateTask(t *Task) (*EstimateTaskResult, error) {
 	for _, p := range params {
 		rawStr += fmt.Sprintf("&%s=%s", p, form.Get(p))
 	}
-	rawStr += "secret_key=%s" + b.secretKey
+	rawStr += "&secret_key=" + b.secretKey
 	sign := md5SignHex(rawStr)
 	req, err := http.NewRequest("POST", b.url, strings.NewReader(form.Encode()))
 	if err != nil {
@@ -314,7 +329,7 @@ func (b *Bridge) EstimateTask(t *Task) (*EstimateTaskResult, error) {
 		return nil, err
 	}
 	defer res.Body.Close()
-
+	log.Printf("estimate ret:%s", body)
 	ret := &EstimateTaskRet{}
 	err = json.Unmarshal(body, ret)
 	if err != nil {
@@ -365,7 +380,7 @@ func (b *Bridge) GetAccountId(addr string, chainId int) (uint64, bool) {
 	k := fmt.Sprintf("%d/%s", chainId, addr)
 	acoountId, ok := b.accounts[k]
 	if !ok {
-		logrus.Warnf("chainId not exist chainId:%s,accounts:%v", chainId, b.accounts)
+		logrus.Warnf("chainId not exist chainId:%d,accounts:%v", chainId, b.accounts)
 		return 0, false
 	}
 	return acoountId, true
@@ -383,7 +398,7 @@ func (b *Bridge) loadChains() ([]int, error) {
 	}
 	var ids []int
 	for _, chain := range chains {
-		logrus.Infof("chains name:%s,id:%s", chain.Name, chain.ChainId)
+		logrus.Infof("chains name:%s,id:%d", chain.Name, chain.ChainId)
 		b.chains[chain.Name] = chain.ChainId
 		ids = append(ids, chain.ChainId)
 	}
@@ -396,7 +411,7 @@ func (b *Bridge) loadCurrencies() error {
 		return err
 	}
 	for _, c := range cs {
-		logrus.Infof("currency name:%s,id:%s", c.Currency, c.CurrencyId)
+		logrus.Infof("currency name:%s,id:%d", c.Currency, c.CurrencyId)
 		b.currencies[c.Currency] = int(c.CurrencyId)
 	}
 	return nil

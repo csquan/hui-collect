@@ -11,6 +11,8 @@ import (
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
+var zeroD = decimal.NewFromFloat(0)
+
 type CrossService struct {
 	db        types.IDB
 	bridgeCli bridge.IBridge
@@ -25,7 +27,9 @@ func NewCrossService(db types.IDB, bCli bridge.IBridge, c *config.Config) *Cross
 	}
 }
 
-func (c *CrossService) estimateCrossTask(fromAccountId, toAccountId uint64, fromCurrencyId, toCurrencyId int, amount string) (total, single string, err error) {
+func (c *CrossService) estimateCrossTask(fromAccountId, toAccountId uint64,
+	fromCurrencyId, toCurrencyId int,
+	amount string) (total, single, minAmount string, err error) {
 	btask := &bridge.Task{
 		FromAccountId:  fromAccountId,
 		ToAccountId:    toAccountId,
@@ -35,9 +39,9 @@ func (c *CrossService) estimateCrossTask(fromAccountId, toAccountId uint64, from
 	}
 	estimateResult, err := c.bridgeCli.EstimateTask(btask)
 	if err != nil {
-		return "0", "0", err
+		return "0", "0", "", err
 	}
-	return estimateResult.TotalQuota, estimateResult.SingleQuota, nil
+	return estimateResult.TotalQuota, estimateResult.SingleQuota, estimateResult.MinAmount, nil
 }
 
 func mustStrToDecimal(num string) decimal.Decimal {
@@ -129,30 +133,39 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 			// if totalAmount < amount {
 			if totalAmount.LessThan(amount) {
 				amountLeft := amount.Sub(totalAmount)
-				totalStr, singleStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
+				totalStr, singleStr, minStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
 					bridgeId.fromCurrencyId, bridgeId.toCurrencyId, amountLeft.String())
 				if err != nil {
 					return false, fmt.Errorf("estimate task err:%v,parent:%d", err, parent.ID)
 				}
+				if singleStr == "" || singleStr == "0" {
+					return false, fmt.Errorf("singleQuota 0")
+				}
 				total := mustStrToDecimal(totalStr)
 				single := mustStrToDecimal(singleStr)
+				minAmount := mustStrToDecimal(minStr)
 
 				if total.LessThan(amountLeft) {
 					logrus.Fatalf("unexpectd esimate total parentId:%d,total:%d,amount:%d", parent.ID, total, amountLeft)
 				}
 
-				amountLeft = decimal.Min(amountLeft, single)
+				// amountLeft = decimal.Min(amountLeft, single)
+				amountCur, err := getAmountCur(minAmount, single, total, amountLeft)
+				if err != nil {
+					return false, fmt.Errorf("amount err:%v,min:%s,single:%s,total:%s,amount:%s", err,
+						minAmount.String(), single.String(), total.String(), amountLeft.String())
+				}
 				subTask := &types.CrossSubTask{
 					ParentTaskId: parent.ID,
 					TaskNo:       latestSub.TaskNo + 1,
-					Amount:       amountLeft.String(),
+					Amount:       amountCur.String(),
 					State:        int(types.ToCross),
 				}
 				err = c.db.SaveCrossSubTask(subTask)
 				if err != nil {
 					return false, fmt.Errorf("add sub task err:%v,task:%v", err, subTask)
 				}
-				if amountLeft.LessThanOrEqual(single) { //剩余amount可一次提交完成
+				if amountCur.Equal(amountLeft) { //剩余amount可一次提交完成
 					return true, nil
 				}
 			} else if totalAmount == amount {
@@ -166,29 +179,35 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 			logrus.Fatalf("unexpected task state:%d,sub_task id:%d", latestSub.State, latestSub.ID)
 		}
 	} else { // the first sub task
-		totalStr, singleStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
+		totalStr, singleStr, minAmountStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
 			bridgeId.fromCurrencyId, bridgeId.toCurrencyId, amount.String())
 		if err != nil {
 			return false, err
 		}
+		if singleStr == "" || singleStr == "0" {
+			return false, fmt.Errorf("singleQuota 0")
+		}
 		total := mustStrToDecimal(totalStr)
-		signal := mustStrToDecimal(singleStr)
-		if amount.LessThanOrEqual(total) {
-			amountCur := decimal.Min(amount, signal)
-			subTask := &types.CrossSubTask{
-				ParentTaskId: parent.ID,
-				TaskNo:       0,
-				Amount:       amountCur.String(),
-			}
-			err = c.db.SaveCrossSubTask(subTask)
-			if err != nil {
-				return false, fmt.Errorf("add sub task err:%v,task:%v", err, subTask)
-			}
-			if amount.LessThanOrEqual(signal) {
-				return true, nil
-			}
-		} else {
-			//logrus.Warnf("cross task amount bigger than total taskId:%d,amount:%d,total:%s", parent.ID, parent.Amount) //TODO
+		single := mustStrToDecimal(singleStr)
+		minAmount := mustStrToDecimal(minAmountStr)
+
+		amountCur, err := getAmountCur(minAmount, single, total, amount)
+		logrus.Infof("amount cur:%s,err:%v", amountCur.String(), err)
+		if err != nil {
+			return false, fmt.Errorf("amount err:%v,min:%s,single:%s,total:%s,amount:%s", err,
+				minAmount.String(), single.String(), total.String(), amount.String())
+		}
+		subTask := &types.CrossSubTask{
+			ParentTaskId: parent.ID,
+			TaskNo:       0,
+			Amount:       amountCur.String(),
+		}
+		err = c.db.SaveCrossSubTask(subTask)
+		if err != nil {
+			return false, fmt.Errorf("add sub task err:%v,task:%v", err, subTask)
+		}
+		if amountCur.Equal(amount) {
+			return true, nil
 		}
 	}
 	return false, nil
@@ -254,4 +273,29 @@ func (c *CrossService) Run() error {
 
 func (c CrossService) Name() string {
 	return "cross"
+}
+
+func getAmountCur(minAmount, single, total, amount decimal.Decimal) (decimal.Decimal, error) {
+	if minAmount.GreaterThan(zeroD) && amount.LessThan(minAmount) { //amount < min
+		return zeroD, fmt.Errorf("amount less than minAmount")
+	}
+	if amount.GreaterThan(total) { //amount > total
+		return zeroD, fmt.Errorf("amount greater than total")
+	}
+	if amount.LessThanOrEqual(single) { // min<= amount <= single
+		return amount, nil
+	}
+	if minAmount.Equal(zeroD) { //无min限制
+		return decimal.Min(single, amount), nil
+	}
+	twiceMin := minAmount.Add(minAmount)
+	if amount.LessThan(twiceMin) { // single < amount < 2*minAmount
+		return zeroD, fmt.Errorf("amount less than 2*minAmount")
+	} else { // single < 2*minAmount< amount
+		amountCur := amount
+		for amountCur.GreaterThan(single) {
+			amountCur = amountCur.Sub(minAmount)
+		}
+		return amountCur, nil
+	}
 }
