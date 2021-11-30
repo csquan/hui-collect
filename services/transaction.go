@@ -66,90 +66,83 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	decimal := 18
 	from := task.From
 	to := task.To
-	GasLimit := "2000000"
+	GasLimit := t.config.SendConf.GasLimit
 	GasPrice := task.GasPrice
-	Amount := "0"
-	quantity := "0"
+	Amount := t.config.SendConf.Amount
+	quantity := t.config.SendConf.Quantity
 	receiver := task.To //和to一致
 
 	signRet, err := signer.SignTx(input, decimal, int(nonce), from, to, GasLimit, GasPrice, Amount, quantity, receiver)
-	if err != nil {
-		return err
-	} else {
-		if signRet.Result == true {
-			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-				task.State = int(types.TxAuditState)
-				task.Cipher = signRet.Data.Extra.Cipher
-				task.EncryptData = signRet.Data.EncryptData
-				task.Hash = signRet.Data.Extra.TxHash
-				execErr = t.db.UpdateTransactionTask(session, task)
-				if execErr != nil {
-					logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
-					return
-				}
+
+	if err == nil && signRet.Result == true {
+		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+			task.State = int(types.TxAuditState)
+			task.Cipher = signRet.Data.Extra.Cipher
+			task.EncryptData = signRet.Data.EncryptData
+			task.Hash = signRet.Data.Extra.TxHash
+			execErr = t.db.UpdateTransactionTask(session, task)
+			if execErr != nil {
+				logrus.Errorf("update sign task error:%v task:[%v]", err, task)
 				return
-			})
-		}
+			}
+			return
+		})
 	}
-	return nil
+
+	return err
 }
 
 func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	input := task.InputData
-	quantity := "0"
+	quantity := t.config.SendConf.Quantity
 	receiver := task.To
 	orderID := time.Now().UnixNano() / 1e6 //毫秒
 
 	auditRet, err := signer.AuditTx(input, receiver, quantity, orderID)
-	if err != nil {
-		return err
-	} else {
-		if auditRet.Success == true {
-			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-				task.State = int(types.TxValidatorState)
-				task.OrderId = orderID
-				execErr = t.db.UpdateTransactionTask(session, task)
-				if execErr != nil {
-					logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
-					return
-				}
+
+	if err == nil && auditRet.Success == true {
+		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+			task.State = int(types.TxValidatorState)
+			task.OrderId = orderID
+			execErr = t.db.UpdateTransactionTask(session, task)
+			if execErr != nil {
+				logrus.Errorf("update  audit task error:%v task:[%v]", err, task)
 				return
-			})
-		}
+			}
+			return
+		})
 	}
-	return nil
+	return err
 }
 
-//todo:code restruct
 func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 	vRet, err := signer.ValidatorTx(task)
-	if err != nil || vRet.OK == false {
+
+	if err == nil && vRet.OK == true {
+		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+			task.State = int(types.TxSignedState)
+			task.SignData = vRet.RawTx
+			execErr = t.db.UpdateTransactionTask(session, task)
+			if execErr != nil {
+				logrus.Errorf("update  validator task error:%v task:[%v]", err, task)
+				return
+			}
+			return
+		})
+	} else {
 		_ = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 			task.State = int(types.TxAuditState) //失败了则退回安审状态，下次重新安审
 
 			execErr = t.db.UpdateTransactionTask(session, task)
 			if execErr != nil {
-				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
+				logrus.Errorf("update  validator task error:%v task:[%v]", err, task)
 				return
 			}
 			return
 		})
-		return err
-	} else {
-		if vRet.OK == true {
-			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-				task.State = int(types.TxSignedState)
-				task.SignData = vRet.RawTx
-				execErr = t.db.UpdateTransactionTask(session, task)
-				if execErr != nil {
-					logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
-					return
-				}
-				return
-			})
-		}
 	}
-	return nil
+
+	return err
 }
 
 func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error {

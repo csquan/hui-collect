@@ -5,3 +5,4 @@ Bin
 config.yaml
 hermes-rebalance
 *.test
+.agollo

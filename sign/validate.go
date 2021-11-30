@@ -253,6 +253,8 @@ func ValidatorTx(task *types.TransactionTask) (vaResp *VaResp, err error) {
 		vreq.Chain = "ht2"
 	case "eth":
 		vreq.Chain = "eth"
+	case "poly":
+		vreq.Chain = "matic1"
 	}
 
 	vreq.EncryptData = task.EncryptData

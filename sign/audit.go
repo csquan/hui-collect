@@ -132,6 +132,8 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 		request.BusData.Chain = "ht2"
 	case "eth":
 		request.BusData.Chain = "eth"
+	case "poly":
+		request.BusData.Chain = "matic1"
 	}
 
 	//convert to lower case

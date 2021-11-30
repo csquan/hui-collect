@@ -28,7 +28,7 @@ type Bridge struct {
 
 func NewBridge(url, ak, sk string, rpcTimeout time.Duration) (*Bridge, error) {
 	if url == "" || ak == "" || sk == "" {
-		return nil, fmt.Errorf("parma not enough for bridge")
+		return nil, fmt.Errorf("param not enough for bridge")
 	}
 	cli := &http.Client{
 		Timeout: rpcTimeout,
@@ -91,15 +91,18 @@ func (b *Bridge) GetChainList() ([]*Chain, error) {
 		return nil, err
 	}
 	body, err := ioutil.ReadAll(res.Body)
+	logrus.Infof("method:%s,ret:%s", method, body)
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("ret:%s", body)
 	ret := &ChainListRet{}
 	defer res.Body.Close()
 	err = json.Unmarshal(body, &ret)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("json decode err:%v,body:%s", err, body)
+	}
+	if ret.Code != 0 {
+		return nil, fmt.Errorf("ret code err body:%s", body)
 	}
 	return ret.Data["chainList"], nil
 }
@@ -126,6 +129,7 @@ func (b *Bridge) GetCurrencyList() ([]*Currency, error) {
 		return nil, err
 	}
 	body, err := ioutil.ReadAll(res.Body)
+	logrus.Infof("method:%s,ret:%s", method, body)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +138,10 @@ func (b *Bridge) GetCurrencyList() ([]*Currency, error) {
 	ret := &CurrencyList{}
 	err = json.Unmarshal(body, ret)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("json decode err:%v", err)
+	}
+	if ret.Code != 0 {
+		return nil, fmt.Errorf("code err body:%s", body)
 	}
 	return ret.Data["currencyList"], nil
 }
@@ -179,7 +186,7 @@ func (b *Bridge) AddAccount(a *AccountAdd) (uint64, error) {
 		return 0, err
 	}
 	body, err := ioutil.ReadAll(res.Body)
-	log.Printf("account ret:%s", body)
+	logrus.Infof("method:%s,ret:%s,param:%v", method, body, a)
 	if err != nil {
 		return 0, err
 	}
@@ -187,10 +194,10 @@ func (b *Bridge) AddAccount(a *AccountAdd) (uint64, error) {
 	ret := &AccountAddRet{}
 	err = json.Unmarshal(body, ret)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("json decode err:%v,body:%s", err, body)
 	}
 	if ret.Code != 0 {
-		return 0, fmt.Errorf("code err ret:%s", body)
+		return 0, fmt.Errorf("code err body:%s", body)
 	}
 	return ret.Data.AccountId, nil
 }
@@ -225,7 +232,7 @@ func (b *Bridge) GetAccountList(chainId int) ([]*Account, error) {
 		return nil, err
 	}
 	body, err := ioutil.ReadAll(res.Body)
-	log.Printf("account ret:%s", body)
+	logrus.Infof("method:%s,ret:%s,param:%d", method, body, chainId)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +240,7 @@ func (b *Bridge) GetAccountList(chainId int) ([]*Account, error) {
 	ret := &AccountListRet{}
 	err = json.Unmarshal(body, ret)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("json decode err:%v,body:%s", err, body)
 	}
 	return ret.Data["accountList"], nil
 }
@@ -241,6 +248,7 @@ func (b *Bridge) GetAccountList(chainId int) ([]*Account, error) {
 func (b *Bridge) AddTask(t *Task) (uint64, error) {
 	form := url.Values{}
 	now := time.Now().Unix()
+
 	form.Add("timestamp", fmt.Sprintf("%d", now))
 	form.Add("method", "addTask")
 	form.Add("taskNo", fmt.Sprintf("%d", t.TaskNo))
@@ -273,7 +281,7 @@ func (b *Bridge) AddTask(t *Task) (uint64, error) {
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
-
+	logrus.Infof("method:%s,ret:%s,param:%v", "addTask", body, t)
 	if err != nil {
 		return 0, err
 	}
@@ -281,10 +289,10 @@ func (b *Bridge) AddTask(t *Task) (uint64, error) {
 	ret := &TaskAddRet{}
 	err = json.Unmarshal(body, ret)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("json decode err:%v,body:%s", err, body)
 	}
 	if ret.Code != 0 {
-		return 0, fmt.Errorf("code ret:%s", body)
+		return 0, fmt.Errorf("code err body:%s", body)
 	}
 	if ret.Data != nil {
 		return ret.Data.TaskId, nil
@@ -325,15 +333,18 @@ func (b *Bridge) EstimateTask(t *Task) (*EstimateTaskResult, error) {
 		return nil, err
 	}
 	body, err := ioutil.ReadAll(res.Body)
+	logrus.Infof("method:%s,ret:%s,param:%v", "estimateTask", body, t)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
-	log.Printf("estimate ret:%s", body)
 	ret := &EstimateTaskRet{}
 	err = json.Unmarshal(body, ret)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("json decode err:%v,body:%s", err, body)
+	}
+	if ret.Code != 0 {
+		return nil, fmt.Errorf("code err body:%s", body)
 	}
 	return ret.Data, nil
 }
@@ -360,13 +371,17 @@ func (b *Bridge) GetTaskDetail(taskID uint64) (*TaskDetailResult, error) {
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
+	logrus.Infof("method:%s,ret:%s,param:%v", "getTaskDetail", body, taskID)
 	if err != nil {
 		return nil, err
 	}
 	ret := &TaskDetailRet{}
 	err = json.Unmarshal(body, ret)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("json decode err:%v,body:%s", err, body)
+	}
+	if ret.Code != 0 {
+		return nil, fmt.Errorf("code err body:%s", body)
 	}
 	return ret.Data, nil
 }
