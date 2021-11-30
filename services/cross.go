@@ -11,6 +11,8 @@ import (
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
+var zeroD = decimal.NewFromFloat(0)
+
 type CrossService struct {
 	db        types.IDB
 	bridgeCli bridge.IBridge
@@ -147,22 +149,23 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 					logrus.Fatalf("unexpectd esimate total parentId:%d,total:%d,amount:%d", parent.ID, total, amountLeft)
 				}
 
-				if amountLeft.LessThan(minAmount) {
-					return false, fmt.Errorf("amountLeft less than min")
+				// amountLeft = decimal.Min(amountLeft, single)
+				amountCur, err := getAmountCur(minAmount, single, total, amountLeft)
+				if err != nil {
+					return false, fmt.Errorf("amount err:%v,min:%s,single:%s,total:%s,amount:%s", err,
+						minAmount.String(), single.String(), total.String(), amountLeft.String())
 				}
-
-				amountLeft = decimal.Min(amountLeft, single)
 				subTask := &types.CrossSubTask{
 					ParentTaskId: parent.ID,
 					TaskNo:       latestSub.TaskNo + 1,
-					Amount:       amountLeft.String(),
+					Amount:       amountCur.String(),
 					State:        int(types.ToCross),
 				}
 				err = c.db.SaveCrossSubTask(subTask)
 				if err != nil {
 					return false, fmt.Errorf("add sub task err:%v,task:%v", err, subTask)
 				}
-				if amountLeft.LessThanOrEqual(single) { //剩余amount可一次提交完成
+				if amountCur.Equal(amountLeft) { //剩余amount可一次提交完成
 					return true, nil
 				}
 			} else if totalAmount == amount {
@@ -185,29 +188,26 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 			return false, fmt.Errorf("singleQuota 0")
 		}
 		total := mustStrToDecimal(totalStr)
-		signal := mustStrToDecimal(singleStr)
+		single := mustStrToDecimal(singleStr)
 		minAmount := mustStrToDecimal(minAmountStr)
 
-		if amount.LessThan(minAmount) {
-			return false, fmt.Errorf("amount less than minAmount")
+		amountCur, err := getAmountCur(minAmount, single, total, amount)
+		logrus.Infof("amount cur:%s,err:%v", amountCur.String(), err)
+		if err != nil {
+			return false, fmt.Errorf("amount err:%v,min:%s,single:%s,total:%s,amount:%s", err,
+				minAmount.String(), single.String(), total.String(), amount.String())
 		}
-
-		if amount.LessThanOrEqual(total) {
-			amountCur := decimal.Min(amount, signal)
-			subTask := &types.CrossSubTask{
-				ParentTaskId: parent.ID,
-				TaskNo:       0,
-				Amount:       amountCur.String(),
-			}
-			err = c.db.SaveCrossSubTask(subTask)
-			if err != nil {
-				return false, fmt.Errorf("add sub task err:%v,task:%v", err, subTask)
-			}
-			if amount.LessThanOrEqual(signal) {
-				return true, nil
-			}
-		} else {
-			//logrus.Warnf("cross task amount bigger than total taskId:%d,amount:%d,total:%s", parent.ID, parent.Amount) //TODO
+		subTask := &types.CrossSubTask{
+			ParentTaskId: parent.ID,
+			TaskNo:       0,
+			Amount:       amountCur.String(),
+		}
+		err = c.db.SaveCrossSubTask(subTask)
+		if err != nil {
+			return false, fmt.Errorf("add sub task err:%v,task:%v", err, subTask)
+		}
+		if amountCur.Equal(amount) {
+			return true, nil
 		}
 	}
 	return false, nil
@@ -275,21 +275,27 @@ func (c CrossService) Name() string {
 	return "cross"
 }
 
-func getAmount(min, max, amount uint64) (uint64, error) {
-	if amount <= max && amount >= min {
+func getAmountCur(minAmount, single, total, amount decimal.Decimal) (decimal.Decimal, error) {
+	if minAmount.GreaterThan(zeroD) && amount.LessThan(minAmount) { //amount < min
+		return zeroD, fmt.Errorf("amount less than minAmount")
+	}
+	if amount.GreaterThan(total) { //amount > total
+		return zeroD, fmt.Errorf("amount greater than total")
+	}
+	if amount.LessThanOrEqual(single) { // min<= amount <= single
 		return amount, nil
 	}
-	if amount < min {
-		return 0, fmt.Errorf("amount less than min")
+	if minAmount.Equal(zeroD) { //无min限制
+		return decimal.Min(single, amount), nil
 	}
-	if amount-max > min {
-		return max, nil
-	} else {
-		if amount-min >= min {
-			return amount - min, nil
-		} else {
-			return amount - min, fmt.Errorf("left min")
+	twiceMin := minAmount.Add(minAmount)
+	if amount.LessThan(twiceMin) { // single < amount < 2*minAmount
+		return zeroD, fmt.Errorf("amount less than 2*minAmount")
+	} else { // single < 2*minAmount< amount
+		amountCur := amount
+		for amountCur.GreaterThan(single) {
+			amountCur = amountCur.Sub(minAmount)
 		}
+		return amountCur, nil
 	}
-
 }
