@@ -123,7 +123,6 @@ type ValidErr struct {
 }
 
 func Validator(vaReq ValidReq, appId string) (vaResp *VaResp, err error) {
-	//encData := vaReq
 	conf := config.RemoteSignerConfig(appId)
 	targetUrl := conf.Vip.GetString("validator.url")
 	tr := &http.Transport{
@@ -245,10 +244,19 @@ func ValidatorTx(task *types.TransactionTask) (vaResp *VaResp, err error) {
 	var vreq ValidReq
 	vreq.Id = task.OrderId
 	vreq.Platform = platform
-	vreq.Chain = "ht2"
 
-	vreq.EncryptData = task.EncryptData     //从db中获取该交易的SignRetData.Data.Encryption
-	vreq.CipherKey = task.Cipher  //从db中获取该交易的SignRetData.Data.Extra.Cipher
+	chain := task.ChainName
+	switch chain {
+	case "bsc":
+		vreq.Chain = "bnb1"
+	case "heco":
+		vreq.Chain = "ht2"
+	case "eth":
+		vreq.Chain = "eth"
+	}
+
+	vreq.EncryptData = task.EncryptData
+	vreq.CipherKey = task.Cipher
 
 	resp, err := Validator(vreq, appId)
 	if err != nil {
