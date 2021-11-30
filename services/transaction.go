@@ -2,16 +2,18 @@ package services
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/hex"
 	"github.com/ethereum/go-ethereum/common"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	signer "github.com/starslabhq/hermes-rebalance/sign"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
+	"strings"
 	"time"
 )
 
@@ -53,6 +55,8 @@ func (t *Transaction) Run() (err error) {
 			return t.handleValidator(task)
 		case types.TxSignedState:
 			return t.handleTransactionSigned(task)
+		case types.TxCheckReceiptState:
+			return t.handleTransactionCheck(task)
 		default:
 			logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
 		}
@@ -121,7 +125,6 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 }
 //todo:code restruct
 func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
-	task.ChainName = "ht2"
 	vRet, err := signer.ValidatorTx(task)
 	if err != nil || vRet.OK ==false{
 		_ = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
@@ -158,14 +161,23 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 		logrus.Fatalf("not find chain client, task:%v", task)
 	}
 	transaction := &etypes.Transaction{}
-	if err := json.Unmarshal([]byte(task.SignData), transaction); err != nil {
-		return err
+	var input string
+
+	input = task.SignData
+
+	if strings.Contains(task.SignData, "0x") {
+		input = task.SignData[2:]
 	}
+
+	rawTxBytes, err := hex.DecodeString(input)
+
+	rlp.DecodeBytes(rawTxBytes, &transaction)
+
 	if err := client.SendTransaction(context.Background(), transaction); err != nil {
 		return err
 	}
 
-	err := utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 		task.State = int(types.TxCheckReceiptState)
 		execErr = t.db.UpdateTransactionTask(session, task)
 		if execErr != nil {
@@ -188,9 +200,16 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 	}
 	if receipt == nil {
 		transaction := &etypes.Transaction{}
-		if err := json.Unmarshal([]byte(task.SignData), transaction); err != nil {
-			return err
+		var input string
+
+		input = task.SignData
+		if strings.Contains(task.SignData, "0x") {
+			input = task.SignData[2:]
 		}
+		rawTxBytes, _ := hex.DecodeString(input)
+
+		rlp.DecodeBytes(rawTxBytes, &transaction)
+
 		if err := client.SendTransaction(context.Background(), transaction); err != nil {
 			return err
 		}

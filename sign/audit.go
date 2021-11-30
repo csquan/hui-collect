@@ -193,6 +193,15 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 }
 
 func AuditTx(input string,to string,quantity string,orderID int64) (AuditResponse, error)  {
+
+	if strings.Contains(input, "0x") {
+		input = input[2:]
+	}
+	if strings.Contains(to, "0x") {
+		to = to[2:]
+	}
+
+
 	var bus BusData
 	bus.Chain = chain
 	bus.Quantity = quantity //保持和签名请求中的一致
