@@ -33,7 +33,7 @@ CREATE TABLE `t_transaction_task`
     `f_cipher`           text      NOT NULL COMMENT '加密数据的解密key',
     `f_encrypt_data`     text      NOT NULL COMMENT '加密后数据',
     `f_signed_data`      text      NOT NULL COMMENT '签名后数据',
-    `f_order_id`         int(11) NOT NULL DEFAULT 0 COMMENT '订单ID',
+    `f_order_id`         BIGINT NOT NULL DEFAULT 0 COMMENT '订单ID',
     `f_hash`             char(66)  NOT NULL DEFAULT '' COMMENT 'transaction hash',
     `f_created_at`       timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `f_updated_at`       timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

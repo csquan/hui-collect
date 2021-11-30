@@ -245,13 +245,13 @@ func ValidatorTx(task *types.TransactionTask) (vaResp *VaResp, err error) {
 	var vreq ValidReq
 	vreq.Id = task.OrderId
 	vreq.Platform = platform
-	vreq.Chain = chain
+	vreq.Chain = "ht2"
 
 	vreq.EncryptData = task.EncryptData     //从db中获取该交易的SignRetData.Data.Encryption
 	vreq.CipherKey = task.Cipher  //从db中获取该交易的SignRetData.Data.Extra.Cipher
 
 	resp, err := Validator(vreq, appId)
-	if err != nil{
+	if err != nil {
 		return resp,err
 	}
 	logrus.Info(resp)

@@ -119,12 +119,22 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	}
 	return nil
 }
-
+//todo:code restruct
 func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
+	task.ChainName = "ht2"
 	vRet, err := signer.ValidatorTx(task)
-	if err != nil {
-		return err
+	if err != nil || vRet.OK ==false{
+		_ = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+			task.State = int(types.TxAuditState) //失败了则退回安审状态，下次重新安审
 
+			execErr = t.db.UpdateTransactionTask(session, task)
+			if execErr != nil {
+				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
+				return
+			}
+			return
+		})
+		return err
 	} else {
 		if vRet.OK == true {
 			err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {

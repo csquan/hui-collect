@@ -508,11 +508,6 @@ func  SignTx(input string,decimal int,nonce int,from string,to string,GasLimit s
 		receiver = receiver[2:]
 	}
 
-	q := string(quantity)
-	if len(q) < decimal {
-		logrus.Fatal("decimal and quantity not right,please check!")
-	}
-
 	var si SigReqData
 	si.ToTag = input
 	si.Decimal = decimal
