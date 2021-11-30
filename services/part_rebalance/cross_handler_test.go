@@ -56,7 +56,7 @@ func TestCreateTreansfer(t *testing.T) {
 			ChainId:   1,
 			ChainName: "heco",
 			From:      "606288c605942f3c84a7794c0b3257b56487263c",
-			To:        "0x882d0c2435CBB8A0E774b674a5a7e64ea6789fe0",
+			To:        "0xC7c38F93036BC13168B4f657296753568f49ef09",
 			Erc20ContractAddr: common.HexToAddress("0x6D2dbA4F00e0Bbc2F93eb43B79ddd00f65fB6bEc"),
 			Amount:    new(big.Int).SetInt64(1),
 			TaskID:    new(big.Int).SetUint64(1),
