@@ -2,6 +2,9 @@ package utils
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"math"
 	"math/big"
@@ -32,12 +35,30 @@ func ApproveInput(param *types.ReceiveFromBridgeParam) (input []byte, err error)
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("approve", param.To, new(big.Int).SetInt64(math.MaxInt64))
+	return abi.Pack("approve", common.HexToAddress(param.To), new(big.Int).SetInt64(math.MaxInt64))
 }
 
+func AllowanceInput(param *types.ReceiveFromBridgeParam) (input []byte, err error) {
+	r := strings.NewReader(erc20abi)
+	abi, err := abi.JSON(r)
+	if err != nil {
+		return nil, err
+	}
+	return abi.Pack("allowance", common.HexToHash(param.From), common.HexToHash(param.To))
+}
+
+func AllowanceOutput(result hexutil.Bytes) ([]interface{}, error) {
+	r := strings.NewReader(erc20abi)
+	abi, err := abi.JSON(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return abi.Unpack("allowance", result)
+}
 
 const erc20abi = `[
-{
+	{
         "constant":false,
         "inputs":[
             {
@@ -59,7 +80,31 @@ const erc20abi = `[
         "payable":false,
         "stateMutability":"nonpayable",
         "type":"function"
-    }]`
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "_owner",
+                "type": "address"
+            },
+            {
+                "name": "_spender",
+                "type": "address"
+            }
+        ],
+        "name": "allowance",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    }
+]`
 
 var content = `[
     {
