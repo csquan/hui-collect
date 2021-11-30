@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"context"
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -67,6 +69,24 @@ func DecodeTransaction(txRaw string) (transaction *etypes.Transaction, err error
 	err = rlp.DecodeBytes(b, &transaction)
 	return
 }
+
+func GetNonce(address string, chainName string) (uint64, error) {
+	client, ok := ClientMap[chainName]
+	if !ok {
+		return 0, fmt.Errorf("not find chain client, chainName:%v", chainName)
+	}
+	//TODO client.PendingNonceAt() ?
+	return client.NonceAt(context.Background(), common.HexToAddress(address), nil)
+}
+
+func GetGasPrice(chainName string) (*big.Int, error) {
+	client, ok := ClientMap[chainName]
+	if !ok {
+		return nil, fmt.Errorf("not find chain client, chainName:%v", chainName)
+	}
+	return client.SuggestGasPrice(context.Background())
+}
+
 
 const erc20abi = `[
 	{

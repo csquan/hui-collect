@@ -36,11 +36,23 @@ func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finish
 
 func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextState types.PartReBalanceState) (err error) {
 
+	var tasks []*types.TransactionTask
+	if nextState == types.PartReBalanceInvest {
+		tasks, err = t.CreateInvestTask(task)
+		if err != nil {
+			logrus.Errorf("InvestTask error:%v task:[%v]", err, task)
+			return
+		}
+		if tasks, err = SetNonceAndGasPrice(tasks); err != nil { //包含http，放在事物外面
+			logrus.Errorf("SetNonceAndGasPrice error:%v task:[%v]", err, task)
+			return
+		}
+	}
+
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 		if nextState == types.PartReBalanceInvest {
-			execErr = CreateInvestTask(task, t.db)
-			if execErr != nil {
-				logrus.Errorf("create transaction task error:%v task:[%v]", execErr, task)
+			if err = t.db.SaveTxTasks(session, tasks); err != nil {
+				logrus.Errorf("save transaction task error:%v tasks:[%v]", err, tasks)
 				return
 			}
 		}
@@ -57,12 +69,11 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 	return
 }
 
-func CreateInvestTask(task *types.PartReBalanceTask, db types.IDB) (err error) {
+func (t *transferInHandler) CreateInvestTask(task *types.PartReBalanceTask) (tasks []*types.TransactionTask, err error) {
 	params, err := task.ReadParams()
 	if err != nil {
 		return
 	}
-	var tasks []*types.TransactionTask
 	var data, inputData []byte
 	for _, param := range params.InvestParams {
 		data, err = json.Marshal(param)
@@ -72,7 +83,7 @@ func CreateInvestTask(task *types.PartReBalanceTask, db types.IDB) (err error) {
 		}
 		inputData, err = utils.InvestInput(param)
 		if err != nil {
-			logrus.Errorf("ReceiveFromBridgeInput err:%v", err)
+			logrus.Errorf("InvestInput err:%v", err)
 			return
 		}
 		task := &types.TransactionTask{
@@ -87,11 +98,6 @@ func CreateInvestTask(task *types.PartReBalanceTask, db types.IDB) (err error) {
 			InputData:       hexutil.Encode(inputData),
 		}
 		tasks = append(tasks, task)
-	}
-	err = db.SaveTxTasks(db.GetSession(), tasks)
-	if err != nil {
-		logrus.Errorf("save transaction task error:%v tasks:[%v]", err, tasks)
-		return
 	}
 	return
 }

@@ -59,7 +59,7 @@ func (c *crossHandler) MoveToNextState(task *types.PartReBalanceTask, nextState 
 			logrus.Errorf("CreateReceiveFromBridgeTask error:%v task:[%v]", err, task)
 			return
 		}
-		if tasks, err = c.SetNonceAndGasPrice(tasks); err != nil { //包含http，放在事物外面
+		if tasks, err = SetNonceAndGasPrice(tasks); err != nil { //包含http，放在事物外面
 			logrus.Errorf("SetNonceAndGasPrice error:%v task:[%v]", err, task)
 			return
 		}
@@ -71,7 +71,6 @@ func (c *crossHandler) MoveToNextState(task *types.PartReBalanceTask, nextState 
 				logrus.Errorf("save transaction task error:%v tasks:[%v]", err, tasks)
 				return
 			}
-			return
 		}
 		//move to next state
 		task.State = nextState
@@ -126,7 +125,7 @@ func (c *crossHandler) CreateReceiveFromBridgeTask(rbTask *types.PartReBalanceTa
 	return
 }
 
-func (c *crossHandler) SetNonceAndGasPrice(tasks []*types.TransactionTask) (result []*types.TransactionTask, err error) {
+func SetNonceAndGasPrice(tasks []*types.TransactionTask) (result []*types.TransactionTask, err error) {
 	//group by From
 	m := make(map[string][]*types.TransactionTask)
 	for _, task := range tasks {
@@ -141,10 +140,10 @@ func (c *crossHandler) SetNonceAndGasPrice(tasks []*types.TransactionTask) (resu
 		var gasPrice *big.Int
 		for i, t := range l {
 			if i == 0 {
-				if nonce, err = c.getNonce(t); err != nil {
+				if nonce, err = utils.GetNonce(t.From, t.ChainName); err != nil {
 					return
 				}
-				if gasPrice, err = c.getGasPrice(t); err != nil {
+				if gasPrice, err = utils.GetGasPrice(t.ChainName); err != nil {
 					return
 				}
 			} else {
@@ -191,13 +190,6 @@ func (c *crossHandler) CreateApproveTask(taskID uint64, param *types.ReceiveFrom
 		return nil, nil
 	}
 
-	//if approve, err = c.db.GetApprove(common.Address.String(param.Erc20ContractAddr), param.To); err != nil {
-	//	logrus.Errorf("GetApprove err:%v", err)
-	//	return
-	//}
-	//if approve != nil {
-	//	return nil, nil
-	//}
 	inputData, err := utils.ApproveInput(param)
 	if err != nil {
 		logrus.Errorf("CreateApproveTask err:%v", err)
@@ -221,21 +213,4 @@ func (c *crossHandler) CreateApproveTask(taskID uint64, param *types.ReceiveFrom
 		InputData:       hexutil.Encode(inputData),
 	}
 	return
-}
-
-func (c *crossHandler) getNonce(task *types.TransactionTask) (uint64, error) {
-	client, ok := c.clientMap[task.ChainName]
-	if !ok {
-		logrus.Fatalf("not find chain client, task:%v", task)
-	}
-	//TODO client.PendingNonceAt() ?
-	return client.NonceAt(context.Background(), common.HexToAddress(task.From), nil)
-}
-
-func (c *crossHandler) getGasPrice(task *types.TransactionTask) (*big.Int, error) {
-	client, ok := c.clientMap[task.ChainName]
-	if !ok {
-		logrus.Fatalf("not find chain client, task:%v", task)
-	}
-	return client.SuggestGasPrice(context.Background())
 }
