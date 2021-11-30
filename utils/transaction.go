@@ -1,10 +1,13 @@
 package utils
 
 import (
+	"context"
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	etypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"math"
 	"math/big"
@@ -26,7 +29,7 @@ func InvestInput(param *types.InvestParam) (input []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("invest", param.Address, param.Token1Amounts, param.Token2Amounts)
+	return abi.Pack("invest", param.Address, param.BaseTokenAmount, param.CounterTokenAmount)
 }
 
 func ApproveInput(param *types.ReceiveFromBridgeParam) (input []byte, err error) {
@@ -56,6 +59,34 @@ func AllowanceOutput(result hexutil.Bytes) ([]interface{}, error) {
 
 	return abi.Unpack("allowance", result)
 }
+
+func DecodeTransaction(txRaw string) (transaction *etypes.Transaction, err error) {
+	transaction = &etypes.Transaction{}
+	b, err := hexutil.Decode(txRaw)
+	if err != nil {
+		return
+	}
+	err = rlp.DecodeBytes(b, &transaction)
+	return
+}
+
+func GetNonce(address string, chainName string) (uint64, error) {
+	client, ok := ClientMap[chainName]
+	if !ok {
+		return 0, fmt.Errorf("not find chain client, chainName:%v", chainName)
+	}
+	//TODO client.PendingNonceAt() ?
+	return client.NonceAt(context.Background(), common.HexToAddress(address), nil)
+}
+
+func GetGasPrice(chainName string) (*big.Int, error) {
+	client, ok := ClientMap[chainName]
+	if !ok {
+		return nil, fmt.Errorf("not find chain client, chainName:%v", chainName)
+	}
+	return client.SuggestGasPrice(context.Background())
+}
+
 
 const erc20abi = `[
 	{
