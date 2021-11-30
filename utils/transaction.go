@@ -26,7 +26,7 @@ func InvestInput(param *types.InvestParam) (input []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("invest", param.Address, param.Token1Amounts, param.Token2Amounts)
+	return abi.Pack("invest", param.Address, param.BaseTokenAmount, param.CounterTokenAmount)
 }
 
 func ApproveInput(param *types.ReceiveFromBridgeParam) (input []byte, err error) {
