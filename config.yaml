@@ -1,5 +1,5 @@
 database:
-#  db: "heco_test:hDyhVaPfwvPzF8ek@tcp(bigdata-tidb-e604534a50b9d35d.elb.ap-northeast-1.amazonaws.com:4000)/chain_test?charset=utf8mb4"
+  #  db: "heco_test:hDyhVaPfwvPzF8ek@tcp(bigdata-tidb-e604534a50b9d35d.elb.ap-northeast-1.amazonaws.com:4000)/chain_test?charset=utf8mb4"
   db: "root:123456sj@tcp(127.0.0.1:3306)/rebalance?charset=utf8mb4"
   block_worker: 5
   tx_worker: 1
@@ -15,12 +15,18 @@ send_conf:
   Quantity:
     "0"
 
+bridge_conf:
+  url: "http://cex-bridge-api.test-15.huobiapps.com/cex-bridge-api/v1"
+  timeout: "5s"
+  ak: "kB01A8gsMv2CP4Tctd7XnUaG3iDE9rQJ"
+  sk: "ho8XcsfygSKTLEvPYOZ9W12k0i4IFJbC"
+
 chains:
   heco:
-    rpc_url: "http://huobichain-dev-08.sinnet.huobiidc.com:8545"
+    rpc_url: "https://http-mainnet.hecochain.com"
     fetch_timeout: 3000
-  poly:
-    rpc_url: "http://huobichain-dev-08.sinnet.huobiidc.com:8545"
+  bsc:
+    rpc_url: "https://bsc-dataseed.binance.org"
     fetch_timeout: 3000
 
 log:
