@@ -25,6 +25,7 @@ type CrossSubState int
 
 const (
 	PartReBalanceInit PartReBalanceState = iota
+	PartReBalanceTransferOut
 	PartReBalanceCross
 	PartReBalanceTransferIn
 	PartReBalanceInvest
@@ -48,6 +49,7 @@ const (
 	ReceiveFromBridge TransactionType = iota
 	Invest
 	Approve
+	SendToBridge
 )
 
 type TaskState int
@@ -87,6 +89,34 @@ func (p *PartReBalanceTask) ReadParams() (params *Params, err error) {
 		return
 	}
 
+	return
+}
+
+func (p *PartReBalanceTask) ReadTransactionParams(txType TransactionType) (result []TransactionParamInterface, err error) {
+	params := &Params{}
+	if err := json.Unmarshal([]byte(p.Params), params); err != nil {
+		logrus.Errorf("Unmarshal PartReBalanceTask params error:%v task:[%v]", err, p)
+		return nil, err
+	}
+	switch txType {
+	case Invest:
+		for _, v := range params.InvestParams {
+			result = append(result, v)
+		}
+		return
+	case ReceiveFromBridge:
+		for _, v := range params.ReceiveFromBridgeParams {
+			result = append(result, v)
+		}
+		return
+	case SendToBridge:
+		for _, v := range params.SendToBridgeParams {
+			result = append(result, v)
+		}
+		return
+	default:
+		return
+	}
 	return
 }
 

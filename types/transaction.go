@@ -1,8 +1,9 @@
-package utils
+package types
 
 import (
 	"context"
 	"fmt"
+	"github.com/starslabhq/hermes-rebalance/clients"
 	"math"
 	"math/big"
 	"strings"
@@ -12,43 +13,51 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/starslabhq/hermes-rebalance/types"
 )
 
-func ReceiveFromBridgeInput(param *types.ReceiveFromBridgeParam) (input []byte, err error) {
+func SendToBridgeInput(bridgeAddress common.Address, amount *big.Int, taskID *big.Int) (input []byte, err error) {
 	r := strings.NewReader(content)
 	abi, err := abi.JSON(r)
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("receiveFromBridge", param.Amount, param.TaskID)
+	return abi.Pack("sendToBridge", bridgeAddress, amount, taskID)
 }
 
-func InvestInput(param *types.InvestParam) (input []byte, err error) {
+func ReceiveFromBridgeInput(amount *big.Int, taskID *big.Int) (input []byte, err error) {
 	r := strings.NewReader(content)
 	abi, err := abi.JSON(r)
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("invest", param.StrategyAddresses, param.BaseTokenAmount, param.CounterTokenAmount)
+	return abi.Pack("receiveFromBridge", amount, taskID)
 }
 
-func ApproveInput(param *types.ReceiveFromBridgeParam) (input []byte, err error) {
+func InvestInput(address []common.Address, baseTokenAmount []*big.Int, counterTokenAmount []*big.Int) (input []byte, err error) {
+	r := strings.NewReader(content)
+	abi, err := abi.JSON(r)
+	if err != nil {
+		return nil, err
+	}
+	return abi.Pack("invest", address, baseTokenAmount, counterTokenAmount)
+}
+
+func ApproveInput(address string) (input []byte, err error) {
 	r := strings.NewReader(erc20abi)
 	abi, err := abi.JSON(r)
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("approve", common.HexToAddress(param.To), new(big.Int).SetInt64(math.MaxInt64))
+	return abi.Pack("approve", common.HexToAddress(address), new(big.Int).SetInt64(math.MaxInt64))
 }
 
-func AllowanceInput(param *types.ReceiveFromBridgeParam) (input []byte, err error) {
+func AllowanceInput(from string, to string) (input []byte, err error) {
 	r := strings.NewReader(erc20abi)
 	abi, err := abi.JSON(r)
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("allowance", common.HexToHash(param.From), common.HexToHash(param.To))
+	return abi.Pack("allowance", common.HexToHash(from), common.HexToHash(to))
 }
 
 func AllowanceOutput(result hexutil.Bytes) ([]interface{}, error) {
@@ -72,7 +81,7 @@ func DecodeTransaction(txRaw string) (transaction *etypes.Transaction, err error
 }
 
 func GetNonce(address string, chainName string) (uint64, error) {
-	client, ok := ClientMap[chainName]
+	client, ok := clients.ClientMap[chainName]
 	if !ok {
 		return 0, fmt.Errorf("not find chain client, chainName:%v", chainName)
 	}
@@ -81,7 +90,7 @@ func GetNonce(address string, chainName string) (uint64, error) {
 }
 
 func GetGasPrice(chainName string) (*big.Int, error) {
-	client, ok := ClientMap[chainName]
+	client, ok := clients.ClientMap[chainName]
 	if !ok {
 		return nil, fmt.Errorf("not find chain client, chainName:%v", chainName)
 	}
@@ -138,6 +147,29 @@ const erc20abi = `[
 ]`
 
 var content = `[
+	{
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "bridge",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "taskId",
+          "type": "uint256"
+        }
+      ],
+      "name": "sendToBridge",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
     {
       "inputs": [
         {

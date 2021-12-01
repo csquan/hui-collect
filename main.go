@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/starslabhq/hermes-rebalance/clients"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,8 +15,6 @@ import (
 	"github.com/starslabhq/hermes-rebalance/db"
 	"github.com/starslabhq/hermes-rebalance/log"
 	"github.com/starslabhq/hermes-rebalance/services"
-	"github.com/starslabhq/hermes-rebalance/utils"
-
 	"net/http"
 	_ "net/http/pprof"
 )
@@ -73,7 +72,7 @@ func main() {
 	}
 
 	//setup rpc clients
-	utils.Init(conf)
+	clients.Init(conf)
 
 	//setup scheduler
 	scheduler, err := services.NewServiceScheduler(conf, dbConnection, sigCh)

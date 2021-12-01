@@ -1,9 +1,6 @@
 package part_rebalance
 
 import (
-	"encoding/json"
-
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -39,13 +36,9 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 
 	var tasks []*types.TransactionTask
 	if nextState == types.PartReBalanceInvest {
-		tasks, err = t.CreateInvestTask(task)
+		tasks, err = CreateTransactionTask(task, types.Invest)
 		if err != nil {
 			logrus.Errorf("InvestTask error:%v task:[%v]", err, task)
-			return
-		}
-		if tasks, err = SetNonceAndGasPrice(tasks); err != nil { //包含http，放在事物外面
-			logrus.Errorf("SetNonceAndGasPrice error:%v task:[%v]", err, task)
 			return
 		}
 	}
@@ -70,35 +63,32 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 	return
 }
 
-func (t *transferInHandler) CreateInvestTask(task *types.PartReBalanceTask) (tasks []*types.TransactionTask, err error) {
-	params, err := task.ReadParams()
+func CreateTransactionTask(task *types.PartReBalanceTask, transactionType types.TransactionType) (tasks []*types.TransactionTask, err error) {
+	params, err := task.ReadTransactionParams(transactionType)
 	if err != nil {
 		return
 	}
-	var data, inputData []byte
-	for _, param := range params.InvestParams {
-		data, err = json.Marshal(param)
+	for _, param := range params {
+		if transactionType == types.ReceiveFromBridge {
+			var approveTask *types.TransactionTask
+			approveTask, err = CreateApproveTask(task.ID, param.(*types.ReceiveFromBridgeParam))
+			if err != nil {
+				logrus.Errorf("create approve task from param err:%v task:%v", err, task)
+				return
+			}
+			if approveTask != nil {
+				tasks = append(tasks, approveTask)
+			}
+		}
+		t, err := param.CreateTask(task.ID)
 		if err != nil {
-			logrus.Errorf("CreateTransactionTask param marshal err:%v", err)
-			return
+			logrus.Errorf("create task from param err:%v task:%v", err, task)
 		}
-		inputData, err = utils.InvestInput(param)
-		if err != nil {
-			logrus.Errorf("InvestInput err:%v", err)
-			return
-		}
-		task := &types.TransactionTask{
-			BaseTask:        &types.BaseTask{State: int(types.TxUnInitState)},
-			RebalanceId:     task.ID,
-			TransactionType: int(types.Invest),
-			ChainId:         param.ChainId,
-			ChainName:       param.ChainName,
-			From:            param.From,
-			To:              param.To,
-			Params:          string(data),
-			InputData:       hexutil.Encode(inputData),
-		}
-		tasks = append(tasks, task)
+		tasks = append(tasks, t)
+	}
+	if tasks, err = SetNonceAndGasPrice(tasks); err != nil {
+		logrus.Errorf("SetNonceAndGasPrice error:%v task:[%v]", err, task)
+		return
 	}
 	return
 }

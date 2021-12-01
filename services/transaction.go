@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"github.com/starslabhq/hermes-rebalance/clients"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -24,7 +25,7 @@ func NewTransactionService(db types.IDB, conf *config.Config) (p *Transaction, e
 	p = &Transaction{
 		db:        db,
 		config:    conf,
-		clientMap: utils.ClientMap,
+		clientMap: clients.ClientMap,
 	}
 	return
 }
@@ -151,7 +152,7 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 	if !ok {
 		logrus.Errorf("not find chain client, task:%v", task)
 	}
-	transaction, err := utils.DecodeTransaction(task.SignData)
+	transaction, err := types.DecodeTransaction(task.SignData)
 	if err != nil {
 		logrus.Errorf("DecodeTransaction err:%v task:%v", err, task)
 		return err
@@ -184,7 +185,7 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 		return err
 	}
 	if receipt == nil {
-		transaction, err := utils.DecodeTransaction(task.SignData)
+		transaction, err := types.DecodeTransaction(task.SignData)
 		if err != nil {
 			logrus.Errorf("DecodeTransaction err:%v task:%v", err, task)
 			return err
