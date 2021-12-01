@@ -141,9 +141,13 @@ func CreateApproveTask(taskID uint64, param *types.ReceiveFromBridgeParam) (task
 		err = fmt.Errorf("decode allowance error:%v", err)
 		return
 	}
-
+	var amount *big.Int
+	if amount, ok = new(big.Int).SetString(param.Amount, 10); !ok {
+		err = fmt.Errorf("CreateApproveTask param error")
+		return
+	}
 	// do not need to approve
-	if out[0].(*big.Int).Cmp(param.Amount) >= 0 {
+	if out[0].(*big.Int).Cmp(amount) >= 0 {
 		return nil, nil
 	}
 
