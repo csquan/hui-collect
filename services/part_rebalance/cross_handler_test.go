@@ -22,7 +22,7 @@ var (
 )
 
 func TestCreateTreansfer(t *testing.T) {
-	conf, err := config.LoadConf("../../config_prod.yaml")
+	conf, err := config.LoadConf("../../config.yaml")
 	if err != nil {
 		logrus.Errorf("load config error:%v", err)
 		return

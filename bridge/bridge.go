@@ -281,7 +281,7 @@ func (b *Bridge) AddTask(t *Task) (uint64, error) {
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
-	logrus.Infof("method:%s,ret:%s,param:%v", "addTask", body, t)
+	logrus.Infof("method:%s,ret:%s,param:%v, task:%v", "addTask", body, form, t)
 	if err != nil {
 		return 0, err
 	}
