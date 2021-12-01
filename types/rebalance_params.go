@@ -142,7 +142,7 @@ func (p *SendToBridgeParam) CreateTask(rebalanceTaskID uint64) (task *Transactio
 	task = &TransactionTask{
 		BaseTask:        &BaseTask{State: int(TxUnInitState)},
 		RebalanceId:     rebalanceTaskID,
-		TransactionType: int(ReceiveFromBridge),
+		TransactionType: int(SendToBridge),
 		ChainId:         p.ChainId,
 		ChainName:       p.ChainName,
 		From:            p.From,

@@ -16,7 +16,7 @@ func (m *Mysql) GetOpenedPartReBalanceTasks() (tasks []*types.PartReBalanceTask,
 
 func (m *Mysql) GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType types.TransactionType) (tasks []*types.TransactionTask, err error) {
 	tasks = make([]*types.TransactionTask, 0)
-	_, err = m.engine.Where("f_rebalance_id = ? and f_type= ?", reBalanceId, transactionType).Get(&tasks)
+	err = m.engine.Table("t_transaction_task").Where("f_rebalance_id = ? and f_type= ?", reBalanceId, transactionType).Find(&tasks)
 	return
 }
 

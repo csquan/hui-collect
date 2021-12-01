@@ -41,11 +41,20 @@ func (m *Mysql) GetSession() *xorm.Session {
 }
 
 func (*Mysql) UpdatePartReBalanceTask(itf xorm.Interface, task *types.PartReBalanceTask) error {
-	_, err := itf.ID(task.ID).Update(task)
+	_, err := itf.Where("f_id = ?", task.ID).Update(task)
 	return err
 }
 
 func (m *Mysql) SaveTxTasks(itf xorm.Interface, tasks []*types.TransactionTask) (err error) {
+	_, err = itf.Insert(tasks)
+	if err != nil {
+		logrus.Errorf("insert transaction task error:%v, tasks:%v", err, tasks)
+	}
+
+	return
+}
+
+func (m *Mysql) SaveRebalanceTask(itf xorm.Interface, tasks *types.PartReBalanceTask) (err error) {
 	_, err = itf.Insert(tasks)
 	if err != nil {
 		logrus.Errorf("insert transaction task error:%v, tasks:%v", err, tasks)
