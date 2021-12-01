@@ -46,10 +46,10 @@ const (
 type TransactionType int
 
 const (
-	ReceiveFromBridge TransactionType = iota
+	SendToBridge TransactionType = iota
+	ReceiveFromBridge
 	Invest
 	Approve
-	SendToBridge
 )
 
 type TaskState int
@@ -160,6 +160,9 @@ type CrossTask struct {
 	Amount        string `xorm:"f_amount"`
 	State         int    `xorm:"f_state"`
 }
+func (t *CrossTask) TableName() string {
+	return "t_cross_task"
+}
 
 type CrossSubTask struct {
 	*Base        `xorm:"extends"`
@@ -174,13 +177,6 @@ type CrossSubTask struct {
 	State  int    `xorm:"f_state"`
 }
 
-type ApproveRecord struct {
-	*Base   `xorm:"extends"`
-	From    string `xorm:"f_from"`
-	Token   string `xorm:"f_token"`
-	Spender string `xorm:"f_spender"`
-}
 
-func (t *ApproveRecord) TableName() string {
-	return "t_approve"
-}
+
+

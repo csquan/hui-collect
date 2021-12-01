@@ -1,11 +1,11 @@
 package services
 
 import (
+	"github.com/starslabhq/hermes-rebalance/bridge"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/starslabhq/hermes-rebalance/bridge"
 	"github.com/starslabhq/hermes-rebalance/services/part_rebalance"
 
 	"github.com/sirupsen/logrus"
