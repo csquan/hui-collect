@@ -76,6 +76,9 @@ func (t *ServiceScheduler) Start() {
 				wg.Add(1)
 				go func(asyncService types.IAsyncService) {
 					defer wg.Done()
+					defer func(start time.Time) {
+						logrus.Infof("%v task process cost %v", service.Name(), time.Now().Sub(start))
+					}(time.Now())
 
 					err := asyncService.Run()
 					if err != nil {
