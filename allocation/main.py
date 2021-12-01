@@ -24,6 +24,9 @@ class Params:
     pass
 
 
+#读取config
+conf = read_yaml("../config.yaml")
+
 def getprojectinfo(url):
     ret = requests.get(url)
     string = str(ret.content,'utf-8')
@@ -106,10 +109,9 @@ if __name__ == '__main__':
     print("+++++solo")
     soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
     soloinfos = getprojectinfo(soloUrl)
+
     #配资计算
 
-    #读取config
-    d = read_yaml("../config.yaml")
 
     #获取pool info
     pool_infos = {}
@@ -122,7 +124,7 @@ if __name__ == '__main__':
     #组装结果参数
     crossBalance = CrossBalanceItem()
     crossBalance.FromChain = "heco"
-    crossBalance.ToChain = "bsc" #这里从郭获得,是多个跨链，应该分别处理，这里假设heco向bsc跨链
+    crossBalance.ToChain = "bsc" #这里从配资获得,是多个跨链，应该分别处理，这里假设heco向bsc跨链
     crossBalance.FromAddr = "configaddress1" #配置-从config读取
     crossBalance.ToAddr = "configaddress2"   #配置的签名机地址
     crossBalance.FromCurrency = "hbtc" #配置
@@ -130,7 +132,7 @@ if __name__ == '__main__':
 
     symbol = "HBTC"
     info = pool_infos[symbol]
-    crossBalance.Amount = 0  #这里从郭的结果得到：需要跨的数量减去已经在bsc上但是未投出去的数量，即：crossed_quantity_in_bsc_controller
+    crossBalance.Amount = 0  #这里从配资结果得到：需要跨的数量减去已经在bsc上但是未投出去的数量，即：crossed_quantity_in_bsc_controller
 
     receiveFromBridge = ReceiveFromBridgeParam()
     receiveFromBridge.ChainID = 52       #配置
@@ -150,14 +152,14 @@ if __name__ == '__main__':
     invest.ChinId = 52         #配置
     invest.ChainName = "bsc"   #配置
     invest.From = "configaddress2" #配置的签名机地址
-    invest.To = "configaddress3"   # 配置的合约地址
+    invest.To = "configaddress3"   # 配置的合约地址 ----这个应该是contract_info中对应链的vault地址
 
     #info = pool_infos[symbol]["contract_info"]["bsc_pancakestrategy"]
     #strategyAddresses = [info]
 
     #这里应该是配置中有很多策略和对应地址，程序需要拼接策略，找到对应地址
     strategystr = "bsc_pancake_btc_usdt"
-    strategys = d["strategyes"]
+    strategys = conf["strategyes"]
 
     strategyAddresses = ""  #策略地址
     for key in strategys:
@@ -166,10 +168,10 @@ if __name__ == '__main__':
             strategyAddresses = strategys[key]
 
 
-    baseTokenAmount = [0]  #值从郭的计算结果得到
-    counterTokenAmount = [0] #值从郭的计算结果得到
+    baseTokenAmount = [0]    #值从配资的计算结果得到
+    counterTokenAmount = [0] #值从配资计算结果得到
 
-    invest.StrategyAddresses = strategyAddresses
+    invest.StrategyAddresses = [0]  #从info中取（contract_info）
     invest.BaseTokenAmount = baseTokenAmount
     invest.CounterTokenAmount = counterTokenAmount
 
@@ -189,11 +191,8 @@ if __name__ == '__main__':
     params.InvestParams = invest
     params.SendToBridgeParams = sendToBridge
 
-    print(d["database"]["db"])
-
-    #(host='39.98.39.173', port=13306, user='root', passwd='root', db='1909C2', c harset='utf8')
-    #db = pymysql.connect('localhost', 'root', '1234', 'rebalance')
-    connect = getconnectinfo(d["database"]["db"])
+    #write db
+    connect = getconnectinfo(conf["database"]["db"])
     print(connect)
     conn = pymysql.connect(host='127.0.0.1', port=3306, user='root', passwd='csquan253905', db='reblance', charset = 'utf8')
     print(conn)
@@ -204,6 +203,6 @@ if __name__ == '__main__':
 
     #cursor.close()
     #db.commit()
-    db.close()
+    conn.close()
 
 
