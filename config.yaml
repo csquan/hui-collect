@@ -17,11 +17,14 @@ send_conf:
 
 chains:
   heco:
-    rpc_url: "http://huobichain-dev-08.sinnet.huobiidc.com:8545"
-    fetch_timeout: 3000
+    rpc_url: "https://http-mainnet.hecochain.com"
+    timeout: 3000
   poly:
-    rpc_url: "http://huobichain-dev-08.sinnet.huobiidc.com:8545"
-    fetch_timeout: 3000
+    rpc_url: "https://rpc-mainnet.maticvigil.com"
+    timeout: 3000
+  bsc:
+    rpc_url: "https://bsc-dataseed.binance.org/"
+    timeout: "3000"
 
 log:
   stdout:
@@ -39,4 +42,8 @@ log:
       - "kafka-2.huobidev.com:9092"
       - "kafka-3.huobidev.com:9092"
     level: 3
-
+bridge_conf:
+  url: "http://cex-bridge-api.test-15.huobiapps.com/cex-bridge-api/v1"
+  timeout: "5s"
+  ak: "kB01A8gsMv2CP4Tctd7XnUaG3iDE9rQJ"
+  sk: "ho8XcsfygSKTLEvPYOZ9W12k0i4IFJbC"
