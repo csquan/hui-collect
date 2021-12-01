@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/clients"
 	"math/big"
 	"net/http"
 	"testing"
+
+	"github.com/starslabhq/hermes-rebalance/clients"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
@@ -65,14 +66,14 @@ func createTask(conf *config.Config) {
 	}
 	SendToBridgeParam := []*types.SendToBridgeParam{
 		&types.SendToBridgeParam{
-			ChainId:           1,
-			ChainName:         "heco",
-			From:              "606288c605942f3c84a7794c0b3257b56487263c",
-			To:                "0xC7c38F93036BC13168B4f657296753568f49ef09",
+			ChainId:   1,
+			ChainName: "heco",
+			From:      "606288c605942f3c84a7794c0b3257b56487263c",
+			To:        "0xC7c38F93036BC13168B4f657296753568f49ef09",
 
 			BridgeAddress: common.HexToAddress("606288c605942f3c84a7794c0b3257b56487263c"),
-			Amount:            "1",
-			TaskID:            "1",
+			Amount:        "1",
+			TaskID:        "1",
 		},
 	}
 	InvestParams := []*types.InvestParam{
@@ -89,8 +90,8 @@ func createTask(conf *config.Config) {
 	}
 	params := &types.Params{
 		ReceiveFromBridgeParams: ReceiveFromBridgeParams,
-		SendToBridgeParams: SendToBridgeParam,
-		InvestParams: InvestParams,
+		SendToBridgeParams:      SendToBridgeParam,
+		InvestParams:            InvestParams,
 	}
 	data, _ := json.Marshal(params)
 	task := &types.PartReBalanceTask{
@@ -110,4 +111,3 @@ func createTask(conf *config.Config) {
 	//}
 	err = dbConnection.SaveRebalanceTask(dbConnection.GetSession(), task)
 }
-
