@@ -32,7 +32,7 @@ type InvestParam struct {
 	From      string
 	To        string //合约地址
 
-	Address            []common.Address
+	StrategyAddresses  []*common.Address
 	BaseTokenAmount    []*big.Int
 	CounterTokenAmount []*big.Int
 }
