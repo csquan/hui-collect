@@ -19,15 +19,15 @@ type CrossBalanceItem struct {
 }
 
 type ReceiveFromBridgeParam struct {
-	ChainId   int
-	ChainName string
-	From      string
-	To        string //合约地址
+	ChainId   int    `json:"chain_id"`
+	ChainName string `json:"chain_name"`
+	From      string `json:"from"`
+	To        string `json:"to"` //合约地址
 
-	Erc20ContractAddr common.Address //erc20 token地址，用于授权
+	Erc20ContractAddr common.Address `json:"erc20_contract_addr"` //erc20 token地址，用于授权
 
-	Amount *big.Int //链上精度值的amount，需要提前转换
-	TaskID *big.Int
+	Amount *big.Int `json:"amount"` //链上精度值的amount，需要提前转换
+	TaskID *big.Int `json:"task_id"`
 }
 
 type Params struct {
@@ -38,14 +38,14 @@ type Params struct {
 }
 
 type InvestParam struct {
-	ChainId   int
-	ChainName string
-	From      string
-	To        string //合约地址
+	ChainId   int    `json:"chain_id"`
+	ChainName string `json:"chain_name"`
+	From      string `json:"chain_from"`
+	To        string `json:"to"` //合约地址
 
-	StrategyAddresses  []common.Address
-	BaseTokenAmount    []*big.Int
-	CounterTokenAmount []*big.Int
+	StrategyAddresses  []common.Address `json:"strategy_addresses"`
+	BaseTokenAmount    []*big.Int        `json:"base_token_amount"`
+	CounterTokenAmount []*big.Int        `json:"counter_token_amount"`
 }
 
 type SendToBridgeParam struct {
