@@ -1,9 +1,10 @@
 package alert
 
 import (
-	"github.com/starslabhq/hermes-rebalance/config"
 	"net/http"
 	"time"
+
+	"github.com/starslabhq/hermes-rebalance/config"
 )
 
 type Ding struct {

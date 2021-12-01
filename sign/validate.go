@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/sirupsen/logrus"
-	"github.com/starslabhq/hermes-rebalance/config"
-	"github.com/starslabhq/hermes-rebalance/types"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/types"
 )
 
 type DecParams struct {
@@ -19,8 +20,8 @@ type DecParams struct {
 }
 
 type ValidatorResp struct {
-	Data DecParams 	`json:"data"`
-	OK 	 bool 		`json:"ok"`
+	Data DecParams `json:"data"`
+	OK   bool      `json:"ok"`
 }
 
 type ValidatorReq struct {
@@ -29,13 +30,13 @@ type ValidatorReq struct {
 }
 
 type VaResp struct {
-	RawTx    string `json:"rawTx"`
-	OK       bool   `json:"ok"`
+	RawTx string `json:"rawTx"`
+	OK    bool   `json:"ok"`
 }
 
 type VaReq struct {
-	VReq	ValidatorReq	`json:"vReq"`
-	AppId   string          `json:"appId"`
+	VReq  ValidatorReq `json:"vReq"`
+	AppId string       `json:"appId"`
 }
 
 func ValidateEnc(vaReq ValidatorReq, appId string) (vaResp *VaResp, err error) {
@@ -92,34 +93,34 @@ func ValidateEnc(vaReq ValidatorReq, appId string) (vaResp *VaResp, err error) {
 
 	return &VaResp{
 		RawTx: DecData.Data.RawTx,
-		OK: DecData.OK,
+		OK:    DecData.OK,
 	}, nil
 
 }
 
 type ValReq struct {
-	VReq	ValidReq	`json:"vReq"`
-	AppId   string          `json:"appId"`
+	VReq  ValidReq `json:"vReq"`
+	AppId string   `json:"appId"`
 }
 
 type ValidReq struct {
-	Id          int64    `json:"id"`   //0 default
-	Platform    string  `json:"platform"`
-	Chain       string   `json:"chain"`
+	Id          int64  `json:"id"` //0 default
+	Platform    string `json:"platform"`
+	Chain       string `json:"chain"`
 	EncryptData string `json:"encrypt_data"`
-	CipherKey      string `json:"cipher_key"`
+	CipherKey   string `json:"cipher_key"`
 }
 
 type ValidResp struct {
-	Id       int  `json:"id"` //audit request id
-	Success  bool    `json:"success"`
-	Error    ValidErr   `json:"error"`
-	RawTx    string  `json:"raw_tx"`
+	Id      int      `json:"id"` //audit request id
+	Success bool     `json:"success"`
+	Error   ValidErr `json:"error"`
+	RawTx   string   `json:"raw_tx"`
 }
 
 type ValidErr struct {
-	Code     int      `json:"code"`
-	Message  string   `json:"message"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 func Validator(vaReq ValidReq, appId string) (vaResp *VaResp, err error) {
@@ -177,7 +178,7 @@ func Validator(vaReq ValidReq, appId string) (vaResp *VaResp, err error) {
 
 	logrus.Info(respBody)
 	logrus.Info(string(respBody))
-	logrus.Infof(" response body :%s",string(respBody))
+	logrus.Infof(" response body :%s", string(respBody))
 	logrus.Infof("unmarshall the response body")
 	var DecData ValidResp
 	err = json.Unmarshal(respBody, &DecData)
@@ -188,18 +189,16 @@ func Validator(vaReq ValidReq, appId string) (vaResp *VaResp, err error) {
 
 	return &VaResp{
 		RawTx: DecData.RawTx,
-		OK: DecData.Success,
+		OK:    DecData.Success,
 	}, nil
 
 }
 
-
 type VaRespInfo struct {
-	Version    string      `json:"version"`
-	Devlang    string      `json:"devlang"`
-	Success    bool        `json:"success"`
+	Version string `json:"version"`
+	Devlang string `json:"devlang"`
+	Success bool   `json:"success"`
 }
-
 
 func ValidatorInfo() (*VaResp, error) {
 	targetUrl := "https://wallet-test-4.sinnet.huobiidc.com:9528/info"
@@ -234,7 +233,7 @@ func ValidatorInfo() (*VaResp, error) {
 
 	return &VaResp{
 		RawTx: DecData.Version,
-		OK: DecData.Success,
+		OK:    DecData.Success,
 	}, nil
 
 }
@@ -262,8 +261,8 @@ func ValidatorTx(task *types.TransactionTask) (vaResp *VaResp, err error) {
 
 	resp, err := Validator(vreq, appId)
 	if err != nil {
-		return resp,err
+		return resp, err
 	}
 	logrus.Info(resp)
-	return resp,nil
+	return resp, nil
 }

@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-xorm/xorm"
@@ -10,7 +12,6 @@ import (
 	signer "github.com/starslabhq/hermes-rebalance/sign"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"time"
 )
 
 type Transaction struct {

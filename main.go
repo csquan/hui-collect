@@ -3,6 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/config"
@@ -10,10 +15,6 @@ import (
 	"github.com/starslabhq/hermes-rebalance/log"
 	"github.com/starslabhq/hermes-rebalance/services"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"net/http"
 	_ "net/http/pprof"

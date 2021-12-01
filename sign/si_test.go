@@ -1,12 +1,13 @@
 package sign
 
 import (
+	"math/big"
+	"testing"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
-	"math/big"
-	"testing"
 )
 
 var EncryptData string
@@ -14,11 +15,11 @@ var CipherKey string
 
 func TestSignGatewayEvmChain(t *testing.T) {
 	siReq := SigReqData{
-		To:    "a929022c9107643515f5c777ce9a910f0d1e490c",
-		ToTag: "dd9b86c1000000000000000000000000a71edc38d189767582c38a3145b5873052c3e47a0000000000000000000000000000000000000000000422ca8b0a00a425000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000286139633032303462313062626131306666636534383864636536666666663163616364626262313000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036574680000000000000000000000000000000000000000000000000000000000",
-		Nonce: 13,
+		To:      "a929022c9107643515f5c777ce9a910f0d1e490c",
+		ToTag:   "dd9b86c1000000000000000000000000a71edc38d189767582c38a3145b5873052c3e47a0000000000000000000000000000000000000000000422ca8b0a00a425000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000286139633032303462313062626131306666636534383864636536666666663163616364626262313000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036574680000000000000000000000000000000000000000000000000000000000",
+		Nonce:   13,
 		Decimal: 18,
-		From:     "606288c605942f3c84a7794c0b3257b56487263c",
+		From:    "606288c605942f3c84a7794c0b3257b56487263c",
 		//GasLimit 2000000
 		FeeStep: "2000000",
 		//GasPrice 1.2*suggestGasprice, or 150Gwei by default
@@ -27,10 +28,10 @@ func TestSignGatewayEvmChain(t *testing.T) {
 		TaskType: "withdraw",
 	}
 	auReq := BusData{
-		Chain: "heco",
-		Quantity: "101000000000000000000",
+		Chain:     "heco",
+		Quantity:  "101000000000000000000",
 		ToAddress: "a9c0204b10bba10ffce488dce6ffff1cacdbbb10",
-		ToTag: "dd9b86c1000000000000000000000000a71edc38d189767582c38a3145b5873052c3e47a0000000000000000000000000000000000000000000422ca8b0a00a425000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000286139633032303462313062626131306666636534383864636536666666663163616364626262313000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036574680000000000000000000000000000000000000000000000000000000000",
+		ToTag:     "dd9b86c1000000000000000000000000a71edc38d189767582c38a3145b5873052c3e47a0000000000000000000000000000000000000000000422ca8b0a00a425000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000286139633032303462313062626131306666636534383864636536666666663163616364626262313000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036574680000000000000000000000000000000000000000000000000000000000",
 	}
 
 	appId := "rebal-si-gateway"
@@ -41,14 +42,14 @@ func TestSignGatewayEvmChain(t *testing.T) {
 	}
 
 	resp, err := SignGatewayEvmChain(signReq, appId)
-	if err != nil{
+	if err != nil {
 		t.Error(err)
 	}
 
 	t.Log(resp.Data.EncryptData)
 	t.Log(resp.Data.Extra.Cipher)
 
-	EncryptData  = resp.Data.EncryptData
+	EncryptData = resp.Data.EncryptData
 	CipherKey = resp.Data.Extra.Cipher
 
 	logrus.Info(resp)
@@ -60,17 +61,16 @@ func TestSignGatewayEvmChain(t *testing.T) {
 	logrus.Info(CipherKey)
 }
 
-
 func TestPostAuditInfo(t *testing.T) {
 	req := AuditRequest{
-		BusType:"starsHecoBridgeWithdraw",
+		BusType: "starsHecoBridgeWithdraw",
 		BusStep: 1,
-		BusId: "15",
+		BusId:   "15",
 		BusData: BusData{
-			Chain: "heco",
-			Quantity: "101000000000000000000",
+			Chain:     "heco",
+			Quantity:  "101000000000000000000",
 			ToAddress: "a9c0204b10bba10ffce488dce6ffff1cacdbbb10",
-			ToTag: "dd9b86c1000000000000000000000000a71edc38d189767582c38a3145b5873052c3e47a0000000000000000000000000000000000000000000422ca8b0a00a425000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000286139633032303462313062626131306666636534383864636536666666663163616364626262313000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036574680000000000000000000000000000000000000000000000000000000000",
+			ToTag:     "dd9b86c1000000000000000000000000a71edc38d189767582c38a3145b5873052c3e47a0000000000000000000000000000000000000000000422ca8b0a00a425000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000286139633032303462313062626131306666636534383864636536666666663163616364626262313000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036574680000000000000000000000000000000000000000000000000000000000",
 		},
 		Result: 1,
 	}
@@ -85,22 +85,21 @@ func TestPostAuditInfo(t *testing.T) {
 	logrus.Info(resp)
 }
 
-
 func TestValidator(t *testing.T) {
 	appId := "rebal-si-gateway"
 	req := ValidReq{
-		Id: 15,
-		Platform: "starshecobridge",
-		Chain: "ht2",
+		Id:          15,
+		Platform:    "starshecobridge",
+		Chain:       "ht2",
 		EncryptData: EncryptData,
-		CipherKey: CipherKey,
+		CipherKey:   CipherKey,
 	}
 
 	logrus.Info(req)
 	logrus.Info(appId)
 
 	resp, err := Validator(req, appId)
-	if err != nil{
+	if err != nil {
 		t.Error(err)
 	}
 	t.Log(resp.OK)
@@ -110,9 +109,9 @@ func TestValidator(t *testing.T) {
 //发起跨链交易到签名机
 func TestSendToBridge(t *testing.T) {
 	//1.sign
-    fromAddress := "606288c605942f3c84a7794c0b3257b56487263c"
-	toAddress := common.HexToAddress("a9c0204b10bba10ffce488dce6ffff1cacdbbb10")  // 和receiver一致
-	receiverAddress := "a9c0204b10bba10ffce488dce6ffff1cacdbbb10"  //brigde address
+	fromAddress := "606288c605942f3c84a7794c0b3257b56487263c"
+	toAddress := common.HexToAddress("a9c0204b10bba10ffce488dce6ffff1cacdbbb10") // 和receiver一致
+	receiverAddress := "a9c0204b10bba10ffce488dce6ffff1cacdbbb10"                //brigde address
 
 	//首先构造 inputdata
 	sendToBridgeSignature := []byte("sendToBridge(address,uint256，uint256)")
@@ -120,7 +119,7 @@ func TestSendToBridge(t *testing.T) {
 	hash := sha3.NewLegacyKeccak256()
 	hash.Write(sendToBridgeSignature)
 	methodID := hash.Sum(nil)[:4]
-	logrus.Info(hexutil.Encode(methodID))//0x0f75dc8c
+	logrus.Info(hexutil.Encode(methodID)) //0x0f75dc8c
 
 	paddedAddress := common.LeftPadBytes(toAddress.Bytes(), 32)
 	logrus.Info(hexutil.Encode(paddedAddress)) // 0x000000000000000000000000a929022c9107643515f5c777ce9a910f0d1e490c
@@ -152,20 +151,20 @@ func TestSendToBridge(t *testing.T) {
 	logrus.Info(toTag)
 
 	siReq := SigReqData{
-		To:    receiverAddress,
-		ToTag: toTag,
-		Decimal: 18,
+		To:       receiverAddress,
+		ToTag:    toTag,
+		Decimal:  18,
 		From:     fromAddress,
-		FeeStep: "2000000",
+		FeeStep:  "2000000",
 		FeePrice: "15000000000",
 		Amount:   "0",
 		TaskType: "withdraw",
 	}
 	auReq := BusData{
-		Chain: "heco",
-		Quantity: "1000000000000000000000",
+		Chain:     "heco",
+		Quantity:  "1000000000000000000000",
 		ToAddress: receiverAddress,
-		ToTag: toTag,
+		ToTag:     toTag,
 	}
 
 	appId := "rebal-si-gateway"
@@ -176,7 +175,7 @@ func TestSendToBridge(t *testing.T) {
 	}
 
 	signResp, err := SignGatewayEvmChain(signReq, appId)
-	if err != nil{
+	if err != nil {
 		t.Error(err)
 	}
 
@@ -187,14 +186,14 @@ func TestSendToBridge(t *testing.T) {
 
 	//2.audit
 	auditReq := AuditRequest{
-		BusType:"starsHecoBridgeWithdraw",
+		BusType: "starsHecoBridgeWithdraw",
 		BusStep: 1,
-		BusId: "20",
+		BusId:   "20",
 		BusData: BusData{
-			Chain: "heco",
-			Quantity: "1000000000000000000000",
+			Chain:     "heco",
+			Quantity:  "1000000000000000000000",
 			ToAddress: "a9c0204b10bba10ffce488dce6ffff1cacdbbb10",
-			ToTag: toTag,
+			ToTag:     toTag,
 		},
 		Result: 1,
 	}
@@ -208,17 +207,17 @@ func TestSendToBridge(t *testing.T) {
 
 	//3.validator
 	vReq := ValidReq{
-		Id: 20,
-		Platform: "starshecobridge",
-		Chain: "ht2",
+		Id:          20,
+		Platform:    "starshecobridge",
+		Chain:       "ht2",
 		EncryptData: signResp.Data.EncryptData,
-		CipherKey: signResp.Data.Extra.Cipher,
+		CipherKey:   signResp.Data.Extra.Cipher,
 	}
 
 	logrus.Info(vReq)
 
 	valResp, err := Validator(vReq, appId)
-	if err != nil{
+	if err != nil {
 		t.Error(err)
 	}
 	t.Log(valResp.OK)
@@ -229,7 +228,7 @@ func TestSendToBridge(t *testing.T) {
 func TestReceiveFromBridge(t *testing.T) {
 	//1.sign
 	fromAddress := "606288c605942f3c84a7794c0b3257b56487263c"
-	receiverAddress := "a9c0204b10bba10ffce488dce6ffff1cacdbbb10"  //brigde address
+	receiverAddress := "a9c0204b10bba10ffce488dce6ffff1cacdbbb10" //brigde address
 
 	//首先构造 inputdata
 	receiveFromBridgeSignature := []byte("receiveFromBridge(uint256，uint256)")
@@ -265,20 +264,20 @@ func TestReceiveFromBridge(t *testing.T) {
 	logrus.Info(toTag)
 
 	siReq := SigReqData{
-		To:    receiverAddress,
-		ToTag: toTag,
-		Decimal: 18,
+		To:       receiverAddress,
+		ToTag:    toTag,
+		Decimal:  18,
 		From:     fromAddress,
-		FeeStep: "2000000",
+		FeeStep:  "2000000",
 		FeePrice: "15000000000",
 		Amount:   "0",
 		TaskType: "withdraw",
 	}
 	auReq := BusData{
-		Chain: "heco",
-		Quantity: "1000000000000000000000",
+		Chain:     "heco",
+		Quantity:  "1000000000000000000000",
 		ToAddress: receiverAddress,
-		ToTag: toTag,
+		ToTag:     toTag,
 	}
 
 	appId := "rebal-si-gateway"
@@ -289,7 +288,7 @@ func TestReceiveFromBridge(t *testing.T) {
 	}
 
 	signResp, err := SignGatewayEvmChain(signReq, appId)
-	if err != nil{
+	if err != nil {
 		t.Error(err)
 	}
 
@@ -300,14 +299,14 @@ func TestReceiveFromBridge(t *testing.T) {
 
 	//2.audit
 	auditReq := AuditRequest{
-		BusType:"starsHecoBridgeWithdraw",
+		BusType: "starsHecoBridgeWithdraw",
 		BusStep: 1,
-		BusId: "18",
+		BusId:   "18",
 		BusData: BusData{
-			Chain: "heco",
-			Quantity: "1000000000000000000000",
+			Chain:     "heco",
+			Quantity:  "1000000000000000000000",
 			ToAddress: "a9c0204b10bba10ffce488dce6ffff1cacdbbb10",
-			ToTag: toTag,
+			ToTag:     toTag,
 		},
 		Result: 1,
 	}
@@ -321,25 +320,19 @@ func TestReceiveFromBridge(t *testing.T) {
 
 	//3.validator
 	vReq := ValidReq{
-		Id: 18,
-		Platform: "starshecobridge",
-		Chain: "ht2",
+		Id:          18,
+		Platform:    "starshecobridge",
+		Chain:       "ht2",
 		EncryptData: signResp.Data.EncryptData,
-		CipherKey: signResp.Data.Extra.Cipher,
+		CipherKey:   signResp.Data.Extra.Cipher,
 	}
 
 	logrus.Info(vReq)
 
 	valResp, err := Validator(vReq, appId)
-	if err != nil{
+	if err != nil {
 		t.Error(err)
 	}
 	t.Log(valResp.OK)
 	logrus.Info(valResp)
 }
-
-
-
-
-
-

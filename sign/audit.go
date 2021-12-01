@@ -8,35 +8,35 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/starslabhq/hermes-rebalance/config"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/config"
 )
 
-
 type BusData struct {
-	Chain    string `json:"chain"`
-	Quantity    string `json:"quantity"`
+	Chain     string `json:"chain"`
+	Quantity  string `json:"quantity"`
 	ToAddress string `json:"toAddress"`
 	ToTag     string `json:"toTag"`
 }
 
 type AuditReq struct {
-	AppId 	string          `json:"appId"`
-	AuReq   AuditRequest    `json:"auReq"`
+	AppId string       `json:"appId"`
+	AuReq AuditRequest `json:"auReq"`
 }
 
 type AuditRequest struct {
-	BusType        string `json:"busType"`
-	BusStep   int   `json:"busStep"` //1
-	BusId			string  `json:"busId"`
-	BusData 	BusData    `json:"busData"`
-	Result      int   `json:"result"`
+	BusType string  `json:"busType"`
+	BusStep int     `json:"busStep"` //1
+	BusId   string  `json:"busId"`
+	BusData BusData `json:"busData"`
+	Result  int     `json:"result"`
 }
 
 type AuditResData struct {
@@ -44,9 +44,9 @@ type AuditResData struct {
 }
 
 type AuditResponse struct {
-	Code int `json:"code"`
+	Code    int    `json:"code"`
 	Message string `json:"message"`
-	Success bool `json:"success"`
+	Success bool   `json:"success"`
 }
 
 // Sign ...
@@ -145,7 +145,7 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 
 	//map the offset Id with appId here
 	offset := conf.Vip.GetInt("offset")
-	busId, _ :=  strconv.Atoi(request.BusId)
+	busId, _ := strconv.Atoi(request.BusId)
 	busId = busId + offset
 
 	request.BusId = strconv.FormatInt(int64(busId), 10)
@@ -157,7 +157,7 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 		return AuditResponse{}, err
 	}
 
-	logrus.Infof("audit request body json: %s",string(reqDataByte))
+	logrus.Infof("audit request body json: %s", string(reqDataByte))
 
 	body := bytes.NewReader(reqDataByte)
 
@@ -194,7 +194,7 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 	return result, nil
 }
 
-func AuditTx(input string,to string,quantity string,orderID int64) (AuditResponse, error)  {
+func AuditTx(input string, to string, quantity string, orderID int64) (AuditResponse, error) {
 
 	if strings.Contains(input, "0x") {
 		input = input[2:]
@@ -202,7 +202,6 @@ func AuditTx(input string,to string,quantity string,orderID int64) (AuditRespons
 	if strings.Contains(to, "0x") {
 		to = to[2:]
 	}
-
 
 	var bus BusData
 	bus.Chain = chain
@@ -213,17 +212,14 @@ func AuditTx(input string,to string,quantity string,orderID int64) (AuditRespons
 	var AuditInput AuditReq
 	AuditInput.AppId = appId
 	AuditInput.AuReq.BusType = bustype
-	AuditInput.AuReq.BusStep = 1 //推荐值，不修改
-	AuditInput.AuReq.BusId = fmt.Sprintf("%d", orderID)  //ID保持和validator中的id一样,确保每次调用增1
+	AuditInput.AuReq.BusStep = 1                        //推荐值，不修改
+	AuditInput.AuReq.BusId = fmt.Sprintf("%d", orderID) //ID保持和validator中的id一样,确保每次调用增1
 	AuditInput.AuReq.BusData = bus
 	AuditInput.AuReq.Result = 1 //推荐值，不修改
 	resp, err := PostAuditInfo(AuditInput.AuReq, appId)
 	if err != nil {
-		return resp,err
+		return resp, err
 	}
 	logrus.Info(resp)
-	return resp,nil
+	return resp, nil
 }
-
-
-

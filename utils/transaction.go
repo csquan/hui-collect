@@ -3,15 +3,16 @@ package utils
 import (
 	"context"
 	"fmt"
+	"math"
+	"math/big"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/starslabhq/hermes-rebalance/types"
-	"math"
-	"math/big"
-	"strings"
 )
 
 func ReceiveFromBridgeInput(param *types.ReceiveFromBridgeParam) (input []byte, err error) {
@@ -86,7 +87,6 @@ func GetGasPrice(chainName string) (*big.Int, error) {
 	}
 	return client.SuggestGasPrice(context.Background())
 }
-
 
 const erc20abi = `[
 	{

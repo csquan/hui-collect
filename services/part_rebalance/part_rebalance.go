@@ -2,6 +2,7 @@ package part_rebalance
 
 import (
 	"fmt"
+
 	"github.com/starslabhq/hermes-rebalance/utils"
 
 	"github.com/sirupsen/logrus"
@@ -108,7 +109,7 @@ func getTransactionState(db types.IDB, task *types.PartReBalanceTask, transferTy
 	}
 	if success {
 		state = types.StateSuccess
-	}else {
+	} else {
 		state = types.StateOngoing
 	}
 	return

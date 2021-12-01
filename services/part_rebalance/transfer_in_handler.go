@@ -2,6 +2,7 @@ package part_rebalance
 
 import (
 	"encoding/json"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
