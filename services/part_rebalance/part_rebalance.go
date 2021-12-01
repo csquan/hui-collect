@@ -2,7 +2,7 @@ package part_rebalance
 
 import (
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/utils"
+	"github.com/starslabhq/hermes-rebalance/clients"
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
@@ -30,7 +30,7 @@ func NewPartReBalanceService(db types.IDB, conf *config.Config) (p *PartReBalanc
 			},
 			types.PartReBalanceCross: &crossHandler{
 				db:        db,
-				clientMap: utils.ClientMap,
+				clientMap: clients.ClientMap,
 			},
 			types.PartReBalanceTransferIn: &transferInHandler{
 				db: db,
@@ -108,7 +108,7 @@ func getTransactionState(db types.IDB, task *types.PartReBalanceTask, transferTy
 	}
 	if success {
 		state = types.StateSuccess
-	}else {
+	} else {
 		state = types.StateOngoing
 	}
 	return

@@ -8,9 +8,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/config"
-	"github.com/shopspring/decimal"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -19,6 +16,10 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/config"
 )
 
 const appId = "rebal-si-gateway"
@@ -65,46 +66,46 @@ type SigReqData struct {
 	Decimal  int    `json:"decimal"`
 	Nonce    int    `json:"nonce"`
 	From     string `json:"from"`
-	To 		 string `json:"to"`        		//to：合约地址
-	FeeStep  string `json:"fee_step"`  		//GasLimit
-	FeePrice string `json:"fee_price"` 		//GasPrice
-	Amount   string `json:"amount"`    		//对于合约交易，可以填写0
-	TaskType string     `json:"taskType"` 	//reblance 固定使用withdraw
+	To       string `json:"to"`        //to：合约地址
+	FeeStep  string `json:"fee_step"`  //GasLimit
+	FeePrice string `json:"fee_price"` //GasPrice
+	Amount   string `json:"amount"`    //对于合约交易，可以填写0
+	TaskType string `json:"taskType"`  //reblance 固定使用withdraw
 }
 
 type ReqData struct {
-	ToTag    string `json:"to_tag"`   		//去除0x的inputdata
+	ToTag    string `json:"to_tag"` //去除0x的inputdata
 	Asset    string `json:"asset"`
 	Decimal  int    `json:"decimal"`
 	Platform string `json:"platform"`
 	Nonce    int    `json:"nonce"`
 	From     string `json:"from"`
-	To 		 string `json:"to"`				//to：合约地址
-	FeeStep  string `json:"fee_step"`		//GasLimit
-	FeePrice string `json:"fee_price"`		//GasPrice
+	To       string `json:"to"`        //to：合约地址
+	FeeStep  string `json:"fee_step"`  //GasLimit
+	FeePrice string `json:"fee_price"` //GasPrice
 	FeeAsset string `json:"fee_asset"`
 	Amount   string `json:"amount"`
 	ChainId  string `json:"chain_id"`
 }
 
 type EncParams struct {
-	From      string     `json:"from"`     //from_address
-	To        string     `json:"to"`       //to：合约地址
-	Value     string     `json:"value"`    //value -- call contract: 0
-	InputData string     `json:"inputData"` //去除0x的inputdata
-	Chain     string     `json:"chain"`     //destination chain
-	Quantity  string     `json:"quantity"`  //token number
-	ToAddress string     `json:"toAddress"` //receipt address
-	ToTag     string     `json:"toTag"`     //去除0x的inputdata
-	TaskType  string     `json:"taskType"`  //reblance 固定使用withdraw
+	From      string `json:"from"`      //from_address
+	To        string `json:"to"`        //to：合约地址
+	Value     string `json:"value"`     //value -- call contract: 0
+	InputData string `json:"inputData"` //去除0x的inputdata
+	Chain     string `json:"chain"`     //destination chain
+	Quantity  string `json:"quantity"`  //token number
+	ToAddress string `json:"toAddress"` //receipt address
+	ToTag     string `json:"toTag"`     //去除0x的inputdata
+	TaskType  string `json:"taskType"`  //reblance 固定使用withdraw
 
 }
 
 type Task struct {
-	TaskId     string 	`json:"task_id"`
-	UserId     string 	`json:"user_id"`
-	OriginAddr string 	`json:"origin_addr"`
-	TaskType   string 	`json:"task_type"`
+	TaskId     string `json:"task_id"`
+	UserId     string `json:"user_id"`
+	OriginAddr string `json:"origin_addr"`
+	TaskType   string `json:"task_type"`
 }
 
 type Response struct {
@@ -122,7 +123,6 @@ type RespEx struct {
 	TxHash string `json:"txhash"`
 }
 
-
 type UnData struct {
 	FromAddr string
 	Gas      int
@@ -133,17 +133,15 @@ type UnData struct {
 	//TaskNonce    string
 }
 
-
 type SigningReq struct {
-	AppId 	string          `json:"appId"`
-	SReq    SignReq         `json:"sReq"`
+	AppId string  `json:"appId"`
+	SReq  SignReq `json:"sReq"`
 }
 
 type SignReq struct {
-	SiReq   SigReqData         `json:"siReq"`
-	AuReq   BusData         `json:"auReq"`
+	SiReq SigReqData `json:"siReq"`
+	AuReq BusData    `json:"auReq"`
 }
-
 
 //SignGatewayEvmChain for EVM compatible chain support
 func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err error) {
@@ -168,18 +166,18 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 	conf := config.RemoteSignerConfig(appId)
 	//reqData := signReq.SiReq
 	reqData := ReqData{
-		Asset: conf.Vip.GetString("gateway." + chain + ".asset"),
+		Asset:    conf.Vip.GetString("gateway." + chain + ".asset"),
 		Platform: conf.Vip.GetString("gateway." + chain + ".platform"),
 		FeeAsset: conf.Vip.GetString("gateway." + chain + ".feeAsset"),
-		ChainId: conf.Vip.GetString("gateway." + chain + ".chainId"),
-		ToTag: signReq.SiReq.ToTag,
-		Decimal: signReq.SiReq.Decimal,
-		From: strings.ToLower(signReq.SiReq.From),
-		To: strings.ToLower(signReq.SiReq.To),
-		FeeStep: signReq.SiReq.FeeStep,
+		ChainId:  conf.Vip.GetString("gateway." + chain + ".chainId"),
+		ToTag:    signReq.SiReq.ToTag,
+		Decimal:  signReq.SiReq.Decimal,
+		From:     strings.ToLower(signReq.SiReq.From),
+		To:       strings.ToLower(signReq.SiReq.To),
+		FeeStep:  signReq.SiReq.FeeStep,
 		FeePrice: signReq.SiReq.FeePrice,
-		Amount: signReq.SiReq.Amount,
-		Nonce: signReq.SiReq.Nonce,
+		Amount:   signReq.SiReq.Amount,
+		Nonce:    signReq.SiReq.Nonce,
 	}
 
 	//the gateway url for signing according to different chains
@@ -188,15 +186,15 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 	sysAddr := reqData.From
 
 	encPara := &EncParams{
-		From: sysAddr,
-		To: reqData.To,
-		Value: reqData.Amount,
+		From:      sysAddr,
+		To:        reqData.To,
+		Value:     reqData.Amount,
 		InputData: reqData.ToTag,
-		Chain: chain,
-		Quantity: signReq.AuReq.Quantity,
+		Chain:     chain,
+		Quantity:  signReq.AuReq.Quantity,
 		ToAddress: strings.ToLower(signReq.AuReq.ToAddress),
-		ToTag: reqData.ToTag,
-		TaskType: signReq.SiReq.TaskType,
+		ToTag:     reqData.ToTag,
+		TaskType:  signReq.SiReq.TaskType,
 	}
 	encParaByte, err := json.Marshal(encPara)
 	if err != nil {
@@ -225,7 +223,6 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 	logrus.Infof("The request body is %s", string(payloadBytes))
 
 	body := bytes.NewReader(payloadBytes)
-
 
 	req1, err := http.NewRequest("POST", Url, body)
 	req1.Header.Set("content-type", "application/json")
@@ -495,7 +492,7 @@ func (p *SignProcess) String() string {
 	return result.String()
 }
 
-func  SignTx(input string,decimal int,nonce int,from string,to string,GasLimit string,GasPrice string,Amount string,quantity string,receiver string )(signResp Response, err error) {
+func SignTx(input string, decimal int, nonce int, from string, to string, GasLimit string, GasPrice string, Amount string, quantity string, receiver string) (signResp Response, err error) {
 	//delete "0x" if have
 	if strings.Contains(input, "0x") {
 		input = input[2:]
@@ -532,9 +529,9 @@ func  SignTx(input string,decimal int,nonce int,from string,to string,GasLimit s
 	req.AuReq = au
 
 	resp, err := SignGatewayEvmChain(req, appId)
-	if err != nil{
+	if err != nil {
 		signResp.Result = false
-		return signResp,err
+		return signResp, err
 	}
 
 	logrus.Info(resp)
@@ -545,10 +542,5 @@ func  SignTx(input string,decimal int,nonce int,from string,to string,GasLimit s
 	logrus.Info("CipherKey")
 	logrus.Info(resp.Data.Extra.Cipher)
 
-	return resp,nil
+	return resp, nil
 }
-
-
-
-
-

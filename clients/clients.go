@@ -1,12 +1,13 @@
-package utils
+package clients
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
-	"net/http"
-	"time"
 )
 
 var ClientMap map[string]*ethclient.Client

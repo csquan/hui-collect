@@ -48,6 +48,7 @@ const (
 	ReceiveFromBridge TransactionType = iota
 	Invest
 	Approve
+	SendToBridge
 )
 
 type TaskState int
@@ -99,6 +100,16 @@ func (p *PartReBalanceTask) ReadTransactionParams(txType TransactionType) (resul
 	switch txType {
 	case Invest:
 		for _, v := range params.InvestParams {
+			result = append(result, v)
+		}
+		return
+	case ReceiveFromBridge:
+		for _, v := range params.ReceiveFromBridgeParams {
+			result = append(result, v)
+		}
+		return
+	case SendToBridge:
+		for _, v := range params.SendToBridgeParams {
 			result = append(result, v)
 		}
 		return

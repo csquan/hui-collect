@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/starslabhq/hermes-rebalance/clients"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -12,7 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"math/big"
 )
 
 type crossHandler struct {
@@ -54,13 +56,9 @@ func (c *crossHandler) CheckFinished(task *types.PartReBalanceTask) (finished bo
 func (c *crossHandler) MoveToNextState(task *types.PartReBalanceTask, nextState types.PartReBalanceState) (err error) {
 	var tasks []*types.TransactionTask
 	if nextState == types.PartReBalanceTransferIn {
-		tasks, err = c.CreateReceiveFromBridgeTask(task)
+		tasks, err = CreateTransactionTask(task, types.ReceiveFromBridge)
 		if err != nil {
-			logrus.Errorf("CreateReceiveFromBridgeTask error:%v task:[%v]", err, task)
-			return
-		}
-		if tasks, err = SetNonceAndGasPrice(tasks); err != nil { //包含http，放在事物外面
-			logrus.Errorf("SetNonceAndGasPrice error:%v task:[%v]", err, task)
+			logrus.Errorf("InvestTask error:%v task:[%v]", err, task)
 			return
 		}
 	}
@@ -84,47 +82,6 @@ func (c *crossHandler) MoveToNextState(task *types.PartReBalanceTask, nextState 
 	return
 }
 
-func (c *crossHandler) CreateReceiveFromBridgeTask(rbTask *types.PartReBalanceTask) (tasks []*types.TransactionTask, err error) {
-	params, err := rbTask.ReadParams()
-	if err != nil {
-		return
-	}
-	var paramData, inputData []byte
-	for _, param := range params.ReceiveFromBridgeParams {
-		var approveTask *types.TransactionTask
-		if approveTask, err = c.CreateApproveTask(rbTask.ID, param); err != nil {
-			logrus.Errorf("CreateApproveTask err:%v", err)
-			return
-		}
-		if approveTask != nil {
-			tasks = append(tasks, approveTask)
-		}
-		paramData, err = json.Marshal(param)
-		if err != nil {
-			logrus.Errorf("CreateTransactionTask param marshal err:%v", err)
-			return
-		}
-		inputData, err = utils.ReceiveFromBridgeInput(param)
-		if err != nil {
-			logrus.Errorf("ReceiveFromBridgeInput err:%v", err)
-			return
-		}
-		task := &types.TransactionTask{
-			BaseTask:        &types.BaseTask{State: int(types.TxUnInitState)},
-			RebalanceId:     rbTask.ID,
-			TransactionType: int(types.ReceiveFromBridge),
-			ChainId:         param.ChainId,
-			ChainName:       param.ChainName,
-			From:            param.From,
-			To:              param.To,
-			Params:          string(paramData),
-			InputData:       hexutil.Encode(inputData),
-		}
-		tasks = append(tasks, task)
-	}
-	return
-}
-
 func SetNonceAndGasPrice(tasks []*types.TransactionTask) (result []*types.TransactionTask, err error) {
 	//group by From
 	m := make(map[string][]*types.TransactionTask)
@@ -140,10 +97,10 @@ func SetNonceAndGasPrice(tasks []*types.TransactionTask) (result []*types.Transa
 		var gasPrice *big.Int
 		for i, t := range l {
 			if i == 0 {
-				if nonce, err = utils.GetNonce(t.From, t.ChainName); err != nil {
+				if nonce, err = types.GetNonce(t.From, t.ChainName); err != nil {
 					return
 				}
-				if gasPrice, err = utils.GetGasPrice(t.ChainName); err != nil {
+				if gasPrice, err = types.GetGasPrice(t.ChainName); err != nil {
 					return
 				}
 			} else {
@@ -157,14 +114,14 @@ func SetNonceAndGasPrice(tasks []*types.TransactionTask) (result []*types.Transa
 	return
 }
 
-func (c *crossHandler) CreateApproveTask(taskID uint64, param *types.ReceiveFromBridgeParam) (task *types.TransactionTask, err error) {
-	client, ok := c.clientMap[param.ChainName]
+func CreateApproveTask(taskID uint64, param *types.ReceiveFromBridgeParam) (task *types.TransactionTask, err error) {
+	client, ok := clients.ClientMap[param.ChainName]
 	if !ok {
 		err = fmt.Errorf("rpc client for chain:[%v] not found", param.ChainName)
 		return
 	}
 
-	data, err := utils.AllowanceInput(param)
+	data, err := types.AllowanceInput(param.From, param.To)
 	if err != nil {
 		err = fmt.Errorf("encode allowance input error:%v", err)
 		return
@@ -179,7 +136,7 @@ func (c *crossHandler) CreateApproveTask(taskID uint64, param *types.ReceiveFrom
 		return
 	}
 
-	out, err := utils.AllowanceOutput(outBytes)
+	out, err := types.AllowanceOutput(outBytes)
 	if err != nil {
 		err = fmt.Errorf("decode allowance error:%v", err)
 		return
@@ -190,7 +147,7 @@ func (c *crossHandler) CreateApproveTask(taskID uint64, param *types.ReceiveFrom
 		return nil, nil
 	}
 
-	inputData, err := utils.ApproveInput(param)
+	inputData, err := types.ApproveInput(param.To)
 	if err != nil {
 		logrus.Errorf("CreateApproveTask err:%v", err)
 		return

@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	remote "github.com/shima-park/agollo/viper-remote"
 	"github.com/spf13/viper"
@@ -32,11 +33,10 @@ type BridgeConf struct {
 }
 
 type SendConf struct {
-	GasLimit      string   `mapstructure:"gaslimit"`
-	Amount 		  string   `mapstructure:"amount"`
-	Quantity      string   `mapstructure:"quantity"`
+	GasLimit string `mapstructure:"gaslimit"`
+	Amount   string `mapstructure:"amount"`
+	Quantity string `mapstructure:"quantity"`
 }
-
 
 //func (o *DataBaseConf) init() {
 //	o.RetryInterval = time.Duration(o.RetryIntervalInt) * time.Millisecond

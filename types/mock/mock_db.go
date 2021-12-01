@@ -5,10 +5,11 @@
 package mock
 
 import (
+	reflect "reflect"
+
 	xorm "github.com/go-xorm/xorm"
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/starslabhq/hermes-rebalance/types"
-	reflect "reflect"
 )
 
 // MockIReader is a mock of IReader interface

@@ -36,13 +36,9 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 
 	var tasks []*types.TransactionTask
 	if nextState == types.PartReBalanceInvest {
-		tasks, err = t.CreateInvestTask(task)
+		tasks, err = CreateTransactionTask(task, types.Invest)
 		if err != nil {
 			logrus.Errorf("InvestTask error:%v task:[%v]", err, task)
-			return
-		}
-		if tasks, err = SetNonceAndGasPrice(tasks); err != nil { //包含http，放在事物外面
-			logrus.Errorf("SetNonceAndGasPrice error:%v task:[%v]", err, task)
 			return
 		}
 	}
@@ -67,36 +63,30 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 	return
 }
 
-func (t *transferInHandler) CreateInvestTask(task *types.PartReBalanceTask) (tasks []*types.TransactionTask, err error) {
-	params, err := task.ReadTransactionParams(types.Invest)
+func CreateTransactionTask(task *types.PartReBalanceTask, transactionType types.TransactionType) (tasks []*types.TransactionTask, err error) {
+	params, err := task.ReadTransactionParams(transactionType)
 	if err != nil {
 		return
 	}
-	var data, inputData string
 	for _, param := range params {
-		data, err = param.EncodeParam()
+		if transactionType == types.ReceiveFromBridge {
+			var approveTask *types.TransactionTask
+			approveTask, err = CreateApproveTask(task.ID, param.(*types.ReceiveFromBridgeParam))
+			if err != nil {
+				logrus.Errorf("create approve task from param err:%v task:%v", err, task)
+				return
+			}
+			tasks = append(tasks, approveTask)
+		}
+		t, err := param.CreateTask(task.ID)
 		if err != nil {
-			logrus.Errorf("CreateTransactionTask param marshal err:%v", err)
-			return
+			logrus.Errorf("create task from param err:%v task:%v", err, task)
 		}
-		inputData, err = param.EncodeInput()
-		if err != nil {
-			logrus.Errorf("InvestInput err:%v", err)
-			return
-		}
-		chainId, chainName, from, to := param.GetBase()
-		task := &types.TransactionTask{
-			BaseTask:        &types.BaseTask{State: int(types.TxUnInitState)},
-			RebalanceId:     task.ID,
-			TransactionType: int(types.Invest),
-			ChainId:         chainId,
-			ChainName:       chainName,
-			From:            from,
-			To:              to,
-			Params:          data,
-			InputData:       inputData,
-		}
-		tasks = append(tasks, task)
+		tasks = append(tasks, t)
+	}
+	if tasks, err = SetNonceAndGasPrice(tasks); err != nil {
+		logrus.Errorf("SetNonceAndGasPrice error:%v task:[%v]", err, task)
+		return
 	}
 	return
 }

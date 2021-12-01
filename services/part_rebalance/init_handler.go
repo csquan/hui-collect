@@ -32,7 +32,7 @@ func (i *initHandler) MoveToNextState(task *types.PartReBalanceTask, nextState t
 	for _, param := range crossBalances {
 		crossTasks = append(crossTasks, &types.CrossTask{
 			//BaseTask:      &types.BaseTask{State: types.ToCreateSubTask},
-			State: types.ToCreateSubTask,
+			State:         types.ToCreateSubTask,
 			RebalanceId:   task.ID,
 			ChainFrom:     param.FromChain,
 			ChainTo:       param.ToChain,

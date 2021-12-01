@@ -1,8 +1,11 @@
 package types
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"encoding/json"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type CrossBalanceItem struct {
@@ -31,6 +34,7 @@ type Params struct {
 	CrossBalances           []*CrossBalanceItem       `json:"cross_balances"`
 	ReceiveFromBridgeParams []*ReceiveFromBridgeParam `json:"receive_from_bridge_params"`
 	InvestParams            []*InvestParam            `json:"invest_params"`
+	SendToBridgeParams      []*SendToBridgeParam      `json:"send_to_bridge_params"`
 }
 
 type InvestParam struct {
@@ -39,10 +43,92 @@ type InvestParam struct {
 	From      string
 	To        string //合约地址
 
-	Address            []common.Address
+	StrategyAddresses  []common.Address
 	BaseTokenAmount    []*big.Int
 	CounterTokenAmount []*big.Int
 }
 
+type SendToBridgeParam struct {
+	ChainId   int
+	ChainName string
+	From      string
+	To        string //合约地址
+
+	BridgeAddress common.Address
+	Amount        *big.Int
+	TaskID        *big.Int
+}
 
 
+type TransactionParamInterface interface {
+	CreateTask(rebalanceTaskID uint64) (*TransactionTask, error)
+}
+
+func (p *InvestParam) CreateTask(rebalanceTaskID uint64) (*TransactionTask, error) {
+	inputData, err := InvestInput(p.StrategyAddresses, p.BaseTokenAmount, p.CounterTokenAmount)
+	if err != nil {
+		return nil, err
+	}
+	paramData, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+	task := &TransactionTask{
+		BaseTask:        &BaseTask{State: int(TxUnInitState)},
+		RebalanceId:     rebalanceTaskID,
+		TransactionType: int(Invest),
+		ChainId:         p.ChainId,
+		ChainName:       p.ChainName,
+		From:            p.From,
+		To:              p.To,
+		Params:          string(paramData),
+		InputData:       hexutil.Encode(inputData),
+	}
+	return task, nil
+}
+
+func (p *ReceiveFromBridgeParam) CreateTask(rebalanceTaskID uint64) (*TransactionTask, error) {
+	inputData, err := ReceiveFromBridgeInput(p.Amount, p.TaskID)
+	if err != nil {
+		return nil, err
+	}
+	paramData, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+	task := &TransactionTask{
+		BaseTask:        &BaseTask{State: int(TxUnInitState)},
+		RebalanceId:     rebalanceTaskID,
+		TransactionType: int(ReceiveFromBridge),
+		ChainId:         p.ChainId,
+		ChainName:       p.ChainName,
+		From:            p.From,
+		To:              p.To,
+		Params:          string(paramData),
+		InputData:       hexutil.Encode(inputData),
+	}
+	return task, nil
+}
+
+func (p *SendToBridgeParam) CreateTask(rebalanceTaskID uint64) (*TransactionTask, error) {
+	inputData, err := SendToBridgeInput(p.BridgeAddress, p.Amount, p.TaskID)
+	if err != nil {
+		return nil, err
+	}
+	paramData, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+	task := &TransactionTask{
+		BaseTask:        &BaseTask{State: int(TxUnInitState)},
+		RebalanceId:     rebalanceTaskID,
+		TransactionType: int(ReceiveFromBridge),
+		ChainId:         p.ChainId,
+		ChainName:       p.ChainName,
+		From:            p.From,
+		To:              p.To,
+		Params:          string(paramData),
+		InputData:       hexutil.Encode(inputData),
+	}
+	return task, nil
+}
