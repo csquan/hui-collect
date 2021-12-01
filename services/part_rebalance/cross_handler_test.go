@@ -47,10 +47,10 @@ func TestCreateTreansfer(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	createInvestTask(conf)
+	createTask(conf)
 
 }
-func createReceiveFromBridgeTask(conf *config.Config) {
+func createTask(conf *config.Config) {
 	var tasks []*types.TransactionTask
 	ReceiveFromBridgeParams := []*types.ReceiveFromBridgeParam{
 		&types.ReceiveFromBridgeParam{
@@ -63,46 +63,33 @@ func createReceiveFromBridgeTask(conf *config.Config) {
 			TaskID:            "1",
 		},
 	}
-	params := &types.Params{
-		ReceiveFromBridgeParams: ReceiveFromBridgeParams,
-	}
-	data, _ := json.Marshal(params)
-	task := &types.PartReBalanceTask{
-		Base:   &types.Base{ID: 10},
-		Params: string(data),
-	}
-	clients.Init(conf)
-	dbConnection, err := db.NewMysql(&conf.DataBase)
-	if err != nil {
-		logrus.Errorf("CreateReceiveFromBridgeTask error:%v task:[%v]", err, task)
-		return
-	}
-	tasks, err = CreateTransactionTask(task, types.ReceiveFromBridge)
-	if err != nil {
-		logrus.Errorf("CreateReceiveFromBridgeTask error:%v task:[%v]", err, task)
-		return
-	}
-	err = dbConnection.SaveTxTasks(dbConnection.GetSession(), tasks)
-}
+	SendToBridgeParam := []*types.SendToBridgeParam{
+		&types.SendToBridgeParam{
+			ChainId:           1,
+			ChainName:         "heco",
+			From:              "606288c605942f3c84a7794c0b3257b56487263c",
+			To:                "0xC7c38F93036BC13168B4f657296753568f49ef09",
 
-func createInvestTask(conf *config.Config) {
-	var tasks []*types.TransactionTask
-	address := common.HexToAddress("0xa929022c9107643515f5c777ce9a910f0d1e490c")
+			BridgeAddress: common.HexToAddress("606288c605942f3c84a7794c0b3257b56487263c"),
+			Amount:            "1",
+			TaskID:            "1",
+		},
+	}
 	InvestParams := []*types.InvestParam{
 		&types.InvestParam{
 			ChainId:            1,
 			ChainName:          "heco",
 			From:               "606288c605942f3c84a7794c0b3257b56487263c",
 			To:                 "0xC7c38F93036BC13168B4f657296753568f49ef09",
-			StrategyAddresses:  []common.Address{address},
+			StrategyAddresses:  []common.Address{0xa929022c9107643515f5c777ce9a910f0d1e490c},
 			BaseTokenAmount:    []*big.Int{new(big.Int)},
 			CounterTokenAmount: []*big.Int{new(big.Int)},
 			//Erc20ContractAddr: common.HexToAddress("0x6D2dbA4F00e0Bbc2F93eb43B79ddd00f65fB6bEc"),
-			//Amount:    new(big.Int).SetInt64(1),
-			//TaskID:    new(big.Int).SetUint64(1),
 		},
 	}
 	params := &types.Params{
+		ReceiveFromBridgeParams: ReceiveFromBridgeParams,
+		SendToBridgeParams: SendToBridgeParam,
 		InvestParams: InvestParams,
 	}
 	data, _ := json.Marshal(params)
@@ -112,10 +99,15 @@ func createInvestTask(conf *config.Config) {
 	}
 	clients.Init(conf)
 	dbConnection, err := db.NewMysql(&conf.DataBase)
-	tasks, err = CreateTransactionTask(task, types.Invest)
+	if err != nil {
+		logrus.Errorf("CreateReceiveFromBridgeTask error:%v task:[%v]", err, task)
+		return
+	}
+	tasks, err = CreateTransactionTask(task, types.SendToBridge)
 	if err != nil {
 		logrus.Errorf("CreateReceiveFromBridgeTask error:%v task:[%v]", err, task)
 		return
 	}
 	err = dbConnection.SaveTxTasks(dbConnection.GetSession(), tasks)
 }
+

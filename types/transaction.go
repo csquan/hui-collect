@@ -21,7 +21,7 @@ func SendToBridgeInput(bridgeAddress common.Address, amount *big.Int, taskID *bi
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("receiveFromBridge", bridgeAddress, amount, taskID)
+	return abi.Pack("sendToBridge", bridgeAddress, amount, taskID)
 }
 
 func ReceiveFromBridgeInput(amount *big.Int, taskID *big.Int) (input []byte, err error) {

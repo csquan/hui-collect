@@ -76,7 +76,9 @@ func CreateTransactionTask(task *types.PartReBalanceTask, transactionType types.
 				logrus.Errorf("create approve task from param err:%v task:%v", err, task)
 				return
 			}
-			tasks = append(tasks, approveTask)
+			if approveTask != nil {
+				tasks = append(tasks, approveTask)
+			}
 		}
 		t, err := param.CreateTask(task.ID)
 		if err != nil {
