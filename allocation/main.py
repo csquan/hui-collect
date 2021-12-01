@@ -3,6 +3,7 @@ import requests
 import json
 import time
 import pymysql
+import yaml
 
 class Pool:
     pass
@@ -14,6 +15,9 @@ class ReceiveFromBridgeParam:
     pass
 
 class InvestParam:
+    pass
+
+class SendToBridgeParam:
     pass
 
 class Params:
@@ -60,6 +64,34 @@ def getpoolinfo(url):
         pool[pool_info["symbol"]] = pool_info
     return pool_infos
 
+def read_yaml(path):
+    with open(path, 'r', encoding='utf8') as f:
+        return yaml.safe_load(f.read())
+
+def getconnectinfo(connstr):
+    strlist = connstr.split('@')  # 用逗号分割str字符串，并保存到列表
+    print(strlist)
+    str1 = strlist[0]             # 包含用户名密码的字串
+    str2 = strlist[1]             # 包含Ip端口数据库的字串
+
+    user_endpos = str1.index(":")
+    user = str1[0:user_endpos]
+    password = str1[user_endpos+1:len(str1)]
+
+    host_startpos = str2.index("(") + 1
+    host_endpos = str2.index(":")
+
+    host = str2[host_startpos:host_endpos]
+    port_endpos  = str2.index(")")
+    port = str2[host_endpos + 1:port_endpos]
+
+    db_startpos = str2.index("/")
+    db_endpos = str2.index("?")
+
+    db = str2[db_startpos + 1:db_endpos]
+
+    return user, password, host, port, db
+
 
 if __name__ == '__main__':
     #获取project info
@@ -74,8 +106,10 @@ if __name__ == '__main__':
     print("+++++solo")
     soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
     soloinfos = getprojectinfo(soloUrl)
-
     #配资计算
+
+    #读取config
+    d = read_yaml("../config.yaml")
 
     #获取pool info
     pool_infos = {}
@@ -91,57 +125,85 @@ if __name__ == '__main__':
     crossBalance.ToChain = "bsc" #这里从郭获得,是多个跨链，应该分别处理，这里假设heco向bsc跨链
     crossBalance.FromAddr = "configaddress1" #配置-从config读取
     crossBalance.ToAddr = "configaddress2"   #配置的签名机地址
-    crossBalance.FromCurrency = "hbtc" #hbtc?
-    crossBalance.ToCurrency = "btc"   #btc?
+    crossBalance.FromCurrency = "hbtc" #配置
+    crossBalance.ToCurrency = "btc"   #配置
 
     symbol = "HBTC"
     info = pool_infos[symbol]
-    crossBalance.Amount = 0 #info["heco_uncross_quantity"] + info["crossed_quantity_in_bsc_controller"] + info["crossed_quantity_in_poly_controller"] + info["bsc_vault_unre_qunatity"] + info["bsc_vault_unre_qunatity"]
+    crossBalance.Amount = 0  #这里从郭的结果得到：需要跨的数量减去已经在bsc上但是未投出去的数量，即：crossed_quantity_in_bsc_controller
 
     receiveFromBridge = ReceiveFromBridgeParam()
-    receiveFromBridge.ChainID = 52
-    receiveFromBridge.ChainName = "bsc"
+    receiveFromBridge.ChainID = 52       #配置
+    receiveFromBridge.ChainName = "bsc"  #配置
     receiveFromBridge.From = "configaddress2"   #配置的签名机地址
     receiveFromBridge.To = "configaddress3"  # 配置的合约地址
     receiveFromBridge.Erc20ContractAddr = "configaddress4"  # 配置的token地址
-    #下面的精度值从哪里取？这里假设跨1个btc
-    receiveFromBridge.Amount = 1*10e18
+
+    receiveFromBridge.Amount = 1*10e18  #精度配置读取
     #生成全局唯一的task🆔并保存币种和taskID的对应关系
     TaskIds = {}
     t = time.time()
     receiveFromBridge.TaskID = int(round(t * 1000)) #毫秒级时间戳
     TaskIds["BTC"] = receiveFromBridge.TaskID
-    #这里下面哪里还能用到TaskIds["BTC"]？
 
-    #这里跨的币种是BTC，从pool_infos[symbol]找到BSC对应的策略
     invest = InvestParam()
-    invest.ChinId = 52
-    invest.ChainName = "bsc"
-    invest.From =  "configaddress2"   #配置的签名机地址
-    invest.To = "configaddress3"  # 配置的合约地址
+    invest.ChinId = 52         #配置
+    invest.ChainName = "bsc"   #配置
+    invest.From = "configaddress2" #配置的签名机地址
+    invest.To = "configaddress3"   # 配置的合约地址
 
-    #这里以pancake为例，实际中应该是郭给的结果中指定,这里少个counter对？
-    info = pool_infos[symbol]["contract_info"]["bsc_pancakestrategy"]
-    strategyAddresses = [info]
+    #info = pool_infos[symbol]["contract_info"]["bsc_pancakestrategy"]
+    #strategyAddresses = [info]
+
+    #这里应该是配置中有很多策略和对应地址，程序需要拼接策略，找到对应地址
+    strategystr = "bsc_pancake_btc_usdt"
+    strategys = d["strategyes"]
+
+    strategyAddresses = ""  #策略地址
+    for key in strategys:
+        print(key + ':' + strategys[key])
+        if strategystr in key:
+            strategyAddresses = strategys[key]
+
+
     baseTokenAmount = [0]  #值从郭的计算结果得到
-
-    counterTokenAmount = [0] #遍历郭给的每一个币种，在pancakeinfos中找到基础货币，取depositTokenList中的tokenAmount 以最大精度计算？
+    counterTokenAmount = [0] #值从郭的计算结果得到
 
     invest.StrategyAddresses = strategyAddresses
     invest.BaseTokenAmount = baseTokenAmount
     invest.CounterTokenAmount = counterTokenAmount
 
+    sendToBridge = SendToBridgeParam()
+
+    sendToBridge.ChainId = 52
+    sendToBridge.ChainName = "bsc"
+    sendToBridge.From = "configaddress2" #配置的签名机地址
+    sendToBridge.To = "configaddress3"   # 配置的合约地址
+    sendToBridge.BridgeAddress = "" #配置的地址
+    sendToBridge.Amount = 1 * 10e18  # 精度配置读取
+    sendToBridge.TaskID = TaskIds["BTC"]
+
     params = Params()
     params.CrossBalances = crossBalance
     params.ReceiveFromBridgeParams = receiveFromBridge
     params.InvestParams = invest
+    params.SendToBridgeParams = sendToBridge
 
-    #写入db
-    db = pymysql.connect('localhost', 'root', '1234', 'rebalance')
-    cursor = db.cursor()
+    print(d["database"]["db"])
 
-    cursor.execute('''insert into Rebalance_params values()''')
+    #(host='39.98.39.173', port=13306, user='root', passwd='root', db='1909C2', c harset='utf8')
+    #db = pymysql.connect('localhost', 'root', '1234', 'rebalance')
+    connect = getconnectinfo(d["database"]["db"])
+    print(connect)
+    conn = pymysql.connect(host='127.0.0.1', port=3306, user='root', passwd='csquan253905', db='reblance', charset = 'utf8')
+    print(conn)
 
-    cursor.close()
-    db.commit()
+    #cursor = db.cursor()
+
+    #cursor.execute('''insert into Rebalance_params values()''')
+
+    #cursor.close()
+    #db.commit()
     db.close()
+
+
