@@ -23,13 +23,13 @@ func ReceiveFromBridgeInput(param *types.ReceiveFromBridgeParam) (input []byte, 
 	return abi.Pack("receiveFromBridge", param.Amount, param.TaskID)
 }
 
-func InvestInput(param *types.InvestParam) (input []byte, err error) {
+func InvestInput(address []common.Address, baseTokenAmount []*big.Int, counterTokenAmount []*big.Int) (input []byte, err error) {
 	r := strings.NewReader(content)
 	abi, err := abi.JSON(r)
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("invest", param.Address, param.BaseTokenAmount, param.CounterTokenAmount)
+	return abi.Pack("invest", address, baseTokenAmount, counterTokenAmount)
 }
 
 func ApproveInput(param *types.ReceiveFromBridgeParam) (input []byte, err error) {

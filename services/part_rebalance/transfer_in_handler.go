@@ -1,8 +1,6 @@
 package part_rebalance
 
 import (
-	"encoding/json"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -70,32 +68,33 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 }
 
 func (t *transferInHandler) CreateInvestTask(task *types.PartReBalanceTask) (tasks []*types.TransactionTask, err error) {
-	params, err := task.ReadParams()
+	params, err := task.ReadTransactionParams(types.Invest)
 	if err != nil {
 		return
 	}
-	var data, inputData []byte
-	for _, param := range params.InvestParams {
-		data, err = json.Marshal(param)
+	var data, inputData string
+	for _, param := range params {
+		data, err = param.EncodeParam()
 		if err != nil {
 			logrus.Errorf("CreateTransactionTask param marshal err:%v", err)
 			return
 		}
-		inputData, err = utils.InvestInput(param)
+		inputData, err = param.EncodeInput()
 		if err != nil {
 			logrus.Errorf("InvestInput err:%v", err)
 			return
 		}
+		chainId, chainName, from, to := param.GetBase()
 		task := &types.TransactionTask{
 			BaseTask:        &types.BaseTask{State: int(types.TxUnInitState)},
 			RebalanceId:     task.ID,
 			TransactionType: int(types.Invest),
-			ChainId:         param.ChainId,
-			ChainName:       param.ChainName,
-			From:            param.From,
-			To:              param.To,
-			Params:          string(data),
-			InputData:       hexutil.Encode(inputData),
+			ChainId:         chainId,
+			ChainName:       chainName,
+			From:            from,
+			To:              to,
+			Params:          data,
+			InputData:       inputData,
 		}
 		tasks = append(tasks, task)
 	}

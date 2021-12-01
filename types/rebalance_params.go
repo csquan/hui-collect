@@ -26,6 +26,13 @@ type ReceiveFromBridgeParam struct {
 	Amount *big.Int //链上精度值的amount，需要提前转换
 	TaskID *big.Int
 }
+
+type Params struct {
+	CrossBalances           []*CrossBalanceItem       `json:"cross_balances"`
+	ReceiveFromBridgeParams []*ReceiveFromBridgeParam `json:"receive_from_bridge_params"`
+	InvestParams            []*InvestParam            `json:"invest_params"`
+}
+
 type InvestParam struct {
 	ChainId   int
 	ChainName string
@@ -37,8 +44,5 @@ type InvestParam struct {
 	CounterTokenAmount []*big.Int
 }
 
-type Params struct {
-	CrossBalances           []*CrossBalanceItem       `json:"cross_balances"`
-	ReceiveFromBridgeParams []*ReceiveFromBridgeParam `json:"receive_from_bridge_params"`
-	InvestParams            []*InvestParam            `json:"invest_params"`
-}
+
+
