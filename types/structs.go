@@ -25,6 +25,7 @@ type CrossSubState int
 
 const (
 	PartReBalanceInit PartReBalanceState = iota
+	PartReBalanceTransferOut
 	PartReBalanceCross
 	PartReBalanceTransferIn
 	PartReBalanceInvest

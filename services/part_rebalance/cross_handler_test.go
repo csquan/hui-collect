@@ -59,8 +59,8 @@ func createReceiveFromBridgeTask(conf *config.Config) {
 			From:              "606288c605942f3c84a7794c0b3257b56487263c",
 			To:                "0xC7c38F93036BC13168B4f657296753568f49ef09",
 			Erc20ContractAddr: common.HexToAddress("0x6D2dbA4F00e0Bbc2F93eb43B79ddd00f65fB6bEc"),
-			Amount:            new(big.Int).SetInt64(1),
-			TaskID:            new(big.Int).SetUint64(1),
+			Amount:            "1",
+			TaskID:            "1",
 		},
 	}
 	params := &types.Params{
