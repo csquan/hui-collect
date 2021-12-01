@@ -44,21 +44,6 @@ CREATE TABLE `t_transaction_task`
     COLLATE = utf8mb4_bin COMMENT ='交易';
 
 
-DROP TABLE IF EXISTS `t_approve`;
-CREATE TABLE `t_approve`
-(
-    `f_id`         bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `f_from`       char(42)  NOT NULL DEFAULT '' COMMENT 'erc20 token addr',
-    `f_token`      char(42)  NOT NULL DEFAULT '' COMMENT 'erc20 token addr',
-    `f_spender`    char(42)  NOT NULL DEFAULT '' COMMENT 'spender addr',
-    `f_created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `f_updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
-    KEY            `idx_token_spender` (`f_token`,`f_spender`)
-) ENGINE = InnoDB
-    DEFAULT CHARSET = utf8mb4
-    COLLATE = utf8mb4_bin COMMENT ='授权';
-
 
 DROP TABLE IF EXISTS `t_cross_task`;
 CREATE TABLE `t_cross_task`

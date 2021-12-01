@@ -41,7 +41,7 @@ func (m *Mysql) GetOpenedCrossTasks() ([]*types.CrossTask, error) {
 
 func (m *Mysql) GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*types.CrossTask, error) {
 	tasks := make([]*types.CrossTask, 0)
-	err := m.engine.Where("rebalance_id = ?", reBalanceId).Find(&tasks)
+	err := m.engine.Where("f_rebalance_id = ?", reBalanceId).Find(&tasks)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,6 @@ package part_rebalance
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -22,13 +21,9 @@ var (
 	confFile string
 )
 
-func init() {
-	flag.StringVar(&confFile, "conf", "config.yaml", "conf file")
-}
+
 func TestCreateTreansfer(t *testing.T) {
-	flag.Parse()
-	logrus.Info(confFile)
-	conf, err := config.LoadConf("../../" + confFile)
+	conf, err := config.LoadConf("../../config_local.yaml" )
 	if err != nil {
 		logrus.Errorf("load config error:%v", err)
 		return
@@ -104,10 +99,6 @@ func createTask(conf *config.Config) {
 		logrus.Errorf("CreateReceiveFromBridgeTask error:%v task:[%v]", err, task)
 		return
 	}
-	//tasks, err = CreateTransactionTask(task, types.SendToBridge)
-	//if err != nil {
-	//	logrus.Errorf("CreateReceiveFromBridgeTask error:%v task:[%v]", err, task)
-	//	return
-	//}
+	
 	err = dbConnection.SaveRebalanceTask(dbConnection.GetSession(), task)
 }
