@@ -99,6 +99,6 @@ func createTask(conf *config.Config) {
 		logrus.Errorf("CreateReceiveFromBridgeTask error:%v task:[%v]", err, task)
 		return
 	}
-	
+
 	err = dbConnection.SaveRebalanceTask(dbConnection.GetSession(), task)
 }

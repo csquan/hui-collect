@@ -177,12 +177,6 @@ type CrossSubTask struct {
 	State  int    `xorm:"f_state"`
 }
 
-type ApproveRecord struct {
-	*Base   `xorm:"extends"`
-	From    string `xorm:"f_from"`
-	Token   string `xorm:"f_token"`
-	Spender string `xorm:"f_spender"`
-}
 
 
 

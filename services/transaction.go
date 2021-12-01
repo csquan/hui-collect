@@ -202,13 +202,6 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 		task.State = int(types.TxFailedState)
 	}
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		if task.TransactionType == int(types.Approve) && task.State == int(types.TxSuccessState) {
-			execErr = t.db.SaveApprove(&types.ApproveRecord{Spender: task.ContractAddress, Token: task.To, From: task.To})
-			if execErr != nil {
-				logrus.Errorf("SaveApprove err:%v", err)
-				return
-			}
-		}
 		execErr = t.db.UpdateTransactionTask(session, task)
 		if execErr != nil {
 			logrus.Errorf("update part audit task error:%v task:[%v]", err, task)

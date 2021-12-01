@@ -66,11 +66,4 @@ func (m *Mysql) GetOpenedCrossSubTasks(parentTaskId uint64) ([]*types.CrossSubTa
 	return tasks, nil
 }
 
-func (m *Mysql) GetApprove(token, spender string) (*types.ApproveRecord, error) {
-	var approve *types.ApproveRecord
-	_, err := m.engine.Table("t_approve").Where("f_token = ? and f_spender = ?", token, spender).Get(approve)
-	if err != nil {
-		return nil, err
-	}
-	return approve, nil
-}
+

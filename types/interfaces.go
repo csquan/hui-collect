@@ -29,7 +29,6 @@ type IWriter interface {
 	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
-	SaveApprove(approve *ApproveRecord) error
 
 	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
 	//update cross task state

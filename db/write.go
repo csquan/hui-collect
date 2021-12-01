@@ -110,7 +110,3 @@ func (m *Mysql) UpdateCrossSubTaskBridgeIDAndState(id, bridgeTaskId uint64, stat
 	return err
 }
 
-func (m *Mysql) SaveApprove(approve *types.ApproveRecord) error {
-	_, err := m.engine.Table("t_approve").Insert(approve)
-	return err
-}
