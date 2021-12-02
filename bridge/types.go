@@ -106,7 +106,7 @@ type TaskDetailResult struct {
 	FromAccountId uint64 `json:"fromAccountId"`
 	Status        int    `json:"status"`
 	TaskId        uint64 `json:"taskId"`
-	TaskNo        uint64 `json:"taskNo"`
+	TaskNo        string `json:"taskNo"`
 	ToAccountId   uint64 `json:"toAccountId"`
 }
 

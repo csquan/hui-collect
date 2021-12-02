@@ -105,8 +105,8 @@ type ValReq struct {
 }
 
 type ValidReq struct {
-	Id          int64  `json:"id"` //0 default
-	Platform    string `json:"platform"`
+	Id          int64  `json:"id"`       //0 default
+	Platform    string `json:"platform"` //bsc starsbridge heco:starshecobridge eth:starshecobridge
 	Chain       string `json:"chain"`
 	EncryptData string `json:"encrypt_data"`
 	CipherKey   string `json:"cipher_key"`
@@ -177,8 +177,6 @@ func Validator(vaReq ValidReq, appId string) (vaResp *VaResp, err error) {
 		return nil, err
 	}
 
-	logrus.Info(respBody)
-	logrus.Info(string(respBody))
 	logrus.Infof(" response body :%s", string(respBody))
 	logrus.Infof("unmarshall the response body")
 	var DecData ValidResp
@@ -243,18 +241,25 @@ func ValidatorInfo() (*VaResp, error) {
 func ValidatorTx(task *types.TransactionTask) (vaResp *VaResp, err error) {
 	var vreq ValidReq
 	vreq.Id = task.OrderId
-	vreq.Platform = platform
+	//fix
+	// vreq.Platform = platform
 
 	chain := strings.ToLower(task.ChainName)
 	switch chain {
 	case "bsc":
 		vreq.Chain = "bnb1"
+		vreq.Platform = platformNotHecoEth
 	case "heco":
 		vreq.Chain = "ht2"
+		vreq.Platform = platform
 	case "eth":
 		vreq.Chain = "eth"
+		vreq.Platform = platform
 	case "poly":
 		vreq.Chain = "matic1"
+		vreq.Platform = platformNotHecoEth
+	default:
+		logrus.Fatalf("unexpected chain:%s", chain)
 	}
 
 	vreq.EncryptData = task.EncryptData
