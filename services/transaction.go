@@ -74,7 +74,7 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	quantity := t.config.SendConf.Quantity
 	receiver := task.To //和to一致
 
-	signRet, err := signer.SignTx(input, decimal, int(nonce), from, to, GasLimit, GasPrice, Amount, quantity, receiver)
+	signRet, err := signer.SignTx(input, decimal, int(nonce), from, to, GasLimit, GasPrice, Amount, quantity, receiver, task.ChainName)
 
 	if err == nil && signRet.Result == true {
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
