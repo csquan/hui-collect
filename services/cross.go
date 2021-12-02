@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -199,7 +200,7 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 		}
 		subTask := &types.CrossSubTask{
 			ParentTaskId: parent.ID,
-			TaskNo:       0,
+			TaskNo:       uint64(time.Now().UnixMilli()) * 1000,
 			Amount:       amountCur.String(),
 		}
 		err = c.db.SaveCrossSubTask(subTask)
