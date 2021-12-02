@@ -21,7 +21,7 @@ type BaseTask struct {
 type ReBalanceState = int
 
 const (
-	ReBalanceInit              ReBalanceState = iota
+	ReBalanceInit ReBalanceState = iota
 	ReBalanceWithdrawLP
 	ReBalanceRecycling
 	ReBalanceParamsCalc
@@ -79,7 +79,6 @@ const (
 	TxUnInitState TransactionState = iota
 	TxAuditState
 	TxValidatorState
-	TxSignedState
 	TxCheckReceiptState
 	TxSuccessState
 	TxFailedState
@@ -90,6 +89,7 @@ type FullReBalanceTask struct {
 	*BaseTask `xorm:"extends"`
 	Params    string `xorm:"f_params"`
 }
+
 func (p *FullReBalanceTask) TableName() string {
 	return "t_full_rebalance_task"
 }
@@ -149,6 +149,9 @@ type TransactionTask struct {
 	TransactionType int    `xorm:"f_type"`
 	Nonce           uint64 `xorm:"f_nonce"`
 	GasPrice        string `xorm:"f_gas_price"`
+	GasLimit        string `xorm:"f_gas_limit"`
+	Amount          string `xorm:"f_amount"`
+	Quantity        string `xorm:"f_quantity"`
 	ChainId         int    `xorm:"f_chain_id"`
 	ChainName       string `xorm:"f_chain_name"`
 	Params          string `xorm:"f_params"`

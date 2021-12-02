@@ -1,19 +1,11 @@
 database:
   #  db: "heco_test:hDyhVaPfwvPzF8ek@tcp(bigdata-tidb-e604534a50b9d35d.elb.ap-northeast-1.amazonaws.com:4000)/chain_test?charset=utf8mb4"
-  db: "root:123456sj@tcp(127.0.0.1:3306)/rebalance?charset=utf8mb4"
+  db: "test:123@tcp(127.0.0.1:3306)/rebalance?charset=utf8mb4"
   block_worker: 5
   tx_worker: 1
   sql_batch: 500
   retry_times: 5
   retry_interval: 300
-
-send_conf:
-  GasLimit:
-    "2000000"
-  Amount:
-    "0"
-  Quantity:
-    "0"
 
 bridge_conf:
   url: "http://cex-bridge-api.test-15.huobiapps.com/cex-bridge-api/v1"

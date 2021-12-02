@@ -82,6 +82,7 @@ func (p *PartReBalance) Run() (err error) {
 		return
 	}
 
+	logrus.Infof("part rebalance task move state, from:[%v], to:[%v]", tasks[0].State, next)
 	err = handler.MoveToNextState(tasks[0], next)
 	if err != nil {
 		return err

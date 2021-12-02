@@ -32,7 +32,7 @@ type AuditReq struct {
 }
 
 type AuditRequest struct {
-	BusType string  `json:"busType"`
+	BusType string  `json:"busType"` //bsc:starsBridgeWithdraw heco/eth:starsHecoBridgeWithdraw
 	BusStep int     `json:"busStep"` //1
 	BusId   string  `json:"busId"`
 	BusData BusData `json:"busData"`
@@ -211,7 +211,21 @@ func AuditTx(input string, to string, quantity string, orderID int64, chainName 
 
 	var AuditInput AuditReq
 	AuditInput.AppId = appId
-	AuditInput.AuReq.BusType = bustype
+	//get bustype
+	chainName = strings.ToLower(chainName)
+	switch chainName {
+	case "bsc":
+		AuditInput.AuReq.BusType = busTypeNotHecoEth
+	case "poly":
+		AuditInput.AuReq.BusType = busTypeNotHecoEth
+	case "heco":
+		AuditInput.AuReq.BusType = bustype
+	case "eth":
+		AuditInput.AuReq.BusType = bustype
+	default:
+		logrus.Fatalf("unexpected chainName:%s", chainName)
+	}
+
 	AuditInput.AuReq.BusStep = 1                        //推荐值，不修改
 	AuditInput.AuReq.BusId = fmt.Sprintf("%d", orderID) //ID保持和validator中的id一样,确保每次调用增1
 	AuditInput.AuReq.BusData = bus

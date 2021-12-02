@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/starslabhq/hermes-rebalance/clients"
-	"math"
 	"math/big"
 	"strings"
 
@@ -57,7 +56,12 @@ func ApproveInput(address string) (input []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return abi.Pack("approve", common.HexToAddress(address), new(big.Int).SetInt64(math.MaxInt64))
+	maxApprove := big.NewInt(0).Sub(
+		big.NewInt(0).Exp(big.NewInt(2), big.NewInt(256), nil),
+		big.NewInt(1),
+	)
+
+	return abi.Pack("approve", common.HexToAddress(address), maxApprove)
 }
 
 func AllowanceInput(from string, to string) (input []byte, err error) {

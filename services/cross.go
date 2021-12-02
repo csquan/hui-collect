@@ -197,9 +197,10 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 			return false, fmt.Errorf("amount err:%v,min:%s,single:%s,total:%s,amount:%s", err,
 				minAmount.String(), single.String(), total.String(), amount.String())
 		}
+		firstTaskNo := parent.ID << 10
 		subTask := &types.CrossSubTask{
 			ParentTaskId: parent.ID,
-			TaskNo:       0,
+			TaskNo:       firstTaskNo,
 			Amount:       amountCur.String(),
 		}
 		err = c.db.SaveCrossSubTask(subTask)

@@ -24,8 +24,14 @@ import (
 
 const appId = "rebal-si-gateway"
 const taskType = "withdraw"
-const bustype = "starsHecoBridgeWithdraw"
-const platform = "starshecobridge"
+
+const (
+	platform           = "starshecobridge"
+	platformNotHecoEth = "starsbridge"
+
+	bustype           = "starsHecoBridgeWithdraw"
+	busTypeNotHecoEth = "starsBridgeWithdraw"
+)
 
 // head key, case insensitive
 const (
