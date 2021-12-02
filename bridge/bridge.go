@@ -355,7 +355,16 @@ func (b *Bridge) GetTaskDetail(taskID uint64) (*TaskDetailResult, error) {
 	form.Add("timestamp", fmt.Sprintf("%d", now))
 	form.Add("method", "getTaskDetail")
 	form.Add("taskId", fmt.Sprintf("%d", taskID))
-	var rawStr = fmt.Sprintf("&method=%s&taskId=%d&secret_key=%s", "getTaskDetail", taskID, b.secretKey)
+	params := []string{"timestamp", "method", "taskId"}
+	sort.Slice(params, func(i, j int) bool {
+		return params[i] > params[j]
+	})
+	var rawStr string
+	for _, p := range params {
+		rawStr += fmt.Sprintf("&%s=%s", p, form.Get(p))
+	}
+	rawStr += "&secret_key=" + b.secretKey
+	log.Printf("raw_Str:%s", rawStr)
 	sign := md5SignHex(rawStr)
 	req, err := http.NewRequest("POST", b.url, strings.NewReader(form.Encode()))
 	if err != nil {

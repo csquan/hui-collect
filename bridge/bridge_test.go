@@ -107,3 +107,9 @@ func TestAddTask(t *testing.T) {
 	})
 	t.Logf("add task ret:%v,err:%v", ret, err)
 }
+
+func TestGetTaskDetail(t *testing.T) {
+	ret, err := b.GetTaskDetail(1345)
+	b, _ := json.Marshal(ret)
+	t.Logf("ret:%s,err:%v", b, err)
+}
