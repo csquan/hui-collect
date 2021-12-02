@@ -51,8 +51,6 @@ func (t *Transaction) Run() (err error) {
 			return t.handleAudit(task)
 		case types.TxValidatorState:
 			return t.handleValidator(task)
-		case types.TxSignedState:
-			return t.handleTransactionSigned(task)
 		case types.TxCheckReceiptState:
 			return t.handleTransactionCheck(task)
 		default:
@@ -122,7 +120,7 @@ func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 
 	if err == nil && vRet.OK == true {
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-			task.State = int(types.TxSignedState)
+			task.State = int(types.TxCheckReceiptState)
 			task.SignData = vRet.RawTx
 			execErr = t.db.UpdateTransactionTask(session, task)
 			if execErr != nil {
@@ -178,11 +176,12 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error {
 	client, ok := t.clientMap[task.ChainName]
 	if !ok {
-		logrus.Errorf("not find chain client, task:%v", task)
+		logrus.Warnf("not find chain client, task:%v", task)
 	}
 	receipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(task.Hash))
 	if err != nil {
-		return err
+		logrus.Warnf("hash not found, task:%v", task)
+		err = nil
 	}
 	if receipt == nil {
 		transaction, err := types.DecodeTransaction(task.SignData)
