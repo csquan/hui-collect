@@ -124,7 +124,7 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 	}
 	myclient := &http.Client{Transport: tr, Timeout: 123 * time.Second}
 
-	chain := request.BusData.Chain
+	chain := strings.ToLower(request.BusData.Chain)
 	switch chain {
 	case "bsc":
 		request.BusData.Chain = "bnb1"
@@ -194,7 +194,7 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 	return result, nil
 }
 
-func AuditTx(input string, to string, quantity string, orderID int64) (AuditResponse, error) {
+func AuditTx(input string, to string, quantity string, orderID int64, chainName string) (AuditResponse, error) {
 
 	if strings.Contains(input, "0x") {
 		input = input[2:]
@@ -204,7 +204,7 @@ func AuditTx(input string, to string, quantity string, orderID int64) (AuditResp
 	}
 
 	var bus BusData
-	bus.Chain = chain
+	bus.Chain = chainName
 	bus.Quantity = quantity //保持和签名请求中的一致
 	bus.ToAddress = to
 	bus.ToTag = input

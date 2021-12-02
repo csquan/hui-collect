@@ -26,7 +26,6 @@ const appId = "rebal-si-gateway"
 const taskType = "withdraw"
 const bustype = "starsHecoBridgeWithdraw"
 const platform = "starshecobridge"
-const chain = "heco"
 
 // head key, case insensitive
 const (
@@ -152,7 +151,7 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 	}
 	myclient := &http.Client{Transport: tr, Timeout: 123 * time.Second}
 
-	chain := signReq.AuReq.Chain
+	chain := strings.ToLower(signReq.AuReq.Chain)
 	switch chain {
 	case "bsc":
 		chain = "bnb1"
@@ -492,7 +491,7 @@ func (p *SignProcess) String() string {
 	return result.String()
 }
 
-func SignTx(input string, decimal int, nonce int, from string, to string, GasLimit string, GasPrice string, Amount string, quantity string, receiver string) (signResp Response, err error) {
+func SignTx(input string, decimal int, nonce int, from string, to string, GasLimit string, GasPrice string, Amount string, quantity string, receiver string, chainName string) (signResp Response, err error) {
 	//delete "0x" if have
 	if strings.Contains(input, "0x") {
 		input = input[2:]
@@ -519,7 +518,7 @@ func SignTx(input string, decimal int, nonce int, from string, to string, GasLim
 	si.TaskType = taskType
 
 	var au BusData
-	au.Chain = "heco"
+	au.Chain = chainName
 	au.Quantity = quantity
 	au.ToAddress = receiver
 	au.ToTag = input

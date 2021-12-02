@@ -1,4 +1,19 @@
 DROP TABLE IF EXISTS `t_part_rebalance_task`;
+
+CREATE TABLE `t_rebalance_task` (
+     `f_id`         bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+     `f_state`      tinyint(4)          NOT NULL DEFAULT '0' COMMENT 'init build ongoing success failed',
+     `f_params`     text                NOT NULL COMMENT '任务数据',
+     `f_message`    text                NOT NULL COMMENT '',
+     `f_created_at` timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     `f_updated_at` timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
+     KEY `idx_state` (`f_state`)
+)
+    ENGINE = InnoDB
+    DEFAULT CHARSET = utf8mb4
+    COLLATE = utf8mb4_bin COMMENT ='小r任务表';
+
 CREATE TABLE `t_part_rebalance_task` (
     `f_id`         bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_state`      tinyint(4)          NOT NULL DEFAULT '0' COMMENT 'init build ongoing success failed',

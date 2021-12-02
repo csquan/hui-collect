@@ -18,11 +18,21 @@ type BaseTask struct {
 	Message string `xorm:"f_message"`
 }
 
+type ReBalanceState = int
+
+const (
+	ReBalanceInit ReBalanceState = iota
+	ReBalanceGetRemoveLPParams      //移除LP参数的获取会触发合约调用，所以独占一个状态，避免重复调用。
+	ReBalanceRecycling
+	ReBalanceDo
+	ReBalanceSuccess
+	ReBalanceFailed
+)
+
 type PartReBalanceState = int
 
 type CrossState = int
 type CrossSubState int
-
 const (
 	PartReBalanceInit PartReBalanceState = iota
 	PartReBalanceTransferOut
