@@ -6,6 +6,7 @@ import pymysql
 import yaml
 import pickle
 import numpy as np
+import json
 
 
 class ChainParams:
@@ -24,7 +25,7 @@ class StategyParams:
     pass
 
 
-class CurrencyAmount:
+class Currency:
     pass
 
 
@@ -55,16 +56,18 @@ class SendToBridgeParam:
 class Params:
     pass
 
-#api暂时不可用，测试结构体
+
+# api暂时不可用，测试结构体
 class PoolInfo:
     pass
 
-class contract_info:
+
+class ContractInfo:
     pass
 
 # todo:1.放入config中 2.solo怎么考虑？如果作为key 三个链都有这个项目？HSOLO BSOLO PSOLO？
 # 项目和链的对应关系
-chain_infos = {"pancake": "BSC", "biswap": "BSC", "quickswap": "POLY"}
+chain_infos = {"pancake": "bsc", "biswap": "bsc", "quickswap": "poly", "hsolo": "heco", "bsolo": "bsc", "psolo": "poly"}
 
 
 def getprojectinfo(url):
@@ -75,7 +78,7 @@ def getprojectinfo(url):
     prices = {}
     tvls = {}
     aprs = {}
-    for data in e["data"]:  #这里要指定project和交易对的dailyreward
+    for data in e["data"]:
         tvls[data["poolName"]] = data["tvl"]
         aprs[data["poolName"]] = data["apr"]
         for rewardToken in data["rewardTokenList"]:
@@ -141,76 +144,146 @@ def getconnectinfo(connstr):
 
 def getPairinfo(X):
     # 存储配资计算的交易对数量结果
+    #key: base + counter + project
     currency_info = {}
-    token = Token()
-    currency = CurrencyAmount()
 
-    token.amount = X[0][0]  # X(0)
-    token.name = "BNB"
-    currency.base = token
-    token.amount = X[0][3]  # X(3)
-    token.name = "BUSD"
-    currency.counter = token
-    currency_info["biswap"] = currency
+    token1 = Token()
+    currency1 = Currency()
 
-    token.amount = X[0][1]  # X(1)
-    token.name = "BNB"
-    currency.base = token
-    token.amount = X[0][2]  # X(2)
-    token.name = "BUSD"
-    currency.counter = token
-    currency_info["pancake"] = currency
+    token1.amount = X[0][0]  # X(0)
+    token1.name = "bnb"
+    currency1.base = token1
 
-    token.amount = X[1][0]  # X(4)
-    token.name = "BUSD"
-    currency.base = token
-    token.amount = X[3][3]  # X(15)
-    token.name = "CAKE"
-    currency.counter = token
-    currency_info["biswap"] = currency
+    token2 = Token()
 
-    token.amount = X[1][1]  # X(5)
-    token.name = "BNB"
-    currency.base = token
-    token.amount = X[2][3]  # X(11)
-    token.name = "USDT"
-    currency.counter = token
-    currency_info["biswap"] = currency
+    token2.amount = X[0][3]  # X(3)
+    token2.name = "busd"
+    currency1.counter = token2
 
-    token.amount = X[1][2]  # X(6)
-    token.name = "BNB"
-    currency.base = token
-    token.amount = X[3][0]  # X(12)：
-    token.name = "USDT"
-    currency.counter = token
-    currency_info["biswap"] = currency
+    currency_info["bnb_busd_biswap"] = currency1
 
-    token.amount = X[1][3]  # X(7)
-    token.name = "BTCB"
-    currency.base = token
-    token.amount = X[2][2]  # X(10)
-    token.name = "USDT"
-    currency.counter = token
-    currency_info["biswap"] = currency
+    token3 = Token()
+    currency2 = Currency()
 
-    token.amount = X[2][0]  # X(8)
-    token.name = "ETH"
-    currency.base = token
-    token.amount = X[2][1]  # X(9)
-    token.name = "USDT"
-    currency.counter = token
-    currency_info["biswap"] = currency
+    token3.amount = X[0][1]  # X(1)
+    token3.name = "bnb"
+    currency2.base = token3
 
-    token.amount = X[3][1]  # X(13)
-    token.name = "USDT"
-    currency.base = token
-    token.amount = X[3][2]  # X(14)
-    token.name = "CAKE"
-    currency.counter = token
-    currency_info["pancake"] = currency
+    token4 = Token()
+    token4.amount = X[0][2]  # X(2)
+    token4.name = "busd"
+    currency2.counter = token4
+
+    currency_info["bnb_busd_pancake"] = currency2
+
+    token5 = Token()
+    currency3 = Currency()
+
+    token5.amount = X[3][3]  # X(15)
+    token5.name = "cake"
+    currency3.base = token5
+
+    token6 = Token()
+
+    token6.amount = X[1][0]  # X(4)
+    token6.name = "busd"
+    currency3.counter = token6
+    currency_info["cake_busd_biswap"] = currency3
+
+    token7 = Token()
+    currency4 = Currency()
+
+    token7.amount = X[1][1]  # X(5)
+    token7.name = "bnb"
+    currency4.base = token7
+
+    token8 = Token()
+
+    token8.amount = X[2][3]  # X(11)
+    token8.name = "usdt"
+    currency4.counter = token8
+    currency_info["bnb_usdt_biswap"] = currency4
+
+    token9 = Token()
+    currency5 = Currency()
+
+    token9.amount = X[1][2]  # X(6)
+    token9.name = "bnb"
+    currency5.base = token9
+
+    token10 = Token()
+
+    token10.amount = X[3][0]  # X(12)：
+    token10.name = "usdt"
+    currency5.counter = token10
+    currency_info["bnb_usdt_pancake"] = currency5
+
+    token11 = Token()
+    currency6 = Currency()
+
+    token11.amount = X[1][3]  # X(7)
+    token11.name = "btcb"
+    currency6.base = token11
+
+    token12 = Token()
+
+    token12.amount = X[2][2]  # X(10)
+    token12.name = "usdt"
+    currency6.counter = token12
+
+    currency_info["btcb_usdt_biswap"] = currency6
+
+    token13 = Token()
+    currency7 = Currency()
+
+    token13.amount = X[2][0]  # X(8)
+    token13.name = "eth"
+    currency7.base = token13
+
+    token14 = Token()
+
+    token14.amount = X[2][1]  # X(9)
+    token14.name = "usdt"
+    currency7.counter = token14
+
+    currency_info["eth_usdt_biswap"] = currency7
+
+    token15 = Token()
+    currency8 = Currency()
+
+    token15.amount = X[3][2]  # X(14)
+    token15.name = "cake"
+    currency8.base = token15
+
+    token16 = Token()
+
+    token16.amount = X[3][1]  # X(13)
+    token16.name = "usdt"
+    currency8.counter = token16
+
+    currency_info["cake_usdt_pancake"] = currency8
+
+    for key in currency_info:
+        print(key+': base name '+currency_info[key].base.name + " amount " + str(currency_info[key].base.amount) +' and counter name ' + currency_info[key].counter.name + " amount " + str(currency_info[key].counter.amount))
 
     return currency_info
 
+def getProject(str):
+    startpos = str.rindex("_")
+    return str[startpos + 1:len(str)]
+
+def obj_2_json(obj):
+    return {
+        "heco_vault": obj.heco_vault,
+        "heco_solostrategy": obj.heco_solostrategy,
+        "bsc_vault":obj.bsc_vault,
+        "bsc_solostrategy":obj.bsc_solostrategy,
+        "bsc_biswapstrategy":obj.bsc_biswapstrategy,
+        "bsc_pancakestrategy":obj.bsc_pancakestrategy,
+        "poly_vault":obj.poly_vault,
+        "poly_solostrategy":obj.poly_solostrategy,
+        "poly_quickswapstrategy":obj.poly_quickswapstrategy
+    }
 
 def getReParams(currency_infos, pool_infos, btc_bsc):
     crossBalance = CrossBalanceItem()
@@ -224,8 +297,8 @@ def getReParams(currency_infos, pool_infos, btc_bsc):
     symbol = "HBTC"
     info = pool_infos[symbol]
     # 这里从配资结果得到：需要跨的数量减去已经在bsc上但是未投出去的数量，即：crossed_quantity_in_bsc_controller
-    # 问题 1.配资计算返回btc_bsc,eth_bsc,usdt_bsc，本次如何知道用那个作为减数？就是跨btc/etc/usdt？
-    crossBalance.Amount = btc_bsc - info["crossed_quantity_in_bsc_controller"]
+    # 问题 1.配资计算返回btc_bsc,eth_bsc,usdt_bsc，本次如何知道用哪一个作为减数？
+    crossBalance.Amount = btc_bsc - info.crossed_quantity_in_bsc_controller
 
     receiveFromBridge = ReceiveFromBridgeParam()
     receiveFromBridge.ChainID = 52  # 配置
@@ -256,10 +329,16 @@ def getReParams(currency_infos, pool_infos, btc_bsc):
     # 遍历8个交易对 currency_infos中的key是project名字 value是交易对
     for key in currency_infos:
         # todo：chain_infos中不存在key对应的project的处理
-        chain = chain_infos[key]
-        strategystr = chain + "_" + key + "strategy"
+        project = getProject(key)
+        chain = chain_infos[project]
+        strategystr = chain + "_" + project + "strategy"
         # todo：api返回对应币种的contract_info不存在strategystr的处理
-        strategyAddresses = info["contract_info"][strategystr]
+        # 下面的info实际应该根据币种到pool_infos中查找,这里测试 就是固定的一个值
+        contract = info.contract_info
+        #将cntractjson序列化，根据键值查找
+        str = json.dumps(contract, default=obj_2_json)
+        jsons = json.loads(str)
+        strategyAddresses = jsons[strategystr]
         baseTokenAmount = currency_infos[key].base.amount
         counterTokenAmount = currency_infos[key].counter.amount
 
@@ -302,10 +381,35 @@ if __name__ == '__main__':
     soloinfos = getprojectinfo(soloUrl)
 
     # 获取pool info
-    #pools_url = ''
-    #pool_infos = getpoolinfo(pools_url)
-    #由于API暂时不可用，造测试数据
+    # pools_url = ''
+    # pool_infos = getpoolinfo(pools_url)
+    # 由于API暂时不可用，造测试数据
+    contractinfo = ContractInfo()
+    contractinfo.heco_vault = "0x1",
+    contractinfo.heco_solostrategy = "0x2",
+    contractinfo.bsc_vault = "0x3",
+    contractinfo.bsc_solostrategy = "0x4",
+    contractinfo.bsc_biswapstrategy = "0x5",
+    contractinfo.bsc_pancakestrategy = "0x6",
+    contractinfo.poly_vault = "0x7",
+    contractinfo.poly_solostrategy = "0x8",
+    contractinfo.poly_quickswapstrategy = "0x9"
 
+    poolinfo = PoolInfo()
+    poolinfo.chain = "heco"
+    poolinfo.chain_id = 50
+    poolinfo.symbol = "HBTC"
+    poolinfo.decimal = 18
+    poolinfo.heco_uncross_quantity = 1000002
+    poolinfo.crossed_quantity_in_bsc_controller = 2
+    poolinfo.crossed_quantity_in_poly_controller = 2
+    poolinfo.bsc_vault_unre_qunatity = 0
+    poolinfo.poly_vault_unre_qunatity = 0
+    poolinfo.contract_info = contractinfo
+
+    pool_infos = {}
+    pool_infos["HBTC"] = poolinfo
+    # 造测试数据结束
 
     # 配资计算
     btc_bsc = 100
