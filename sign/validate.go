@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -244,7 +245,7 @@ func ValidatorTx(task *types.TransactionTask) (vaResp *VaResp, err error) {
 	vreq.Id = task.OrderId
 	vreq.Platform = platform
 
-	chain := task.ChainName
+	chain := strings.ToLower(task.ChainName)
 	switch chain {
 	case "bsc":
 		vreq.Chain = "bnb1"

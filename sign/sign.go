@@ -26,7 +26,6 @@ const appId = "rebal-si-gateway"
 const taskType = "withdraw"
 const bustype = "starsHecoBridgeWithdraw"
 const platform = "starshecobridge"
-const chain = "heco"
 
 // head key, case insensitive
 const (
@@ -152,7 +151,7 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 	}
 	myclient := &http.Client{Transport: tr, Timeout: 123 * time.Second}
 
-	chain := signReq.AuReq.Chain
+	chain := strings.ToLower(signReq.AuReq.Chain)
 	switch chain {
 	case "bsc":
 		chain = "bnb1"

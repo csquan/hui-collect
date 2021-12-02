@@ -100,7 +100,7 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	receiver := task.To
 	orderID := time.Now().UnixNano() / 1e6 //毫秒
 
-	auditRet, err := signer.AuditTx(input, receiver, quantity, orderID)
+	auditRet, err := signer.AuditTx(input, receiver, quantity, orderID, task.ChainName)
 
 	if err == nil && auditRet.Success == true {
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
