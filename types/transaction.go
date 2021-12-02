@@ -33,6 +33,15 @@ func ReceiveFromBridgeInput(amount *big.Int, taskID *big.Int) (input []byte, err
 	return abi.Pack("receiveFromBridge", amount, taskID)
 }
 
+func ClaimFromVaultInput(address []common.Address, baseTokenAmount []*big.Int, counterTokenAmount []*big.Int) (input []byte, err error) {
+	r := strings.NewReader(content)
+	abi, err := abi.JSON(r)
+	if err != nil {
+		return nil, err
+	}
+	return abi.Pack("claimFromVaultInput", address, baseTokenAmount, counterTokenAmount)
+}
+
 func InvestInput(address []common.Address, baseTokenAmount []*big.Int, counterTokenAmount []*big.Int) (input []byte, err error) {
 	r := strings.NewReader(content)
 	abi, err := abi.JSON(r)

@@ -14,6 +14,16 @@ func (m *Mysql) GetOpenedPartReBalanceTasks() (tasks []*types.PartReBalanceTask,
 	return
 }
 
+func (m *Mysql) GetOpenedFullReBalanceTasks() (tasks []*types.FullReBalanceTask, err error) {
+	tasks = make([]*types.FullReBalanceTask, 0)
+	err = m.engine.Where("f_state != ? and f_state != ?",
+		types.ReBalanceSuccess,
+		types.ReBalanceFailed).
+		Desc("f_state").
+		Find(&tasks)
+	return
+}
+
 func (m *Mysql) GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType types.TransactionType) (tasks []*types.TransactionTask, err error) {
 	tasks = make([]*types.TransactionTask, 0)
 	err = m.engine.Table("t_transaction_task").Where("f_rebalance_id = ? and f_type= ?", reBalanceId, transactionType).Find(&tasks)
