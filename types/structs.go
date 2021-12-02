@@ -21,8 +21,8 @@ type BaseTask struct {
 type ReBalanceState = int
 
 const (
-	ReBalanceInit ReBalanceState = iota
-	ReBalanceGetRemoveLPParams      //移除LP参数的获取会触发合约调用，所以独占一个状态，避免重复调用。
+	ReBalanceInit              ReBalanceState = iota
+	ReBalanceGetRemoveLPParams                //移除LP参数的获取会触发合约调用，所以独占一个状态，避免重复调用。
 	ReBalanceRecycling
 	ReBalanceDo
 	ReBalanceSuccess
@@ -33,6 +33,7 @@ type PartReBalanceState = int
 
 type CrossState = int
 type CrossSubState int
+
 const (
 	PartReBalanceInit PartReBalanceState = iota
 	PartReBalanceTransferOut
@@ -76,7 +77,6 @@ const (
 	TxUnInitState TransactionState = iota
 	TxAuditState
 	TxValidatorState
-	TxSignedState
 	TxCheckReceiptState
 	TxSuccessState
 	TxFailedState
@@ -170,6 +170,7 @@ type CrossTask struct {
 	Amount        string `xorm:"f_amount"`
 	State         int    `xorm:"f_state"`
 }
+
 func (t *CrossTask) TableName() string {
 	return "t_cross_task"
 }
@@ -186,7 +187,3 @@ type CrossSubTask struct {
 	Amount string `xorm:"f_amount"`
 	State  int    `xorm:"f_state"`
 }
-
-
-
-
