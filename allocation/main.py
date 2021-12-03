@@ -7,7 +7,7 @@ import yaml
 import pickle
 import numpy as np
 import json
-
+import sys
 
 class ChainParams:
     pass
@@ -65,39 +65,81 @@ class PoolInfo:
 class ContractInfo:
     pass
 
+
+class Pair:
+    pass
+
+
 # todo:1.放入config中 2.solo怎么考虑？如果作为key 三个链都有这个项目？HSOLO BSOLO PSOLO？
 # 项目和链的对应关系
 chain_infos = {"pancake": "bsc", "biswap": "bsc", "quickswap": "poly", "hsolo": "heco", "bsolo": "bsc", "psolo": "poly"}
 
+# 每个链上的base token
+base_tokens = ["ht", "bnb", "matic"]
 
-def getprojectinfo(url):
+
+def getPair(str):
+    pair = Pair()
+    tokenstr = str.split('/')  # 用/分割str字符串,etc:Cake/WBNB
+    print(tokenstr)
+
+    str1 = tokenstr[0].lower()
+    str2 = tokenstr[1].lower()
+
+    for base in base_tokens:
+        if str1.find(base):
+            pair.base = str1
+            pair.counter = str2
+        if str2.find(base):
+            pair.base = str1
+            pair.counter = str2
+    return pair
+
+
+# 关于价格：函数获取价格填写进传入的currencys，同时将这个价格和对应币种返回
+def getprojectinfo(project, url, currencys):
     ret = requests.get(url)
     string = str(ret.content, 'utf-8')
     e = json.loads(string)
     reward = 0
-    prices = {}
     tvls = {}
     aprs = {}
+    daily = {}
     for data in e["data"]:
-        tvls[data["poolName"]] = data["tvl"]
+        if float(data["apr"]) < 0.18:  #如果apr小于18，忽略本次data
+            continue
         aprs[data["poolName"]] = data["apr"]
+        tvls[data["poolName"]] = data["tvl"]
         for rewardToken in data["rewardTokenList"]:
-            prices[rewardToken["tokenSymbol"]] = rewardToken["tokenPrice"]
+            # 拼接dailyReward
+            tokenPair = getPair(data["poolName"])
+            key = tokenPair.base + '_' + tokenPair.counter + '_' + project
             dailyReward = float(rewardToken["dayAmount"]) * float(rewardToken["tokenPrice"])
+            daily[key] = dailyReward
             reward = reward + dailyReward
+        for deposit in data["depositTokenList"]:
+            #首先以tokenAddress到config中查找，获取对应币种的名字
+            for name in currencys:
+                if currencys[name]["address"] == deposit["tokenAddress"]:
+                    currencys[name]["price"] = deposit["tokenPrice"]
+
     print("totalReward is")
     print(reward)
-    print("prices dict is")
-    for token in prices:
-        print(token + ':' + prices[token])
+
+    print("daily dict is")
+    for d in daily:
+        print(d + ':' + str(daily[d]))
     print("tvls dict is")
     for poolName in tvls:
         print(poolName + ':' + tvls[poolName])
     print("aprs dict is")
     for poolName in aprs:
         print(poolName + ':' + aprs[poolName])
+    print("currencys price dict is")
+    for currency in currencys:
+        print(currency + ':' + str(currencys[currency]))
 
-    return prices, reward, tvls, aprs
+    return reward, daily, tvls, aprs, currencys
 
 
 def getpoolinfo(url):
@@ -117,34 +159,9 @@ def read_yaml(path):
         return yaml.safe_load(f.read())
 
 
-def getconnectinfo(connstr):
-    strlist = connstr.split('@')  # 用逗号分割str字符串，并保存到列表
-    print(strlist)
-    str1 = strlist[0]  # 包含用户名密码的字串
-    str2 = strlist[1]  # 包含Ip端口数据库的字串
-
-    user_endpos = str1.index(":")
-    user = str1[0:user_endpos]
-    password = str1[user_endpos + 1:len(str1)]
-
-    host_startpos = str2.index("(") + 1
-    host_endpos = str2.index(":")
-
-    host = str2[host_startpos:host_endpos]
-    port_endpos = str2.index(")")
-    port = str2[host_endpos + 1:port_endpos]
-
-    db_startpos = str2.index("/")
-    db_endpos = str2.index("?")
-
-    db = str2[db_startpos + 1:db_endpos]
-
-    return user, password, host, port, db
-
-
 def getPairinfo(X):
     # 存储配资计算的交易对数量结果
-    #key: base + counter + project
+    # key: base + counter + project
     currency_info = {}
 
     token1 = Token()
@@ -264,26 +281,31 @@ def getPairinfo(X):
     currency_info["cake_usdt_pancake"] = currency8
 
     for key in currency_info:
-        print(key+': base name '+currency_info[key].base.name + " amount " + str(currency_info[key].base.amount) +' and counter name ' + currency_info[key].counter.name + " amount " + str(currency_info[key].counter.amount))
+        print(key + ': base name ' + currency_info[key].base.name + " amount " + str(
+            currency_info[key].base.amount) + ' and counter name ' + currency_info[key].counter.name + " amount " + str(
+            currency_info[key].counter.amount))
 
     return currency_info
+
 
 def getProject(str):
     startpos = str.rindex("_")
     return str[startpos + 1:len(str)]
 
+
 def obj_2_json(obj):
     return {
         "heco_vault": obj.heco_vault,
         "heco_solostrategy": obj.heco_solostrategy,
-        "bsc_vault":obj.bsc_vault,
-        "bsc_solostrategy":obj.bsc_solostrategy,
-        "bsc_biswapstrategy":obj.bsc_biswapstrategy,
-        "bsc_pancakestrategy":obj.bsc_pancakestrategy,
-        "poly_vault":obj.poly_vault,
-        "poly_solostrategy":obj.poly_solostrategy,
-        "poly_quickswapstrategy":obj.poly_quickswapstrategy
+        "bsc_vault": obj.bsc_vault,
+        "bsc_solostrategy": obj.bsc_solostrategy,
+        "bsc_biswapstrategy": obj.bsc_biswapstrategy,
+        "bsc_pancakestrategy": obj.bsc_pancakestrategy,
+        "poly_vault": obj.poly_vault,
+        "poly_solostrategy": obj.poly_solostrategy,
+        "poly_quickswapstrategy": obj.poly_quickswapstrategy
     }
+
 
 def getReParams(currency_infos, pool_infos, btc_bsc):
     crossBalance = CrossBalanceItem()
@@ -302,7 +324,7 @@ def getReParams(currency_infos, pool_infos, btc_bsc):
 
     receiveFromBridge = ReceiveFromBridgeParam()
     receiveFromBridge.ChainID = 52  # 配置
-    receiveFromBridge.ChainName = "bsc"  # 配置
+    receiveFromBrid:qge.ChainName = "bsc"  # 配置
     receiveFromBridge.From = "configaddress2"  # 配置的签名机地址
     receiveFromBridge.To = "configaddress3"  # 配置的合约地址
     receiveFromBridge.Erc20ContractAddr = "configaddress4"  # 配置的token地址
@@ -335,7 +357,7 @@ def getReParams(currency_infos, pool_infos, btc_bsc):
         # todo：api返回对应币种的contract_info不存在strategystr的处理
         # 下面的info实际应该根据币种到pool_infos中查找,这里测试 就是固定的一个值
         contract = info.contract_info
-        #将cntractjson序列化，根据键值查找
+        # 将cntractjson序列化，根据键值查找
         str = json.dumps(contract, default=obj_2_json)
         jsons = json.loads(str)
         strategyAddresses = jsons[strategystr]
@@ -365,20 +387,52 @@ def getReParams(currency_infos, pool_infos, btc_bsc):
     ret = pickle.dumps(params)
     return ret
 
-
-if __name__ == '__main__':
+def outputReTask():
     # 读取config
-    conf = read_yaml("../config.yaml")
+    conf = read_yaml("./config.yaml")
+
+    currency_dict = conf.get("currency")
 
     # 获取project info
     pancakeUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
-    pancakeinfos = getprojectinfo(pancakeUrl)
+    pancakeinfos = getprojectinfo("pancake", pancakeUrl, currency_dict)
 
     biswapUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=476'
-    biswapinfos = getprojectinfo(biswapUrl)
+    biswapinfos = getprojectinfo("biswap", biswapUrl, currency_dict)
 
     soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
-    soloinfos = getprojectinfo(soloUrl)
+    soloinfos = getprojectinfo("solo", soloUrl, currency_dict)
+
+    pool_infos = {}
+    pool_infos["HBTC"] = poolinfo
+    # 造测试数据结束
+
+    # 配资计算
+    btc_bsc = 100
+    eth_bsc = 100
+    usdt_bsc = 100
+    X = np.random.randint(1, 100, (4, 4))
+    # 交易对赋值
+    currency_infos = getPairinfo(X)
+
+    # 拼接结果字串
+    parambytes = getReParams(currency_infos, pool_infos, btc_bsc)
+
+    # write db
+    conn = pymysql.connect(host=conf["database"]["host"], port=conf["database"]["port"], user=conf["database"]["user"],
+                           passwd=conf["database"]["passwd"], db=conf["database"]["db"], charset='utf8')
+    print(conn)
+
+    # cursor = db.cursor()
+
+    # cursor.execute('''insert into Rebalance_params values()''')
+
+    # cursor.close()
+    # db.commit()
+    conn.close()
+
+if __name__ == '__main__':
+    # 首先读取api的pool——info，将5个值累加，判断门槛
 
     # 获取pool info
     # pools_url = ''
@@ -407,32 +461,11 @@ if __name__ == '__main__':
     poolinfo.poly_vault_unre_qunatity = 0
     poolinfo.contract_info = contractinfo
 
-    pool_infos = {}
-    pool_infos["HBTC"] = poolinfo
-    # 造测试数据结束
+    total = poolinfo.heco_uncross_quantity + poolinfo.crossed_quantity_in_bsc_controller + poolinfo.crossed_quantity_in_poly_controller + poolinfo.bsc_vault_unre_qunatity + poolinfo.poly_vault_unre_qunatity
 
-    # 配资计算
-    btc_bsc = 100
-    eth_bsc = 100
-    usdt_bsc = 100
-    X = np.random.randint(1, 100, (4, 4))
-    # 交易对赋值
-    currency_infos = getPairinfo(X)
+    if total < 100:
+       sys.exit(1)
 
-    # 拼接结果字串
-    parambytes = getReParams(currency_infos, pool_infos, btc_bsc)
+    outputReTask()
 
-    # write db
-    connect = getconnectinfo(conf["database"]["db"])
-    print(connect)
-    conn = pymysql.connect(host='127.0.0.1', port=3306, user='root', passwd='csquan253905', db='reblance',
-                           charset='utf8')
-    print(conn)
 
-    # cursor = db.cursor()
-
-    # cursor.execute('''insert into Rebalance_params values()''')
-
-    # cursor.close()
-    # db.commit()
-    conn.close()

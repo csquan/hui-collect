@@ -51,8 +51,6 @@ func (t *Transaction) Run() (err error) {
 			return t.handleAudit(task)
 		case types.TxValidatorState:
 			return t.handleValidator(task)
-		case types.TxSignedState:
-			return t.handleTransactionSigned(task)
 		case types.TxCheckReceiptState:
 			return t.handleTransactionCheck(task)
 		default:
@@ -68,10 +66,10 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	decimal := 18
 	from := task.From
 	to := task.To
-	GasLimit := t.config.SendConf.GasLimit
+	GasLimit := task.GasLimit
 	GasPrice := task.GasPrice
-	Amount := t.config.SendConf.Amount
-	quantity := t.config.SendConf.Quantity
+	Amount := task.Amount
+	quantity := task.Quantity
 	receiver := task.To //和to一致
 
 	signRet, err := signer.SignTx(input, decimal, int(nonce), from, to, GasLimit, GasPrice, Amount, quantity, receiver, task.ChainName)
@@ -96,7 +94,7 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 
 func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	input := task.InputData
-	quantity := t.config.SendConf.Quantity
+	quantity := task.Quantity
 	receiver := task.To
 	orderID := time.Now().UnixNano() / 1e6 //毫秒
 
@@ -122,7 +120,7 @@ func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 
 	if err == nil && vRet.OK == true {
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-			task.State = int(types.TxSignedState)
+			task.State = int(types.TxCheckReceiptState)
 			task.SignData = vRet.RawTx
 			execErr = t.db.UpdateTransactionTask(session, task)
 			if execErr != nil {
@@ -178,11 +176,12 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error {
 	client, ok := t.clientMap[task.ChainName]
 	if !ok {
-		logrus.Errorf("not find chain client, task:%v", task)
+		logrus.Warnf("not find chain client, task:%v", task)
 	}
 	receipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(task.Hash))
 	if err != nil {
-		return err
+		logrus.Warnf("hash not found, task:%v", task)
+		err = nil
 	}
 	if receipt == nil {
 		transaction, err := types.DecodeTransaction(task.SignData)

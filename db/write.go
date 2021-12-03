@@ -45,6 +45,11 @@ func (*Mysql) UpdatePartReBalanceTask(itf xorm.Interface, task *types.PartReBala
 	return err
 }
 
+func (*Mysql) UpdateReBalanceTask(itf xorm.Interface, task *types.FullReBalanceTask) error{
+	_, err := itf.Where("f_id = ?", task.ID).Update(task)
+	return err
+}
+
 func (m *Mysql) SaveTxTasks(itf xorm.Interface, tasks []*types.TransactionTask) (err error) {
 	_, err = itf.Insert(tasks)
 	if err != nil {

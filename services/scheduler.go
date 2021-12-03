@@ -35,9 +35,13 @@ func NewServiceScheduler(conf *config.Config, db types.IDB, closeCh <-chan os.Si
 }
 
 func (t *ServiceScheduler) Start() {
+	//reBalance, err := rebalance.NewReBalanceService(t.db, t.conf)
+	//if err != nil {
+	//	logrus.Fatalf("new rebalance service error: %v", err)
+	//}
 	partReBalance, err := part_rebalance.NewPartReBalanceService(t.db, t.conf)
 	if err != nil {
-		logrus.Fatalf("new rebalance service error: %v", err)
+		logrus.Fatalf("new part rebalance service error: %v", err)
 	}
 	t.services = append(t.services, partReBalance)
 
@@ -57,6 +61,7 @@ func (t *ServiceScheduler) Start() {
 	//create cross service
 
 	t.services = []types.IAsyncService{
+		//reBalance,
 		partReBalance,
 		transaction,
 		crossService,
