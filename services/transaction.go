@@ -67,9 +67,18 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	from := task.From
 	to := task.To
 	GasLimit := task.GasLimit
+	if GasLimit == "" {
+		GasLimit = "2000000"
+	}
 	GasPrice := task.GasPrice
 	Amount := task.Amount
+	if Amount == "" {
+		Amount = "0"
+	}
 	quantity := task.Quantity
+	if quantity == "" {
+		quantity = "0"
+	}
 	receiver := task.To //和to一致
 
 	signRet, err := signer.SignTx(input, decimal, int(nonce), from, to, GasLimit, GasPrice, Amount, quantity, receiver, task.ChainName)
@@ -190,7 +199,7 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 			return err
 		}
 		if err := client.SendTransaction(context.Background(), transaction); err != nil {
-			logrus.Errorf("SendTransaction err:%v task:%v", err, task)
+			logrus.Warnf("SendTransaction err:%v task:%v", err, task)
 			return err
 		}
 		return nil

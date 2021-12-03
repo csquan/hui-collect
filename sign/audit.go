@@ -157,7 +157,7 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 		return AuditResponse{}, err
 	}
 
-	logrus.Infof("audit request body json: %s", string(reqDataByte))
+	logrus.Infof("audit request body: %s", string(reqDataByte))
 
 	body := bytes.NewReader(reqDataByte)
 

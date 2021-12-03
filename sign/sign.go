@@ -212,7 +212,7 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 		logrus.Errorf("json unmarshal request data error: %v", err)
 		return
 	}
-	logrus.Infof("The request ++++++++ is %s", string(reqDataByte))
+	logrus.Debugf("sign gateway request data: %s", string(reqDataByte))
 
 	data := &Payload{
 		Addrs:         []string{sysAddr},
@@ -225,7 +225,7 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 		return
 	}
 
-	logrus.Infof("The request body is %s", string(payloadBytes))
+	logrus.Infof("sign gateway request body: %s", string(payloadBytes))
 
 	body := bytes.NewReader(payloadBytes)
 
@@ -539,13 +539,13 @@ func SignTx(input string, decimal int, nonce int, from string, to string, GasLim
 		return signResp, err
 	}
 
-	logrus.Info(resp)
+	logrus.Infof("sign gateway response: %v", resp)
 
-	logrus.Info("EncryptData")
-	logrus.Info(resp.Data.EncryptData)
-
-	logrus.Info("CipherKey")
-	logrus.Info(resp.Data.Extra.Cipher)
+	//logrus.Info("EncryptData")
+	//logrus.Info(resp.Data.EncryptData)
+	//
+	//logrus.Info("CipherKey")
+	//logrus.Info(resp.Data.Extra.Cipher)
 
 	return resp, nil
 }
