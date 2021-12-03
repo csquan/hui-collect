@@ -74,11 +74,15 @@ class Pair:
 # 项目和链的对应关系
 chain_infos = {"pancake": "bsc", "biswap": "bsc", "quickswap": "poly", "hsolo": "heco", "bsolo": "bsc", "psolo": "poly"}
 
-# 每个链上的base token
-base_tokens = ["ht", "bnb", "matic"]
+
+counter_tokens = ["usd"]
+
+def getCurrency(pair):
+    tokenstr = pair.split('_')
+    return tokenstr[0].lower()
 
 
-def getPair(str):
+def getPair(str,currencys):
     pair = Pair()
     tokenstr = str.split('/')  # 用/分割str字符串,etc:Cake/WBNB
     print(tokenstr)
@@ -86,11 +90,25 @@ def getPair(str):
     str1 = tokenstr[0].lower()
     str2 = tokenstr[1].lower()
 
-    for base in base_tokens:
-        if str1.find(base):
-            pair.base = str1
-            pair.counter = str2
-        if str2.find(base):
+    for key in currencys:
+        for info in currencys[key]["tokens"]:
+            for t in currencys[key]["tokens"][info]:
+                if key == "eth" and info == "poly":
+                    print("poly")
+                if currencys[key]["tokens"][info]["symbol"].lower() == str1:
+                    str1 = key
+                if currencys[key]["tokens"][info]["symbol"].lower() == str2:
+                    str2 = key
+
+
+    pair.base = str1
+    pair.counter = str2
+
+    for counter in counter_tokens:
+        if str1.find(counter) >= 0:
+            pair.base = str2
+            pair.counter = str1
+        if str2.find(counter) >= 0:
             pair.base = str1
             pair.counter = str2
     return pair
@@ -115,13 +133,16 @@ def getprojectinfo(project, url, currencys):
     aprs = {}
     daily = {}
     for data in e["data"]:
-        if float(data["apr"]) < 0.18:  #如果apr小于18，忽略本次data
-            continue
         aprs[data["poolName"]] = data["apr"]
-        tvls[data["poolName"]] = data["tvl"]
+
+        #todo:临时修改
+        tokenPair1 = getPair(data["poolName"], currencys)
+        key1 = tokenPair1.base + '_' + tokenPair1.counter + '_' + project
+        tvls[key1] = data["tvl"]
+
         for rewardToken in data["rewardTokenList"]:
             # 拼接dailyReward
-            tokenPair = getPair(data["poolName"])
+            tokenPair = getPair(data["poolName"],currencys)
             key = tokenPair.base + '_' + tokenPair.counter + '_' + project
             dailyReward = float(rewardToken["dayAmount"]) * float(rewardToken["tokenPrice"])
             daily[key] = dailyReward
@@ -403,17 +424,18 @@ def outputReTask():
 
     currency_dict = conf.get("currencies")
     currencyName = currency_dict.keys()
-
+    """
     # 获取project info
     pancakeUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
     pancakeinfos = getprojectinfo("pancake", pancakeUrl, currency_dict)
 
     biswapUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=476'
     biswapinfos = getprojectinfo("biswap", biswapUrl, currency_dict)
+    """
+    #soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=76'
+    #soloinfos = getprojectinfo("solo", soloUrl, currency_dict)
 
-    soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=76'
-    soloinfos = getprojectinfo("solo", soloUrl, currency_dict)
-
+    print("polygon+++++++")
     polygonUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'
     polygoninfos = getprojectinfo("quickswap", polygonUrl, currency_dict)
     """
@@ -436,7 +458,6 @@ def outputReTask():
     # db.commit()
     conn.close()
     """
-"""
 
     # 获取pool info
     reUrl = 'http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re'
@@ -491,32 +512,33 @@ def outputReTask():
             'bsc': 'poly',
             'poly': 'bsc',
         }
-        for chain in diffMap[currency]:
-            diff = diffMap[currency + '_' +chain]
-            crossItem = {}
+        diff = diffMap[currency]
+        crossItem = {}
 
-            # TODO 只考虑了从HECO往其他链搬
-            if beforeInfo[currency][crossItem['from']] > diff:
-                crossItem['amount'] = diff  # 绝对值
-                crossItem['from'] = "heco"
-                crossItem['to'] = "bsc"
-                beforeInfo[currency][crossItem['from']] -= diff
-            else:
-                crossItem['from'] = "poly" #heco?
-                crossItem['to'] = "bsc"
+        # TODO 只考虑了从HECO往其他链搬
+        crossItem['from'] = "heco"
+        crossItem['to'] = "bsc"
 
-                if beforeInfo[currency]["heco"] > currency_dict[currency]["min"]:
-                    #format beforeInfo[currency]["heco"] 精度
-                    crossItem['amount'] = beforeInfo[currency][crossItem['from']]
-                    beforeInfo[currency][crossItem['from']] = 0
+        signel = getCurrency(currency)
+        if float(beforeInfo[signel][crossItem['from']]["amount"]) > float(diff):
+            crossItem['amount'] = diff  # 绝对值
+            beforeInfo[signel][crossItem['from']]["amount"] = str(float(beforeInfo[signel][crossItem['from']]["amount"]) - float(diff))
+        else:
+            # 前提是heco的大于最小额 format精度
+            crossItem['amount'] = beforeInfo[signel][crossItem['from']]["amount"]
+            beforeInfo[signel][crossItem['from']]["amount"] = 0
 
-                crossItem['fromCurrency'] = currency_dict[currency][tokens][crossItem['from']].crossSymbol
-                crossItem['toCurrency'] = currency_dict[currency][tokens][crossItem['to']].crossSymbol
+        if float(beforeInfo[signel]["heco"]["amount"]) > currency_dict[signel]["min"]:
+            #format beforeInfo[currency]["heco"] 精度
+            crossItem['amount'] = beforeInfo[signel][crossItem['from']]["amount"]
+            beforeInfo[signel][crossItem['from']]["amount"] = 0
 
-                if crossItem['amount'] > 0:
-                    crossList.append(crossItem)
+            crossItem['fromCurrency'] = currency_dict[signel]["tokens"][crossItem['from']]["crossSymbol"]
+            crossItem['toCurrency'] = currency_dict[signel]["tokens"][crossItem['to']]["crossSymbol"]
 
-"""
+        if float(crossItem['amount']) > 0:
+            crossList.append(crossItem)
+
 
 if __name__ == '__main__':
     # 首先读取api的pool——info，将5个值累加，判断门槛
