@@ -44,17 +44,24 @@ func (t *Transaction) Run() (err error) {
 	}
 
 	for _, task := range tasks {
-		switch types.TransactionState(task.State) {
-		case types.TxUnInitState:
-			return t.handleSign(task)
-		case types.TxAuditState:
-			return t.handleAudit(task)
-		case types.TxValidatorState:
-			return t.handleValidator(task)
-		case types.TxCheckReceiptState:
-			return t.handleTransactionCheck(task)
-		default:
-			logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
+		err = func(task *types.TransactionTask) error {
+			switch types.TransactionState(task.State) {
+			case types.TxUnInitState:
+				return t.handleSign(task)
+			case types.TxAuditState:
+				return t.handleAudit(task)
+			case types.TxValidatorState:
+				return t.handleValidator(task)
+			case types.TxCheckReceiptState:
+				return t.handleTransactionCheck(task)
+			default:
+				logrus.Errorf("unkonwn task state [%v] for task [%v]", tasks[0].State, tasks[0].ID)
+				return nil
+			}
+		}(task)
+
+		if err != nil {
+			return
 		}
 	}
 	return
@@ -203,7 +210,7 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 		}
 		if err := client.SendTransaction(context.Background(), transaction); err != nil {
 			logrus.Warnf("SendTransaction err:%v task:%v", err, task)
-			return err
+			return nil
 		}
 		return nil
 	}
