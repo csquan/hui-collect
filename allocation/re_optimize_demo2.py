@@ -9,10 +9,11 @@ btcb = 1000.98
 eth  = 200.8
 busd = 60.9
 usdt = 1.0
-usdc = 1.1
-matic= 25.0
+#usdc = 1.1
+#matic= 25.0
 
 #token quantity（total）
+'''
 bnb_total  = 100000000000
 cake_total = 200000000000
 btc_total  = 2000000000
@@ -21,6 +22,7 @@ busd_total = 100000000000
 usdt_total = 100000000000 
 usdc_total = 100000000000
 matic_total= 10000000000000
+'''
 '''
 #token quantity (小re分配) 结果要返回这个！！
 btc_bsc  = btc quantity   
@@ -51,6 +53,8 @@ J = 0.030 #eth_usdt_quickswap_daily_reward
 K = 0.01  #wbtc_usdc_quickswap_daily_reward
 L = 0.005 #matic_usdc_quickswap_daily_reward
 M = 0.016 #matic_usdt_quickswap_daily_reward
+
+
 N = 0.016 #bnb_bsolotop_daily_reward
 O = 0.020 #cake_bsolotop_daily_reward
 P = 0.046 #btcb_bsolotop_daily_reward
@@ -171,14 +175,14 @@ usdt_bsc= to_usdt *((365* C / 0.18)- cc + (365* D / 0.18)- dd +(365* F / 0.18)- 
 bnb_q  =  3000
 cake_q =  400
 btcb_q =  500000 + btc_bsc
-eth_q  =  6000+ eth_bsc
+eth_q  =  6000 + eth_bsc
 busd_q =  700
 usdt_q =  8000 + usdt_bsc 
 
 def total_reward(argsp, argsr, argst):
     bnb, busd, usdt, cake, btcb, eth = argsp
-    A, B ,C, D, E, F, G ,H = argsr
-    a, b, c, d, e, f, g, h = argst
+    A, B ,C, D, E, F, G , H = argsr
+    a, b, c, d, e, f, g , h = argst
     v = lambda x: (
         (bnb*x[0] + busd*x[3])/(bnb*x[0] + busd*x[3] + a )*A + \
         (bnb*x[1] + busd*x[2])/(bnb*x[1] + busd*x[2] + b )*B + \
@@ -286,7 +290,7 @@ if __name__ == "__main__":
     #x0 = np.asarray((0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0))
     #x0 = np.asarray( tuple([random.random() for i in range(16)]))
     argsq = (bnb_q, busd_q, btcb_q, eth_q, usdt_q, cake_q)
-    argsp = (bnb, busd, usdt, cake, btcb, eth)    
+    argsp = (bnb, busd, usdt, cake, btcb, eth) 
     argsr = (A, B ,C, D, E, F, G ,H)
     argst = (a, b, c, d, e, f, g, h)
     boundary = (bnb_q, bnb_q, busd_q, busd_q, busd_q, bnb_q, bnb_q, btcb_q,
