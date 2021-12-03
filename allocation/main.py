@@ -96,6 +96,15 @@ def getPair(str):
     return pair
 
 
+def getreinfo(url):
+    ret = requests.get(url)
+    string = str(ret.content, 'utf-8')
+    e = json.loads(string)
+
+    print(e["data"])
+
+    return e["data"]
+
 # 关于价格：函数获取价格填写进传入的currencys，同时将这个价格和对应币种返回
 def getprojectinfo(project, url, currencys):
     ret = requests.get(url)
@@ -120,8 +129,9 @@ def getprojectinfo(project, url, currencys):
         for deposit in data["depositTokenList"]:
             #首先以tokenAddress到config中查找，获取对应币种的名字
             for name in currencys:
-                if currencys[name]["address"] == deposit["tokenAddress"]:
-                    currencys[name]["price"] = deposit["tokenPrice"]
+                for token in currencys[name]["tokens"]:
+                    if currencys[name]["tokens"][token]["addr"] == deposit["tokenAddress"]:
+                        currencys[name]["price"] = deposit["tokenPrice"]
 
     print("totalReward is")
     print(reward)
@@ -391,7 +401,8 @@ def outputReTask():
     # 读取config
     conf = read_yaml("./config.yaml")
 
-    currency_dict = conf.get("currency")
+    currency_dict = conf.get("currencies")
+    currencyName = currency_dict.keys()
 
     # 获取project info
     pancakeUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
@@ -400,18 +411,12 @@ def outputReTask():
     biswapUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=476'
     biswapinfos = getprojectinfo("biswap", biswapUrl, currency_dict)
 
-    soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
+    soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=76'
     soloinfos = getprojectinfo("solo", soloUrl, currency_dict)
 
-    pool_infos = {}
-    pool_infos["HBTC"] = poolinfo
-    # 造测试数据结束
-
-    # 配资计算
-    btc_bsc = 100
-    eth_bsc = 100
-    usdt_bsc = 100
-    X = np.random.randint(1, 100, (4, 4))
+    polygonUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'
+    polygoninfos = getprojectinfo("quickswap", polygonUrl, currency_dict)
+    """
     # 交易对赋值
     currency_infos = getPairinfo(X)
 
@@ -430,6 +435,88 @@ def outputReTask():
     # cursor.close()
     # db.commit()
     conn.close()
+    """
+"""
+
+    # 获取pool info
+    reUrl = 'http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re'
+    reinfos = getreinfo(reUrl)
+    threshold = reinfos["threshold"]
+    vaultInfoList = reinfos["vaultInfoList"]
+
+    # 整理出阈值，当前值 进行比较
+    # {btc:{bsc:{amount:"1", controllerAddress:""},...}}
+    beforeInfo = {}
+
+    # 计算跨链的初始状态--todo:这里多个etc对应的值
+    for vault in vaultInfoList:
+        for name in currencyName:
+            controller = {}
+            if vault["tokenSymbol"].lower().find(name) > 0:
+                for chain in vault["activeAmount"].keys():
+                    controller[chain.lower()] = vault["activeAmount"][chain]
+            if controller:
+                beforeInfo[name.lower()] = controller
+                    # total = total + vault.activeAmount[chain]
+
+    #得到poly上的btc量
+    btc_total = 0
+    for controller in beforeInfo["btc"]:
+        btc_total = btc_total + float(beforeInfo["btc"][controller]["amount"])
+
+    poly_btc = btc_total - 100
+    # 计算跨链的最终状态--配资结果  btc_bsc = 100 eth_bsc = 101 usdt_bsc = 102
+    afterInfo = {"btc": [{"bsc": 100}, {"polygon": 200}], "eth": [{"bsc": 101}],"usdt": [{"bsc": 102}]}
+
+    #afterInfo["pbtc"] = {"poly": poly_btc}
+
+    # 跨链信息 存储
+    diffMap = {}
+
+    # cross list
+    crossList = []
+
+    # 生成跨链参数, 需要考虑最小值
+    for currency in afterInfo:
+        for chain in ['bsc', 'polygon']:
+            for info in afterInfo[currency]:
+                for k in info.keys():
+                    if currency in beforeInfo.keys():
+                        diff = info[k] - float(beforeInfo[currency][chain]["amount"])
+                        if diff > currency_dict[currency]["min"] or diff < currency_dict[currency]["min"] * -1:
+                            diffMap[currency + '_' + chain] = diff  # todo:format to min decimal
+
+    for currency in diffMap:
+        targetMap = {
+            'bsc': 'poly',
+            'poly': 'bsc',
+        }
+        for chain in diffMap[currency]:
+            diff = diffMap[currency + '_' +chain]
+            crossItem = {}
+
+            # TODO 只考虑了从HECO往其他链搬
+            if beforeInfo[currency][crossItem['from']] > diff:
+                crossItem['amount'] = diff  # 绝对值
+                crossItem['from'] = "heco"
+                crossItem['to'] = "bsc"
+                beforeInfo[currency][crossItem['from']] -= diff
+            else:
+                crossItem['from'] = "poly" #heco?
+                crossItem['to'] = "bsc"
+
+                if beforeInfo[currency]["heco"] > currency_dict[currency]["min"]:
+                    #format beforeInfo[currency]["heco"] 精度
+                    crossItem['amount'] = beforeInfo[currency][crossItem['from']]
+                    beforeInfo[currency][crossItem['from']] = 0
+
+                crossItem['fromCurrency'] = currency_dict[currency][tokens][crossItem['from']].crossSymbol
+                crossItem['toCurrency'] = currency_dict[currency][tokens][crossItem['to']].crossSymbol
+
+                if crossItem['amount'] > 0:
+                    crossList.append(crossItem)
+
+"""
 
 if __name__ == '__main__':
     # 首先读取api的pool——info，将5个值累加，判断门槛

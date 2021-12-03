@@ -5,103 +5,111 @@ database:
   passwd: csquan253905
   db: reblance
 
-currency:
-  hbtc:
-    symbol: "btc"
-    decimal: 18
-    address: "0x66a79d23e58475d2738179ca52cd0b41d73f0bea"
-    chain: "heco"
-    price:
-  btcb:
-    symbol: "btc"
-    decimal: 18
-    address: "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c"
-    chain: "bsc"
-    price:
-  wbtc:
-    symbol: "btc"
-    decimal: 18
-    address: "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6"
-    chain: "poly"
-    price:
-  heth:
-    symbol: "eth"
-    decimal: 18
-    address: "0x64ff637fb478863b7468bc97d30a5bf3a428a1fd"
-    chain: "heco"
-    price:
-  beth:
-    symbol: "eth"
-    decimal: 18
-    address: "0x2170ed0880ac9a755fd29b2688956bd959f933f8"
-    chain: "bsc"
-    price:
-  weth:
-    symbol: "eth"
-    decimal: 18
-    address: "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
-    chain: "poly"
-    price:
-  husdt:
-    symbol: "usdt"
-    decimal: 18
-    address: "0xa71edc38d189767582c38a3145b5873052c3e47a"
-    chain: "heco"
-    price:
-  busdt:
-    symbol: "usdt"
-    decimal: 18
-    address: "0xe9e7cea3dedca5984780bafc599bd69add087d56"
-    chain: "bsc"
-    price:
-  pusdt:
-    symbol: "usdt"
-    decimal: 6
-    address: "0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
-    chain: "poly"
-    price:
-  husdc:
-    symbol: "usdc-heco"
-    decimal: 6
-    address: "0x9362bbef4b8313a8aa9f0c9808b80577aa26b73b"
-    chain: "heco"
-    price:
-  husdc:
-    symbol: "usdc"
-    decimal: 6
-    address: "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
-    chain: "poly"
-    price:
-  hdai:
-    symbol: "dai-heco"
-    decimal: 18
-    address: "0x3d760a45d0887dfd89a2f5385a236b29cb46ed2a"
-    chain: "heco"
-    price:
-  pdai:
-    symbol: "dai"
-    decimal: 18
-    address: "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063"
-    chain: "poly"
-    price:
-  husd:
-    symbol: "husd"
-    decimal: 8
-    address: "0x0298c2b32eae4da002a15f36fdf7615bea3da047"
-    chain: "heco"
-    price:
-  busd:
-    symbol: "busd"
-    decimal: 18
-    address: "0xe9e7cea3dedca5984780bafc599bd69add087d56"
-    chain: "poly"
-    price:
-  cake:
-    symbol: "cake"
-    decimal: 18
-    address: "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82"
-    chain: "bsc"
-    price:
-
+currencies:
+  btc:
+    min: 0.001
+    crossDecimal: 3
+    tokens:
+      heco:
+        symbol: 'HBTC'
+        addr: '0x66a79d23e58475d2738179ca52cd0b41d73f0bea'
+        decimal: 18
+        crossSymbol: "BTC"
+      bsc:
+        symbol: 'BTCB'
+        addr: '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c'
+        decimal: 18
+        crossSymbol: "BTC"
+      poly:
+        symbol: 'WBTC'
+        addr: '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6'
+        decimal: 8
+        crossSymbol: "BTC"
+  eth:
+    min: 0.01
+    crossDecimal: 2
+    tokens:
+      heco:
+        symbol: 'ETH'
+        addr: '0x64ff637fb478863b7468bc97d30a5bf3a428a1fd'
+        decimal: 18
+        crossSymbol: "ETH"
+      bsc:
+        symbol: 'ETH'
+        addr: '0x2170ed0880ac9a755fd29b2688956bd959f933f8'
+        decimal: 18
+        min: 0.01
+        crossSymbol: "ETH"
+      poly:
+        symbol: 'WETH'
+        addr: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619'
+        decimal: 18
+        min: 0.01
+        crossSymbol: "ETH"
+  usdt:
+    min: 10
+    crossDecimal: 0
+    tokens:
+      heco:
+        symbol: 'USDT'
+        addr: '0xa71edc38d189767582c38a3145b5873052c3e47a'
+        decimal: 18
+        crossSymbol: "USDT"
+      bsc:
+        symbol: 'USDT'
+        addr: '0x55d398326f99059fF775485246999027B3197955'
+        decimal: 18
+        min: 10
+        crossSymbol: "USDT"
+      poly:
+        symbol: 'USDT'
+        addr: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f'
+        decimal: 6
+        min: 10
+        crossSymbol: "USDT"
+  usdc:
+    min: 2
+    crossDecimal: 0
+    tokens:
+      heco:
+        symbol: 'USDC'
+        addr: '0x9362bbef4b8313a8aa9f0c9808b80577aa26b73b'
+        decimal: 6
+        crossSymbol: "USDC"
+      poly:
+        symbol: 'USDC'
+        addr: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'
+        decimal: 6
+        crossSymbol: "USDC"
+  dai:
+    min: 1
+    crossDecimal: 0
+    tokens:
+      heco:
+        symbol: 'DAI-HECO'
+        addr: '0x9362bbef4b8313a8aa9f0c9808b80577aa26b73b'
+        decimal: 18
+        crossSymbol: "DAI"
+      poly:
+        symbol: 'DAI'
+        addr: '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'
+        decimal: 18
+        crossSymbol: "DAI"
+  usd:
+    min: 10
+    crossDecimal: 0
+    tokens:
+      heco:
+        symbol: 'HUSD'
+        addr: '0x0298c2b32eae4da002a15f36fdf7615bea3da047'
+        decimal: 8
+        # min: 1,
+        # crossSymbol: "BUSD"
+      bsc:
+        symbol: 'BUSD'
+        addr: '0xe9e7cea3dedca5984780bafc599bd69add087d56'
+        decimal: 18
+        # min: 1,
+        # crossSymbol: "BUSD"
 
 
