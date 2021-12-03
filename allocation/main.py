@@ -82,13 +82,24 @@ def getCurrency(pair):
     return tokenstr[0].lower()
 
 
-def getPair(str):
+def getPair(str,currencys):
     pair = Pair()
     tokenstr = str.split('/')  # 用/分割str字符串,etc:Cake/WBNB
     print(tokenstr)
 
     str1 = tokenstr[0].lower()
     str2 = tokenstr[1].lower()
+
+    for key in currencys:
+        for info in currencys[key]["tokens"]:
+            for t in currencys[key]["tokens"][info]:
+                if key == "eth" and info == "poly":
+                    print("poly")
+                if currencys[key]["tokens"][info]["symbol"].lower() == str1:
+                    str1 = key
+                if currencys[key]["tokens"][info]["symbol"].lower() == str2:
+                    str2 = key
+
 
     pair.base = str1
     pair.counter = str2
@@ -126,7 +137,7 @@ def getprojectinfo(project, url, currencys):
         tvls[data["poolName"]] = data["tvl"]
         for rewardToken in data["rewardTokenList"]:
             # 拼接dailyReward
-            tokenPair = getPair(data["poolName"])
+            tokenPair = getPair(data["poolName"],currencys)
             key = tokenPair.base + '_' + tokenPair.counter + '_' + project
             dailyReward = float(rewardToken["dayAmount"]) * float(rewardToken["tokenPrice"])
             daily[key] = dailyReward
