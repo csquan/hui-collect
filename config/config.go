@@ -32,11 +32,6 @@ type BridgeConf struct {
 	Sk      string        `mapstructure:"sk"`
 }
 
-type SendConf struct {
-	GasLimit string `mapstructure:"gaslimit"`
-	Amount   string `mapstructure:"amount"`
-	Quantity string `mapstructure:"quantity"`
-}
 
 //func (o *DataBaseConf) init() {
 //	o.RetryInterval = time.Duration(o.RetryIntervalInt) * time.Millisecond
@@ -51,7 +46,6 @@ type Config struct {
 	LogConf          Log                   `mapstructure:"log"`
 	Alert            AlertConf             `mapstructure:"alert"`
 	BridgeConf       BridgeConf            `mapstructure:"bridge_conf"`
-	SendConf         SendConf              `mapstructure:"send_conf"`
 	Chains           map[string]*ChainInfo `mapstructure:"chains"`
 }
 

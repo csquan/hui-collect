@@ -7,14 +7,6 @@ database:
   retry_times: 5
   retry_interval: 300
 
-send_conf:
-  GasLimit:
-    "2000000"
-  Amount:
-    "0"
-  Quantity:
-    "0"
-
 bridge_conf:
   url: "http://cex-bridge-api.test-15.huobiapps.com/cex-bridge-api/v1"
   timeout: "5s"

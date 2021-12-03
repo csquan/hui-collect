@@ -66,10 +66,10 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 	decimal := 18
 	from := task.From
 	to := task.To
-	GasLimit := t.config.SendConf.GasLimit
+	GasLimit := task.GasLimit
 	GasPrice := task.GasPrice
-	Amount := t.config.SendConf.Amount
-	quantity := t.config.SendConf.Quantity
+	Amount := task.Amount
+	quantity := task.Quantity
 	receiver := task.To //和to一致
 
 	signRet, err := signer.SignTx(input, decimal, int(nonce), from, to, GasLimit, GasPrice, Amount, quantity, receiver, task.ChainName)
@@ -94,7 +94,7 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 
 func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	input := task.InputData
-	quantity := t.config.SendConf.Quantity
+	quantity := task.Quantity
 	receiver := task.To
 	orderID := time.Now().UnixNano() / 1e6 //毫秒
 

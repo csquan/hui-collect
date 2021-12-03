@@ -60,6 +60,17 @@ type SendToBridgeParam struct {
 	TaskID        string         `json:"task_id"`
 }
 
+type ClaimFromVaultParam struct {
+	ChainId   int    `json:"chain_id"`
+	ChainName string `json:"chain_name"`
+	From      string `json:"chain_from"`
+	To        string `json:"to"` //合约地址
+
+	StrategyAddresses  []common.Address `json:"strategy_addresses"`
+	BaseTokenAmount    []*big.Int       `json:"base_token_amount"`
+	CounterTokenAmount []*big.Int       `json:"counter_token_amount"`
+}
+
 type TransactionParamInterface interface {
 	CreateTask(rebalanceTaskID uint64) (*TransactionTask, error)
 }
@@ -86,6 +97,30 @@ func (p *InvestParam) CreateTask(rebalanceTaskID uint64) (*TransactionTask, erro
 	}
 	return task, nil
 }
+
+func (p *ClaimFromVaultParam) CreateTask(globalTaskID uint64) (*TransactionTask, error) {
+	inputData, err := InvestInput(p.StrategyAddresses, p.BaseTokenAmount, p.CounterTokenAmount)
+	if err != nil {
+		return nil, err
+	}
+	paramData, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+	task := &TransactionTask{
+		BaseTask:        &BaseTask{State: int(TxUnInitState)},
+		RebalanceId:     globalTaskID,
+		TransactionType: int(ClaimFromVault),
+		ChainId:         p.ChainId,
+		ChainName:       p.ChainName,
+		From:            p.From,
+		To:              p.To,
+		Params:          string(paramData),
+		InputData:       hexutil.Encode(inputData),
+	}
+	return task, nil
+}
+
 
 func (p *ReceiveFromBridgeParam) CreateTask(rebalanceTaskID uint64) (task *TransactionTask, err error) {
 	var amount, taskID *big.Int

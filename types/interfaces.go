@@ -9,6 +9,7 @@ type IReader interface {
 	//GetPartReBalanceTasks(state types.PartReBalanceState) ([]*types.PartReBalanceTask, error)
 
 	GetOpenedPartReBalanceTasks() ([]*PartReBalanceTask, error)
+	GetOpenedFullReBalanceTasks() ([]*FullReBalanceTask, error)
 
 	GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType TransactionType) ([]*TransactionTask, error)
 
@@ -27,6 +28,7 @@ type IWriter interface {
 	GetEngine() *xorm.Engine
 
 	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
+	UpdateReBalanceTask(itf xorm.Interface, task *FullReBalanceTask) error
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
 
