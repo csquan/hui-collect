@@ -119,8 +119,6 @@ def getprojectinfo(project, url, currencys):
     aprs = {}
     daily = {}
     for data in e["data"]:
-        if float(data["apr"]) < 0.18:  #如果apr小于18，忽略本次data
-            continue
         aprs[data["poolName"]] = data["apr"]
         tvls[data["poolName"]] = data["tvl"]
         for rewardToken in data["rewardTokenList"]:
@@ -414,13 +412,14 @@ def outputReTask():
 
     biswapUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=476'
     biswapinfos = getprojectinfo("biswap", biswapUrl, currency_dict)
+    """
+    #soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=76'
+    #soloinfos = getprojectinfo("solo", soloUrl, currency_dict)
 
-    soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=76'
-    soloinfos = getprojectinfo("solo", soloUrl, currency_dict)
-
+    print("polygon+++++++")
     polygonUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'
     polygoninfos = getprojectinfo("quickswap", polygonUrl, currency_dict)
-  
+    """
     # 交易对赋值
     currency_infos = getPairinfo(X)
 
