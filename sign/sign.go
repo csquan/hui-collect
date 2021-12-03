@@ -263,7 +263,7 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 
 	//check the signing result is returned with true status
 	if !result.Result {
-		logrus.Errorf("signing result from gateway is failed")
+		logrus.Errorf("signing result from gateway is failed body:%s", respBody)
 		return
 	}
 
