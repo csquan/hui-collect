@@ -42,57 +42,117 @@ func TestCreateTreansfer(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	createTask(conf)
-
+	err = createTask(conf)
+	if err != nil {
+		t.Fatalf("create task err:%v", err)
+	}
 }
-func createTask(conf *config.Config) {
+func createTask(conf *config.Config) error {
+
+	var (
+		ethAmount        string = powN(big.NewInt(1), 17)
+		usdtAmount       string = powN(big.NewInt(320), 18)
+		ethAmountBridge  string = "0.1"
+		usdtAmountBridge string = "320"
+	)
 	//var tasks []*types.TransactionTask
 	SendToBridgeParam := []*types.SendToBridgeParam{
-		&types.SendToBridgeParam{
+		&types.SendToBridgeParam{ //usdt
 			ChainId:   128,
 			ChainName: "heco",
 			From:      "0x9f0583a209fedbc404c4968e2157c2e7d4359803",
-			To:        "0xD95Cbc6907134b2C9F3Ba6c424D7d69d493D3014",
+			To:        "0xa82Aa96714bd30EaE09BeB3291834A845B3E5B72",
 
 			BridgeAddress: common.HexToAddress("0x9f0583a209fedbc404c4968e2157c2e7d4359803"),
-			Amount:        big.NewInt(0).Exp(big.NewInt(10), big.NewInt(20), big.NewInt(0)).String(),
+			Amount:        usdtAmount,
 			TaskID:        "1",
+		},
+		&types.SendToBridgeParam{
+			ChainId:   128, //eth
+			ChainName: "heco",
+			From:      "0x9f0583a209fedbc404c4968e2157c2e7d4359803",
+			To:        "0x497DeF83FFA5d6C42B39Acd49C292EC49EaD496E",
+
+			BridgeAddress: common.HexToAddress("0x9f0583a209fedbc404c4968e2157c2e7d4359803"),
+			Amount:        ethAmount,
+			TaskID:        "2",
 		},
 	}
 	CrossBalances := []*types.CrossBalanceItem{
-		&types.CrossBalanceItem{
+		&types.CrossBalanceItem{ //USDT
 			FromChain:    "HECO",
 			ToChain:      "BSC",
 			FromAddr:     "0x9f0583a209fedbc404c4968e2157c2e7d4359803",
 			ToAddr:       "0x74938228ae77e5fcc3504ad46fac4a965d210761",
 			FromCurrency: "USDT",
 			ToCurrency:   "USDT",
-			Amount:       "100",
+			Amount:       usdtAmountBridge,
+		},
+		&types.CrossBalanceItem{ //ETH
+			FromChain:    "HECO",
+			ToChain:      "BSC",
+			FromAddr:     "0x9f0583a209fedbc404c4968e2157c2e7d4359803",
+			ToAddr:       "0x74938228ae77e5fcc3504ad46fac4a965d210761",
+			FromCurrency: "ETH",
+			ToCurrency:   "ETH",
+			Amount:       ethAmountBridge,
 		},
 	}
 	ReceiveFromBridgeParams := []*types.ReceiveFromBridgeParam{
-		&types.ReceiveFromBridgeParam{
+		&types.ReceiveFromBridgeParam{ //USDT
 			ChainId:           56,
 			ChainName:         "bsc",
 			From:              "0x74938228ae77e5fcc3504ad46fac4a965d210761",
-			To:                "0xbFc4c5c1Bb5e9B806899eaAef7f04E278b59198A",
+			To:                "0x36Bdee19a991dB559F3072a7974a85759BeE1224",
 			Erc20ContractAddr: common.HexToAddress("0x55d398326f99059ff775485246999027b3197955"),
-			Amount:            big.NewInt(0).Exp(big.NewInt(10), big.NewInt(20), big.NewInt(0)).String(),
+			Amount:            usdtAmount,
 			TaskID:            "1",
+		},
+		&types.ReceiveFromBridgeParam{ //ETH
+			ChainId:           56,
+			ChainName:         "bsc",
+			From:              "0x74938228ae77e5fcc3504ad46fac4a965d210761",
+			To:                "0x7867226d16440FFbEAb39225E7a137CA9ba98501",
+			Erc20ContractAddr: common.HexToAddress("0x2170ed0880ac9a755fd29b2688956bd959f933f8"),
+			Amount:            ethAmount,
+			TaskID:            "2",
 		},
 	}
 
 	InvestParams := []*types.InvestParam{
-		//&types.InvestParam{
-		//	ChainId:            1,
-		//	ChainName:          "heco",
-		//	From:               "606288c605942f3c84a7794c0b3257b56487263c",
-		//	To:                 "0xC7c38F93036BC13168B4f657296753568f49ef09",
-		//	StrategyAddresses:  []common.Address{common.HexToAddress("0xa929022c9107643515f5c777ce9a910f0d1e490c")},
-		//	BaseTokenAmount:    []*big.Int{new(big.Int)},
-		//	CounterTokenAmount: []*big.Int{new(big.Int)},
-		//	//Erc20ContractAddr: common.HexToAddress("0x6D2dbA4F00e0Bbc2F93eb43B79ddd00f65fB6bEc"),
-		//},
+		// &types.InvestParam{ //USDT
+		// 	ChainId:   56,
+		// 	ChainName: "bsc",
+		// 	From:      "0x74938228ae77e5fcc3504ad46fac4a965d210761",
+		// 	To:        "0x36Bdee19a991dB559F3072a7974a85759BeE1224",
+		// 	StrategyAddresses: []common.Address{
+		// 		common.HexToAddress("0x32944aA3716E3B25e03c80De0A0b4c301CaccDC7"),
+		// 	},
+		// 	BaseTokenAmount: []string{
+		// 		powN(big.NewInt(100), 18),
+		// 	},
+		// 	CounterTokenAmount: []string{
+		// 		"0",
+		// 	},
+		// },
+		&types.InvestParam{ //ETH
+			ChainId:   56,
+			ChainName: "bsc",
+			From:      "0x74938228ae77e5fcc3504ad46fac4a965d210761",
+			To:        "0x7867226d16440FFbEAb39225E7a137CA9ba98501", //TODO
+			StrategyAddresses: []common.Address{
+				common.HexToAddress("0x4956C5835eDBD358A1D51D6DD8B4E0C0665Fb640"), //solo
+				common.HexToAddress("0xa71c55cB4A091c7Fb676C29913F74B51FFb6e981"), //bisSwap
+			},
+			BaseTokenAmount: []string{
+				powN(big.NewInt(1), 13), //0.00001
+				powN(big.NewInt(5), 13), //0.00005ETH
+			},
+			CounterTokenAmount: []string{
+				"0",
+				powN(big.NewInt(22), 16), //0.22U
+			},
+		},
 	}
 	params := &types.Params{
 		CrossBalances:           CrossBalances,
@@ -109,8 +169,26 @@ func createTask(conf *config.Config) {
 	dbConnection, err := db.NewMysql(&conf.DataBase)
 	if err != nil {
 		logrus.Errorf("CreateReceiveFromBridgeTask error:%v task:[%v]", err, task)
-		return
+		return err
 	}
 
 	err = dbConnection.SaveRebalanceTask(dbConnection.GetSession(), task)
+	if err != nil {
+		return fmt.Errorf("save rebalance err:%v", err)
+	}
+	return nil
+}
+
+func TestPowN(t *testing.T) {
+	ret := powN(big.NewInt(2), 17)
+	t.Logf("%s,%d", ret, len(ret))
+}
+
+func powN(num *big.Int, n int64) string {
+	var a = big.NewInt(0).Exp(big.NewInt(10), big.NewInt(n), big.NewInt(0))
+	return num.Mul(num, a).String()
+}
+
+func TestTemp(t *testing.T) {
+	t.Logf("%d", len("000000000000000000"))
 }
