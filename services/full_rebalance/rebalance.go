@@ -1,4 +1,4 @@
-package rebalance
+package full_rebalance
 
 import (
 	"fmt"
@@ -23,19 +23,35 @@ func NewReBalanceService(db types.IDB, conf *config.Config) (p *ReBalance, err e
 		db:     db,
 		config: conf,
 		handlers: map[types.ReBalanceState]StateHandler{
-			types.ReBalanceInit: &initHandler{
+			types.FullReBalanceInit: &initHandler{
 				db: db,
 			},
-			types.ReBalanceWithdrawLP: &withdrawLPHandler{
+			types.FullReBalanceImpermanenceLoss: &impermanenceLostHandler{
 				db: db,
 			},
-			types.ReBalanceRecycling: &recyclingHandler{
+			types.FullReBalanceImpermanenceLossCheck: &impermanenceLostCheckHandler{
 				db: db,
 			},
-			types.ReBalanceParamsCalc: &paramsCalcHandler{
+			types.FullReBalanceClaimLP: &claimLPHandler{
 				db: db,
 			},
-			types.ReBalanceDoPartRebalance: &doPartRebalanceHandler{
+			types.FullReBalanceClaimLPCheck: &claimLPCheckHandler{
+				db: db,
+			},
+			types.FullReBalanceMarginBalanceTransferOut: &marginOutHandler{
+				db: db,
+			},
+			types.FullReBalanceMarginBalanceTransferOutCheck: &marginOutCheckHandler{
+				db: db,
+			},
+			types.FullReBalanceRecycling: &recyclingHandler{
+				db: db,
+			},
+			// 计算状态由python处理
+			//types.FullReBalanceParamsCalc: &paramsCalcHandler{
+			//	db: db,
+			//},
+			types.FullReBalanceOndoing: &doPartRebalanceHandler{
 				db: db,
 			},
 		},
@@ -45,7 +61,7 @@ func NewReBalanceService(db types.IDB, conf *config.Config) (p *ReBalance, err e
 }
 
 func (p *ReBalance) Name() string {
-	return "rebalance"
+	return "full_rebalance"
 }
 
 func (p *ReBalance) Run() (err error) {
@@ -55,18 +71,18 @@ func (p *ReBalance) Run() (err error) {
 	}
 
 	if len(tasks) == 0 {
-		logrus.Infof("no available part rebalance task.")
+		logrus.Infof("no available part full_rebalance task.")
 		return
 	}
 
 	if len(tasks) > 1 {
-		err = fmt.Errorf("more than one rebalance tasks are being processed. tasks:%v", tasks)
+		err = fmt.Errorf("more than one full_rebalance tasks are being processed. tasks:%v", tasks)
 		return
 	}
 
 	handler, ok := p.handlers[tasks[0].State]
 	if !ok {
-		err = fmt.Errorf("unkonwn state for part rebalance task:%v", tasks[0])
+		err = fmt.Errorf("unkonwn state for part full_rebalance task:%v", tasks[0])
 		return
 	}
 

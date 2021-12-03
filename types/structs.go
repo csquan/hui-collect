@@ -21,13 +21,18 @@ type BaseTask struct {
 type ReBalanceState = int
 
 const (
-	ReBalanceInit ReBalanceState = iota
-	ReBalanceWithdrawLP
-	ReBalanceRecycling
-	ReBalanceParamsCalc
-	ReBalanceDoPartRebalance
-	ReBalanceSuccess
-	ReBalanceFailed
+	FullReBalanceInit                          ReBalanceState = iota
+	FullReBalanceImpermanenceLoss                             //平无常 http请求
+	FullReBalanceImpermanenceLossCheck                        //检查平无常结果 http请求
+	FullReBalanceClaimLP                                      //拆LP 合约调用
+	FullReBalanceClaimLPCheck                                 //拆LP结果检查
+	FullReBalanceMarginBalanceTransferOut                     //保证金转出至对冲账户
+	FullReBalanceMarginBalanceTransferOutCheck                //保证金转出至对冲账户 结果检查，并创建资金跨回子任务（此处如果合约不支持全部转出，则增加一个获取资金总数的过程。）
+	FullReBalanceRecycling                                    //资金跨回
+	FullReBalanceParamsCalc                                   // python 计算并创建partRebalanceTask
+	FullReBalanceOndoing                                      // 检查partRebalanceTask状态
+ 	FullReBalanceSuccess
+	FullReBalanceFailed
 )
 
 type PartReBalanceState = int
@@ -155,12 +160,9 @@ type TransactionTask struct {
 	ChainId         int    `xorm:"f_chain_id"`
 	ChainName       string `xorm:"f_chain_name"`
 	Params          string `xorm:"f_params"`
-	//Decimal         int    `xorm:"f_decimal"` //todo:之后需不需要单独抽个参数？
 	From            string `xorm:"f_from"`
 	To              string `xorm:"f_to"`
 	ContractAddress string `xorm:"f_contract_address"` //当交易类型为授权时，此字段保存spender
-	//Value           string `xorm:"f_value"`
-
 	InputData   string `xorm:"f_input_data"`
 	Cipher      string `xorm:"f_cipher"`
 	EncryptData string `xorm:"f_encrypt_data"`

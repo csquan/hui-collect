@@ -17,8 +17,8 @@ func (m *Mysql) GetOpenedPartReBalanceTasks() (tasks []*types.PartReBalanceTask,
 func (m *Mysql) GetOpenedFullReBalanceTasks() (tasks []*types.FullReBalanceTask, err error) {
 	tasks = make([]*types.FullReBalanceTask, 0)
 	err = m.engine.Where("f_state != ? and f_state != ?",
-		types.ReBalanceSuccess,
-		types.ReBalanceFailed).
+		types.FullReBalanceSuccess,
+		types.FullReBalanceFailed).
 		Desc("f_state").
 		Find(&tasks)
 	return

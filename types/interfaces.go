@@ -28,7 +28,7 @@ type IWriter interface {
 	GetEngine() *xorm.Engine
 
 	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
-	UpdateReBalanceTask(itf xorm.Interface, task *FullReBalanceTask) error
+	UpdateFullReBalanceTask(itf xorm.Interface, task *FullReBalanceTask) error
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
 

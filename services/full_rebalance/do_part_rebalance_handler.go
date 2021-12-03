@@ -1,4 +1,4 @@
-package rebalance
+package full_rebalance
 
 import (
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -9,7 +9,7 @@ type doPartRebalanceHandler struct {
 }
 
 func (d *doPartRebalanceHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
-	return true, types.ReBalanceWithdrawLP, nil
+	return true, types.FullReBalanceSuccess, nil
 }
 
 func (d *doPartRebalanceHandler) MoveToNextState(task *types.FullReBalanceTask, nextState types.ReBalanceState) (err error) {
