@@ -104,6 +104,9 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 	input := task.InputData
 	quantity := task.Quantity
+	if quantity == "" {
+		quantity = "0"
+	}
 	receiver := task.To
 	orderID := time.Now().UnixNano() / 1e6 //毫秒
 
