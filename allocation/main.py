@@ -7,7 +7,7 @@ import yaml
 import pickle
 import numpy as np
 import json
-
+import sys
 
 class ChainParams:
     pass
@@ -106,8 +106,10 @@ def getprojectinfo(project, url, currencys):
     aprs = {}
     daily = {}
     for data in e["data"]:
-        tvls[data["poolName"]] = data["tvl"]
+        if float(data["apr"]) < 0.18:  #如果apr小于18，忽略本次data
+            continue
         aprs[data["poolName"]] = data["apr"]
+        tvls[data["poolName"]] = data["tvl"]
         for rewardToken in data["rewardTokenList"]:
             # 拼接dailyReward
             tokenPair = getPair(data["poolName"])
@@ -155,31 +157,6 @@ def getpoolinfo(url):
 def read_yaml(path):
     with open(path, 'r', encoding='utf8') as f:
         return yaml.safe_load(f.read())
-
-
-def getconnectinfo(connstr):
-    strlist = connstr.split('@')  # 用逗号分割str字符串，并保存到列表
-    print(strlist)
-    str1 = strlist[0]  # 包含用户名密码的字串
-    str2 = strlist[1]  # 包含Ip端口数据库的字串
-
-    user_endpos = str1.index(":")
-    user = str1[0:user_endpos]
-    password = str1[user_endpos + 1:len(str1)]
-
-    host_startpos = str2.index("(") + 1
-    host_endpos = str2.index(":")
-
-    host = str2[host_startpos:host_endpos]
-    port_endpos = str2.index(")")
-    port = str2[host_endpos + 1:port_endpos]
-
-    db_startpos = str2.index("/")
-    db_endpos = str2.index("?")
-
-    db = str2[db_startpos + 1:db_endpos]
-
-    return user, password, host, port, db
 
 
 def getPairinfo(X):
@@ -347,7 +324,7 @@ def getReParams(currency_infos, pool_infos, btc_bsc):
 
     receiveFromBridge = ReceiveFromBridgeParam()
     receiveFromBridge.ChainID = 52  # 配置
-    receiveFromBridge.ChainName = "bsc"  # 配置
+    receiveFromBrid:qge.ChainName = "bsc"  # 配置
     receiveFromBridge.From = "configaddress2"  # 配置的签名机地址
     receiveFromBridge.To = "configaddress3"  # 配置的合约地址
     receiveFromBridge.Erc20ContractAddr = "configaddress4"  # 配置的token地址
@@ -410,10 +387,9 @@ def getReParams(currency_infos, pool_infos, btc_bsc):
     ret = pickle.dumps(params)
     return ret
 
-
-if __name__ == '__main__':
+def outputReTask():
     # 读取config
-    conf = read_yaml("../config.yaml")
+    conf = read_yaml("./config.yaml")
 
     currency_dict = conf.get("currency")
 
@@ -426,6 +402,37 @@ if __name__ == '__main__':
 
     soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
     soloinfos = getprojectinfo("solo", soloUrl, currency_dict)
+
+    pool_infos = {}
+    pool_infos["HBTC"] = poolinfo
+    # 造测试数据结束
+
+    # 配资计算
+    btc_bsc = 100
+    eth_bsc = 100
+    usdt_bsc = 100
+    X = np.random.randint(1, 100, (4, 4))
+    # 交易对赋值
+    currency_infos = getPairinfo(X)
+
+    # 拼接结果字串
+    parambytes = getReParams(currency_infos, pool_infos, btc_bsc)
+
+    # write db
+    conn = pymysql.connect(host=conf["database"]["host"], port=conf["database"]["port"], user=conf["database"]["user"],
+                           passwd=conf["database"]["passwd"], db=conf["database"]["db"], charset='utf8')
+    print(conn)
+
+    # cursor = db.cursor()
+
+    # cursor.execute('''insert into Rebalance_params values()''')
+
+    # cursor.close()
+    # db.commit()
+    conn.close()
+
+if __name__ == '__main__':
+    # 首先读取api的pool——info，将5个值累加，判断门槛
 
     # 获取pool info
     # pools_url = ''
@@ -454,32 +461,11 @@ if __name__ == '__main__':
     poolinfo.poly_vault_unre_qunatity = 0
     poolinfo.contract_info = contractinfo
 
-    pool_infos = {}
-    pool_infos["HBTC"] = poolinfo
-    # 造测试数据结束
+    total = poolinfo.heco_uncross_quantity + poolinfo.crossed_quantity_in_bsc_controller + poolinfo.crossed_quantity_in_poly_controller + poolinfo.bsc_vault_unre_qunatity + poolinfo.poly_vault_unre_qunatity
 
-    # 配资计算
-    btc_bsc = 100
-    eth_bsc = 100
-    usdt_bsc = 100
-    X = np.random.randint(1, 100, (4, 4))
-    # 交易对赋值
-    currency_infos = getPairinfo(X)
+    if total < 100:
+       sys.exit(1)
 
-    # 拼接结果字串
-    parambytes = getReParams(currency_infos, pool_infos, btc_bsc)
+    outputReTask()
 
-    # write db
-    connect = getconnectinfo(conf["database"]["db"])
-    print(connect)
-    conn = pymysql.connect(host='127.0.0.1', port=3306, user='root', passwd='csquan253905', db='reblance',
-                           charset='utf8')
-    print(conn)
 
-    # cursor = db.cursor()
-
-    # cursor.execute('''insert into Rebalance_params values()''')
-
-    # cursor.close()
-    # db.commit()
-    conn.close()
