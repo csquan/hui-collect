@@ -9,8 +9,8 @@ btcb = 1000.98
 eth  = 200.8
 busd = 60.9
 usdt = 1.0
-usdc_price = 1.1
-matic_price= 25.0
+usdc = 1.1
+matic= 25.0
 
 #token quantity（total）
 bnb_total  = 100000000000
