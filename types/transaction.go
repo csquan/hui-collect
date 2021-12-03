@@ -3,9 +3,10 @@ package types
 import (
 	"context"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/clients"
 	"math/big"
 	"strings"
+
+	"github.com/starslabhq/hermes-rebalance/clients"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -41,7 +42,7 @@ func ClaimFromVaultInput(address []common.Address, baseTokenAmount []*big.Int, c
 	return abi.Pack("claimFromVaultInput", address, baseTokenAmount, counterTokenAmount)
 }
 
-func InvestInput(address []common.Address, baseTokenAmount []*big.Int, counterTokenAmount []*big.Int) (input []byte, err error) {
+func InvestInput(address []common.Address, baseTokenAmount, counterTokenAmount []*big.Int) (input []byte, err error) {
 	r := strings.NewReader(content)
 	abi, err := abi.JSON(r)
 	if err != nil {

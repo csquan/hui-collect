@@ -3,8 +3,10 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/sirupsen/logrus"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -45,8 +47,8 @@ type InvestParam struct {
 	To        string `json:"to"` //合约地址
 
 	StrategyAddresses  []common.Address `json:"strategy_addresses"`
-	BaseTokenAmount    []*big.Int       `json:"base_token_amount"`
-	CounterTokenAmount []*big.Int       `json:"counter_token_amount"`
+	BaseTokenAmount    []string         `json:"base_token_amount"`
+	CounterTokenAmount []string         `json:"counter_token_amount"`
 }
 
 type SendToBridgeParam struct {
@@ -67,16 +69,36 @@ type ClaimFromVaultParam struct {
 	To        string `json:"to"` //合约地址
 
 	StrategyAddresses  []common.Address `json:"strategy_addresses"`
-	BaseTokenAmount    []*big.Int       `json:"base_token_amount"`
-	CounterTokenAmount []*big.Int       `json:"counter_token_amount"`
+	BaseTokenAmount    []string         `json:"base_token_amount"`
+	CounterTokenAmount []string         `json:"counter_token_amount"`
 }
 
 type TransactionParamInterface interface {
 	CreateTask(rebalanceTaskID uint64) (*TransactionTask, error)
 }
 
+func toBigIntAmounts(bases, counters []string) ([]*big.Int, []*big.Int) {
+	var baseAmounts, counterAmounts []*big.Int
+	for _, v := range bases {
+		amount, ok := new(big.Int).SetString(v, 10)
+		if !ok {
+			logrus.Fatalf("base amount to big.Int err,v:%s,v")
+		}
+		baseAmounts = append(baseAmounts, amount)
+	}
+	for _, v := range counters {
+		amount, ok := new(big.Int).SetString(v, 10)
+		if !ok {
+			logrus.Fatalf("counter amount to big.Int err,v:%s,v")
+		}
+		counterAmounts = append(counterAmounts, amount)
+	}
+	return baseAmounts, counterAmounts
+}
+
 func (p *InvestParam) CreateTask(rebalanceTaskID uint64) (*TransactionTask, error) {
-	inputData, err := InvestInput(p.StrategyAddresses, p.BaseTokenAmount, p.CounterTokenAmount)
+	var baseAmounts, counterAmounts = toBigIntAmounts(p.BaseTokenAmount, p.CounterTokenAmount)
+	inputData, err := InvestInput(p.StrategyAddresses, baseAmounts, counterAmounts)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +121,8 @@ func (p *InvestParam) CreateTask(rebalanceTaskID uint64) (*TransactionTask, erro
 }
 
 func (p *ClaimFromVaultParam) CreateTask(globalTaskID uint64) (*TransactionTask, error) {
-	inputData, err := InvestInput(p.StrategyAddresses, p.BaseTokenAmount, p.CounterTokenAmount)
+	var bases, counters = toBigIntAmounts(p.BaseTokenAmount, p.CounterTokenAmount)
+	inputData, err := InvestInput(p.StrategyAddresses, bases, counters)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +143,6 @@ func (p *ClaimFromVaultParam) CreateTask(globalTaskID uint64) (*TransactionTask,
 	}
 	return task, nil
 }
-
 
 func (p *ReceiveFromBridgeParam) CreateTask(rebalanceTaskID uint64) (task *TransactionTask, err error) {
 	var amount, taskID *big.Int
