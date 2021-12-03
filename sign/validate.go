@@ -169,7 +169,6 @@ func Validator(vaReq ValidReq, appId string) (vaResp *VaResp, err error) {
 	}
 	defer resp.Body.Close()
 
-	logrus.Infof("ReadAll the response body")
 	//unmarshall the response body
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -177,7 +176,7 @@ func Validator(vaReq ValidReq, appId string) (vaResp *VaResp, err error) {
 		return nil, err
 	}
 
-	logrus.Infof(" response body :%s", string(respBody))
+	logrus.Infof(" validator response body:%s", string(respBody))
 	logrus.Infof("unmarshall the response body")
 	var DecData ValidResp
 	err = json.Unmarshal(respBody, &DecData)
