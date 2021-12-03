@@ -134,7 +134,12 @@ def getprojectinfo(project, url, currencys):
     daily = {}
     for data in e["data"]:
         aprs[data["poolName"]] = data["apr"]
-        tvls[data["poolName"]] = data["tvl"]
+
+        #todo:临时修改
+        tokenPair1 = getPair(data["poolName"], currencys)
+        key1 = tokenPair1.base + '_' + tokenPair1.counter + '_' + project
+        tvls[key1] = data["tvl"]
+
         for rewardToken in data["rewardTokenList"]:
             # 拼接dailyReward
             tokenPair = getPair(data["poolName"],currencys)
