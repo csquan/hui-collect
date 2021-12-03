@@ -74,8 +74,8 @@ class Pair:
 # 项目和链的对应关系
 chain_infos = {"pancake": "bsc", "biswap": "bsc", "quickswap": "poly", "hsolo": "heco", "bsolo": "bsc", "psolo": "poly"}
 
-# 每个链上的base token
-base_tokens = ["ht", "bnb", "matic"]
+
+counter_tokens = ["usd"]
 
 def getCurrency(pair):
     tokenstr = pair.split('_')
@@ -90,11 +90,11 @@ def getPair(str):
     str1 = tokenstr[0].lower()
     str2 = tokenstr[1].lower()
 
-    for base in base_tokens:
-        if str1.find(base):
-            pair.base = str1
-            pair.counter = str2
-        if str2.find(base):
+    for counter in counter_tokens:
+        if str1.find(counter) >= 0:
+            pair.base = str2
+            pair.counter = str1
+        if str2.find(counter) >= 0:
             pair.base = str1
             pair.counter = str2
     return pair
