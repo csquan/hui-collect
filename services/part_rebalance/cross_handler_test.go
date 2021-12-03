@@ -103,7 +103,7 @@ func createTask(conf *config.Config) error {
 			ChainId:           56,
 			ChainName:         "bsc",
 			From:              "0x74938228ae77e5fcc3504ad46fac4a965d210761",
-			To:                "0x36Bdee19a991dB559F3072a7974a85759BeE1224",
+			To:                "0x7867226d16440FFbEAb39225E7a137CA9ba98501",
 			Erc20ContractAddr: common.HexToAddress("0x55d398326f99059ff775485246999027b3197955"),
 			Amount:            usdtAmount,
 			TaskID:            "1",
@@ -112,7 +112,7 @@ func createTask(conf *config.Config) error {
 			ChainId:           56,
 			ChainName:         "bsc",
 			From:              "0x74938228ae77e5fcc3504ad46fac4a965d210761",
-			To:                "0x7867226d16440FFbEAb39225E7a137CA9ba98501",
+			To:                "0x36Bdee19a991dB559F3072a7974a85759BeE1224",
 			Erc20ContractAddr: common.HexToAddress("0x2170ed0880ac9a755fd29b2688956bd959f933f8"),
 			Amount:            ethAmount,
 			TaskID:            "2",
@@ -139,7 +139,7 @@ func createTask(conf *config.Config) error {
 			ChainId:   56,
 			ChainName: "bsc",
 			From:      "0x74938228ae77e5fcc3504ad46fac4a965d210761",
-			To:        "0x7867226d16440FFbEAb39225E7a137CA9ba98501", //TODO
+			To:        "0x36Bdee19a991dB559F3072a7974a85759BeE1224", //TODO
 			StrategyAddresses: []common.Address{
 				common.HexToAddress("0x4956C5835eDBD358A1D51D6DD8B4E0C0665Fb640"), //solo
 				common.HexToAddress("0xa71c55cB4A091c7Fb676C29913F74B51FFb6e981"), //bisSwap
@@ -162,7 +162,7 @@ func createTask(conf *config.Config) error {
 	}
 	data, _ := json.Marshal(params)
 	task := &types.PartReBalanceTask{
-		Base:   &types.Base{ID: 10},
+		Base:   &types.Base{},
 		Params: string(data),
 	}
 	clients.Init(conf)
