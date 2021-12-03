@@ -333,7 +333,7 @@ func (b *Bridge) EstimateTask(t *Task) (*EstimateTaskResult, error) {
 		return nil, err
 	}
 	body, err := ioutil.ReadAll(res.Body)
-	logrus.Infof("method:%s,ret:%s,param:%v", "estimateTask", body, t)
+	logrus.Infof("method:%s,ret:%s,param:%v", "estimateTask", body, form)
 	if err != nil {
 		return nil, err
 	}

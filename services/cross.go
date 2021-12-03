@@ -182,7 +182,7 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 		totalStr, singleStr, minAmountStr, err := c.estimateCrossTask(bridgeId.fromAccountId, bridgeId.toAccountId,
 			bridgeId.fromCurrencyId, bridgeId.toCurrencyId, amount.String())
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("first estimate err:%v", err)
 		}
 		if singleStr == "" || singleStr == "0" {
 			return false, fmt.Errorf("singleQuota 0")
