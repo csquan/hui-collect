@@ -90,6 +90,9 @@ def getPair(str):
     str1 = tokenstr[0].lower()
     str2 = tokenstr[1].lower()
 
+    pair.base = str1
+    pair.counter = str2
+
     for counter in counter_tokens:
         if str1.find(counter) >= 0:
             pair.base = str2
