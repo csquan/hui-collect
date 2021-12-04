@@ -349,7 +349,7 @@ def obj_2_json(obj):
     }
 
 
-def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
+def getReParams(currency_infos, currency_dict, reinfo, beforeInfo):
     vaultInfoList = reinfo["vaultInfoList"]
 
     # 计算跨链的最终状态--配资结果  btc_bsc = 100 eth_bsc = 101 usdt_bsc = 102

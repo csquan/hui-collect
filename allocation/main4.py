@@ -477,10 +477,16 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
         params.InvestParams = invest
         params.SendToBridgeParams = sendToBridge
 
-        # 序列化本次的小re params todo:序列化需要调试
+        # 序列化本次的小re params
         ret = pickle.dumps(params)
+        # test
+        aa = pickle.loads(ret)
 
         paramsList.append(ret)
+
+    retList = pickle.dumps(paramsList)
+    # test
+    aa = pickle.loads(retList)
 
     return paramsList
 
