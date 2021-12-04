@@ -656,6 +656,7 @@ def outputReTask():
     # 下面进行配资计算
     from re_optimize import doCompute
     X = doCompute(argsq, argsp, argsr, argstt)
+    X = np.array(X).reshape(4, 4)
     print('compute res:',X)
     # 这里先生成一个测试矩阵X，模拟配资计算结果x0-15
     #X = np.arange(16).reshape(4, 4)
