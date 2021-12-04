@@ -319,9 +319,15 @@ def getPairinfo(X):
     return currency_info
 
 
-def getProject(str):
-    startpos = str.rindex("_")
-    return str[startpos + 1:len(str)]
+def getPairProject(str):
+    info = str.split('_')
+    ret = {}
+
+    ret["base"] = info[0]
+    ret["counter"] = info[1]
+    ret["project"] = info[2]
+
+    return ret
 
 
 def obj_2_json(obj):
@@ -340,7 +346,6 @@ def obj_2_json(obj):
 
 def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
     vaultInfoList = reinfo["vaultInfoList"]
-
 
     # 计算跨链的最终状态--配资结果  btc_bsc = 100 eth_bsc = 101 usdt_bsc = 102
     afterInfo = {"btc": [{"bsc": 100}, {"polygon": 200}], "eth": [{"bsc": 101}], "usdt": [{"bsc": 102}]}
@@ -422,21 +427,24 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
         invest.CounterTokenAmount = []
 
         # 拼接策略:从api返回结果中找到对应地址 拼接规则：chain + "_" + project + "strategy"
-        # 遍历8个交易对 currency_infos中的key是project名字 value是交易对
+        # 遍历8个交易对 currency_infos中的key:base_counter_project
         for key in currency_infos:
             # todo：chain_infos中不存在key对应的project的处理
-            project = getProject(key)
-            chain = chain_infos[project]
-            strategystr = chain + "_" + project + "strategy"
+            info = getPairProject(key)
+            project = info["project"]
             # todo：api返回对应币种的contract_info不存在strategystr的处理
             for vaultInfo in vaultInfoList:
-                    if vaultInfo["tokenSymbol"] == "HBTC": #todo:HBTC?
+                    if vaultInfo["tokenSymbol"] == info["base"]:  #找到对应币种的策略信息 这里的问题：等式右边是info["base"]还是和info["counter"]的拼接？
                         for chainName in vaultInfo["strategies"]:
                             for projectName in vaultInfo["strategies"][chainName]:
                                 for strategyinfo in vaultInfo["strategies"][chainName][projectName]:
                                     for elem in strategyinfo:
                                         if projectName.lower() == project and elem == 'strategyAddress':
                                             strategyAddresses = strategyinfo[elem]
+
+            if strategyAddresses == "":
+                print("配资的其中一个交易对策略在小re的返回数据中没有找到，请检查！")
+                sys.exit(1)
 
             baseTokenAmount = currency_infos[key].base.amount
             counterTokenAmount = currency_infos[key].counter.amount
