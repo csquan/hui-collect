@@ -111,5 +111,28 @@ currencies:
         decimal: 18
         # min: 1,
         # crossSymbol: "BUSD"
+  cake:  #测试数据
+    min: 0.001
+    crossDecimal: 3
+    tokens:
+      bsc:
+        symbol: 'CAKE'
+        addr: '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82'
+        decimal: 18
+        crossSymbol: "CAKE"
+  bnb:
+    min: 0.001
+    crossDecimal: 3
+    tokens:
+      bsc:
+        symbol: 'BNB'
+        addr: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c'
+        decimal: 18
+        crossSymbol: "BNB"
+      bsc:
+        symbol: 'WBNB'
+        addr: ''
+        decimal: 18
+        crossSymbol: "BNB"
 
 
