@@ -487,13 +487,13 @@ def outputReTask():
 
     poly_btc = btc_total - 100
 
-    #Bnb_q  bnb在bsc上的bnb总量，以下变量类似定义，测试数据 其中Btcb_q Eth_q Usdt_q 由配资内部计算可得
+    # Bnb_q  bnb在bsc上的bnb总量，以下变量类似定义，应该re返回获取，但是目前返回数据不全，所以测试数据 其中Btcb_q Eth_q Usdt_q 由配资内部计算可得
     Bnb_q = 3000
     cake_q = 2000
-    #Btcb_q = 500000 + btc_bsc
-    #Eth_q = 6000 + eth_bsc
+    # Btcb_q = 500000 + btc_bsc
+    # Eth_q = 6000 + eth_bsc
     Busd_q = 10000
-    #Usdt_q = 8000 + usdt_bsc
+    # Usdt_q = 8000 + usdt_bsc
 
 
     # 计算跨链的最终状态--配资结果  btc_bsc = 100 eth_bsc = 101 usdt_bsc = 102
