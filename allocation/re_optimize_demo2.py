@@ -259,7 +259,7 @@ def get_rand_x0(bounds):
 def minimize_wrapper(x0, argsq, argsp, argsr, argst):
     res_list = []
     cons = con_samllre(argsq, argsp)
-    for m in ('Nelder-Mead'
+    for m in ('Nelder-Mead',
               'Powell', 
               'CG', 
               'BFGS',
