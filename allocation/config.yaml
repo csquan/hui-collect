@@ -117,7 +117,7 @@ currencies:
     tokens:
       bsc:
         symbol: 'CAKE'
-        addr: '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82'
+        addr: '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82'
         decimal: 18
         crossSymbol: "CAKE"
   bnb:
@@ -125,12 +125,12 @@ currencies:
     crossDecimal: 3
     tokens:
       bsc:
-        symbol: 'BNB'
+        symbol: 'WBNB'
         addr: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c'
         decimal: 18
         crossSymbol: "BNB"
-      bsc:
-        symbol: 'WBNB'
+      poly:
+        symbol: 'BNB'
         addr: ''
         decimal: 18
         crossSymbol: "BNB"
