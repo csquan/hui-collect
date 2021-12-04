@@ -132,6 +132,11 @@ def getprojectinfo(project, url, currencys):
     tvls = {}
     aprs = {}
     daily = {}
+
+    if e["code"] != 200:
+        print("project服务异常")
+        sys.exit(1)
+
     for data in e["data"]:
         aprs[data["poolName"]] = data["apr"]
 
@@ -426,6 +431,9 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
         invest.BaseTokenAmount = []
         invest.CounterTokenAmount = []
 
+        #存储此次找到的策略
+        strategyAddresses = ""
+
         # 拼接策略:从api返回结果中找到对应地址 拼接规则：chain + "_" + project + "strategy"
         # 遍历8个交易对 currency_infos中的key:base_counter_project
         for key in currency_infos:
@@ -434,13 +442,13 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
             project = info["project"]
             # todo：api返回对应币种的contract_info不存在strategystr的处理
             for vaultInfo in vaultInfoList:
-                    if vaultInfo["tokenSymbol"] == info["base"]:  #找到对应币种的策略信息 这里的问题：等式右边是info["base"]还是和info["counter"]的拼接？
                         for chainName in vaultInfo["strategies"]:
                             for projectName in vaultInfo["strategies"][chainName]:
                                 for strategyinfo in vaultInfo["strategies"][chainName][projectName]:
-                                    for elem in strategyinfo:
-                                        if projectName.lower() == project and elem == 'strategyAddress':
-                                            strategyAddresses = strategyinfo[elem]
+                                    if strategyinfo["tokenSymbol"] == info["base"]:  # 找到对应币种的策略信息 这里的问题：等式右边是info["base"]还是和info["counter"]的拼接？
+                                        for elem in strategyinfo:
+                                            if projectName.lower() == project and elem == 'strategyAddress':
+                                                strategyAddresses = strategyinfo[elem]
 
             if strategyAddresses == "":
                 print("配资的其中一个交易对策略在小re的返回数据中没有找到，请检查！")
