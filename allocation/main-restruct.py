@@ -338,8 +338,9 @@ def obj_2_json(obj):
     }
 
 
-def getReParams(currency_infos, reinfo, btc_bsc, beforeInfo):
-    strategiesinfo = reinfo["data"]["strategies"]
+def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
+    vaultInfoList = reinfo["vaultInfoList"]
+
 
     # 计算跨链的最终状态--配资结果  btc_bsc = 100 eth_bsc = 101 usdt_bsc = 102
     afterInfo = {"btc": [{"bsc": 100}, {"polygon": 200}], "eth": [{"bsc": 101}], "usdt": [{"bsc": 102}]}
@@ -373,27 +374,27 @@ def getReParams(currency_infos, reinfo, btc_bsc, beforeInfo):
         crossItem = CrossItem()
 
         # TODO 只考虑了从HECO往其他链搬
-        crossItem.from = "heco"
-        crossItem.to = "bsc"
+        crossItem.From = "heco"
+        crossItem.To = "bsc"
 
         prefixToken = getCurrency(currency)
-        if float(beforeInfo[prefixToken][crossItem['from']]["amount"]) > float(diff):
-            crossItem.amount = diff  # 绝对值
-            beforeInfo[prefixToken][crossItem['from']]["amount"] = str(float(beforeInfo[prefixToken][crossItem['from']]["amount"]) - float(diff))
+        if float(beforeInfo[prefixToken][crossItem.From]["amount"]) > float(diff):
+            crossItem.Amount = diff  # 绝对值
+            beforeInfo[prefixToken][crossItem.From]["amount"] = str(float(beforeInfo[prefixToken][crossItem.From]["amount"]) - float(diff))
         else:
             # 前提是heco的大于最小额 format精度
-            crossItem.amount = beforeInfo[prefixToken][crossItem['from']]["amount"]
-            beforeInfo[prefixToken][crossItem['from']]["amount"] = 0
+            crossItem.Amount = beforeInfo[prefixToken][crossItem.From]["amount"]
+            beforeInfo[prefixToken][crossItem.From]["amount"] = 0
 
         if float(beforeInfo[prefixToken]["heco"]["amount"]) > currency_dict[prefixToken]["min"]:
             #todo:format beforeInfo[currency]["heco"] 精度
-            crossItem['amount'] = beforeInfo[signel][crossItem['from']]["amount"]
-            beforeInfo[prefixToken][crossItem['from']]["amount"] = 0
+            crossItem.Amount = beforeInfo[prefixToken][crossItem.From]["amount"]
+            beforeInfo[prefixToken][crossItem.From]["amount"] = 0
 
-            crossItem.fromCurrency = currency_dict[prefixToken]["tokens"][crossItem['from']]["crossSymbol"]
-            crossItem.toCurrency = currency_dict[prefixToken]["tokens"][crossItem['to']]["crossSymbol"]
+            crossItem.FromCurrency = currency_dict[prefixToken]["tokens"][crossItem.From]["crossSymbol"]
+            crossItem.ToCurrency = currency_dict[prefixToken]["tokens"][crossItem.To]["crossSymbol"]
 
-        if float(crossItem['amount']) > 0:
+        if float(crossItem.Amount) > 0:
             crossList.append(crossItem)
 
         receiveFromBridge = ReceiveFromBridgeParam()
@@ -402,7 +403,7 @@ def getReParams(currency_infos, reinfo, btc_bsc, beforeInfo):
         receiveFromBridge.From = "configaddress2"  # 配置的签名机地址
         receiveFromBridge.To = "configaddress3"  # 配置的合约地址
         receiveFromBridge.Erc20ContractAddr = "configaddress4"  # 配置的token地址
-        receiveFromBridge.Amount = crossBalance.Amount * 10e18  # todo:精度配置读取
+        receiveFromBridge.Amount = float(crossItem.Amount) * 10e18  # todo:精度配置读取
 
         # 生成全局唯一的task🆔并保存币种和taskID的对应关系
         TaskIds = {}
@@ -428,11 +429,14 @@ def getReParams(currency_infos, reinfo, btc_bsc, beforeInfo):
             chain = chain_infos[project]
             strategystr = chain + "_" + project + "strategy"
             # todo：api返回对应币种的contract_info不存在strategystr的处理
-            for chainName in strategiesinfo:
-                if chainName == chain:
-                    for projectName in strategiesinfo[chainName]:
-                        if projectName == project:
-                            strategyAddresses = strategiesinfo[chainName][projectName]["strategyAddresses"]
+            for vaultInfo in vaultInfoList:
+                    if vaultInfo["tokenSymbol"] == "HBTC": #todo:HBTC?
+                        for chainName in vaultInfo["strategies"]:
+                            for projectName in vaultInfo["strategies"][chainName]:
+                                for strategyinfo in vaultInfo["strategies"][chainName][projectName]:
+                                    for elem in strategyinfo:
+                                        if projectName.lower() == project and elem == 'strategyAddress':
+                                            strategyAddresses = strategyinfo[elem]
 
             baseTokenAmount = currency_infos[key].base.amount
             counterTokenAmount = currency_infos[key].counter.amount
@@ -452,7 +456,7 @@ def getReParams(currency_infos, reinfo, btc_bsc, beforeInfo):
         sendToBridge.TaskID = TaskIds["BTC"]
 
         params = Params()
-        params.CrossBalances = crossBalance
+        params.CrossBalances = crossItem
         params.ReceiveFromBridgeParams = receiveFromBridge
         params.InvestParams = invest
         params.SendToBridgeParams = sendToBridge
@@ -468,25 +472,25 @@ def outputReTask():
     # 读取config
     conf = read_yaml("./config.yaml")
 
-    currency_dict = conf.get("currencies")
-    currencyName = currency_dict.keys()
+    conf_currency_dict = conf.get("currencies")
+    currencyName = conf_currency_dict.keys()
 
     # 获取project info
     print("++++pancake++++")
     pancakeUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
-    pancakeinfos = getprojectinfo("pancake", pancakeUrl, currency_dict)
+    pancakeinfos = getprojectinfo("pancake", pancakeUrl, conf_currency_dict)
 
     print("++++biswap++++")
     biswapUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=476'
-    biswapinfos = getprojectinfo("biswap", biswapUrl, currency_dict)
+    biswapinfos = getprojectinfo("biswap", biswapUrl, conf_currency_dict)
 
     #todo：solo 单币 需要特殊处理，小re不需要
     #soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=76'
-    #soloinfos = getprojectinfo("solo", soloUrl, currency_dict)
+    #soloinfos = getprojectinfo("solo", soloUrl, conf_currency_dict)
 
     print("++++polygon++++")
     polygonUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'
-    polygoninfos = getprojectinfo("quickswap", polygonUrl, currency_dict)
+    polygoninfos = getprojectinfo("quickswap", polygonUrl, conf_currency_dict)
 
     reUrl = 'http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re'
     reinfos = getreinfo(reUrl)
@@ -526,13 +530,13 @@ def outputReTask():
     # 下面进行配资计算
 
     # 这里先生成一个测试矩阵X，模拟配资计算结果x0-15
-    X = np.arange(12).reshape(4, 4)
+    X = np.arange(16).reshape(4, 4)
 
     # 交易对赋值
-    currency_infos = getPairinfo(X)
+    currencyPair_infos = getPairinfo(X)
 
     # 拼接结果字串
-    paramsList = getReParams(currency_infos, reinfos, btc_bsc,beforeInfo)
+    paramsList = getReParams(currencyPair_infos, conf_currency_dict, reinfos, beforeInfo)
 
     # write db
     conn = pymysql.connect(host=conf["database"]["host"], port=conf["database"]["port"], user=conf["database"]["user"],
