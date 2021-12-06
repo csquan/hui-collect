@@ -647,7 +647,9 @@ def outputReTask():
     todo_eth = 20000
     todo_usdt = 400000
     btc_bsc, eth_bsc, usdt_bsc = computeTarget(todo_btc, todo_eth, todo_usdt, argsr, argstt)
-    print("three target:",btc_bsc, eth_bsc, usdt_bsc)
+    print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    print("three target: btc_bsc: %f, eth_bsc: %f, usdt_bsc:%f"%(btc_bsc, eth_bsc, usdt_bsc))
+    print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
     # Bnb_q  bnb在bsc上的bnb总量，以下变量类似定义，应该re返回获取，但是目前返回数据不全，所以测试数据 其中Btcb_q Eth_q Usdt_q 由配资内部计算可得
     bnb_q  = 3000
     cake_q = 2000
