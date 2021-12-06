@@ -45,12 +45,23 @@ func (*Mysql) UpdatePartReBalanceTask(itf xorm.Interface, task *types.PartReBala
 	return err
 }
 
-func (*Mysql) UpdateFullReBalanceTask(itf xorm.Interface, task *types.FullReBalanceTask) error{
+func (*Mysql) UpdateFullReBalanceTask(itf xorm.Interface, task *types.FullReBalanceTask) error {
 	_, err := itf.Where("f_id = ?", task.ID).Update(task)
 	return err
 }
 
 func (m *Mysql) SaveTxTasks(itf xorm.Interface, tasks []*types.TransactionTask) (err error) {
+	for _, t := range tasks {
+		if t.GasLimit == "" {
+			t.GasLimit = "2000000"
+		}
+		if t.Amount == "" {
+			t.Amount = "0"
+		}
+		if t.Quantity == "" {
+			t.Quantity = "0"
+		}
+	}
 	_, err = itf.Insert(tasks)
 	if err != nil {
 		logrus.Errorf("insert transaction task error:%v, tasks:%v", err, tasks)
@@ -114,4 +125,3 @@ func (m *Mysql) UpdateCrossSubTaskBridgeIDAndState(id, bridgeTaskId uint64, stat
 		})
 	return err
 }
-

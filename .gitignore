@@ -2,6 +2,7 @@ vendor
 check
 bin
 Bin
+config
 hermes-rebalance
 *.test
 .agollo

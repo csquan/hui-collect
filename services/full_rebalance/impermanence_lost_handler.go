@@ -36,7 +36,7 @@ func (i *impermanenceLostHandler) MoveToNextState(task *types.FullReBalanceTask,
 }
 
 func getLp(url string) (lpList []*types.LiquidityProvider, err error) {
-	data, err := utils.DoGet(url, nil)
+	data, err := utils.DoPost(url, nil)
 	if err != nil {
 		logrus.Errorf("request lp err:%v", err)
 		return
@@ -54,13 +54,18 @@ func getLp(url string) (lpList []*types.LiquidityProvider, err error) {
 	return
 }
 func callImpermanentLoss(url string, req *types.ImpermanectLostReq) (err error) {
-	data, err := utils.DoPost(url, req)
+	data, err := utils.DoPost(url + "submit", req)
 	if err != nil {
 		logrus.Errorf("request ImpermanentLoss api err:%v", err)
 		return
 	}
+<<<<<<< Updated upstream
 	resp := &types.NomalResponse{}
 	if err = json.Unmarshal(data, resp); err != nil {
+=======
+	resp := &types.NormalResponse{}
+	if err := json.Unmarshal(data, resp); err != nil {
+>>>>>>> Stashed changes
 		logrus.Errorf("unmarshar lpResponse err:%v", err)
 		return
 	}
