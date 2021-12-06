@@ -8,15 +8,40 @@ def computeTarget(todo_btc, todo_eth, todo_usdt, argsr, argstt):
     #print(repr(argsr),repr(argstt))
     A, B ,C, D, E, F, G ,H, I, J, K, L, M = argsr
     aa, bb, cc, dd, ee, ff, gg , hh, ii, jj, kk, ll, mm = argstt
-
-    btc_bsc = todo_btc * ((365* G / _RATE )- gg) / ((365* G / _RATE)- gg  +  (365* K / _RATE )- kk )
-    print("G:", G, "gg:",gg, "G/gg:", G/gg)
-    print("K:", K, "kk:",kk, "K/kk:", K/kk)
-    eth_bsc = todo_eth * ((365* H / _RATE )- hh) / ((365* H / _RATE)- hh + (365* I / _RATE )- ii  + (365* J / _RATE )- jj )
     
-    _sub = (365* C / _RATE )- cc + (365* D / _RATE)- dd +(365* F / _RATE )- ff  +(365* G / _RATE )- gg +(365* H / _RATE )- hh
-    usdt_bsc= todo_usdt *( _sub ) / ( _sub +(365* J / _RATE )- jj +(365* M / _RATE )- mm)
+    if K < _RATE:
+        _sub1 = (365* G / _RATE )- gg
+        btc_bsc = todo_btc * (_sub1 ) / (_sub1  +  (365* K / _RATE )- kk )
+    else:
+        btc_bsc = todo_btc * 1
+    
+
+    _sub2 = (365* H / _RATE )- hh
+    _sub22 = _sub2
+    for (Z, zz)  in ( (I, ii), (J, jj) ):
+        print('_sub22:',_sub22)
+
+        _sub22 += ((365* Z / _RATE )- zz) if  Z >= _RATE else 0
+
+        print('Z:',Z)
+        print('zz:',zz)
+        print('factor:', (365* Z / _RATE )- zz)
+        print('_sub22=_sub22+factor:',_sub22)
+
+    eth_bsc = todo_eth * _sub2 / _sub22
+    #eth_bsc = todo_eth * ((365* H / _RATE )- hh) / ((365* H / _RATE)- hh + (365* I / _RATE )- ii  + (365* J / _RATE )- jj )
  
+    _sub3 = 0
+    for (Z, zz) in ((C, cc), (D, dd), (F, ff), (G, gg), (H, hh)):
+        _sub3 += ((365* Z / _RATE )- zz) if  Z >= _RATE else 0
+
+    _sub33 = _sub3
+    for (Z, zz) in ((J, jj), (M, mm)):
+        _sub33 += ((365* Z / _RATE )- zz) if  Z >= _RATE else 0
+    #_sub = (365* C / _RATE )- cc + (365* D / _RATE)- dd +(365* F / _RATE )- ff  +(365* G / _RATE )- gg +(365* H / _RATE )- hh
+    #usdt_bsc= todo_usdt *( _sub ) / ( _sub +(365* J / _RATE )- jj +(365* M / _RATE )- mm)
+    usdt_bsc =todo_usdt * _sub3 / _sub33
+
     return btc_bsc, eth_bsc, usdt_bsc
 
 
