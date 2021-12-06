@@ -445,10 +445,11 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
                         for chainName in vaultInfo["strategies"]:
                             for projectName in vaultInfo["strategies"][chainName]:
                                 for strategyinfo in vaultInfo["strategies"][chainName][projectName]:
-                                    if strategyinfo["tokenSymbol"] == info["base"]:  # 找到对应币种的策略信息 这里的问题：等式右边是info["base"]还是和info["counter"]的拼接？
-                                        for elem in strategyinfo:
-                                            if projectName.lower() == project and elem == 'strategyAddress':
-                                                strategyAddresses = strategyinfo[elem]
+                                    if projectName.lower() == info["project"]:
+                                        if strategyinfo["tokenSymbol"].lower() == info["base"] + '-' + info["counter"]: #todo:这里如果project是solo，不能这么比对，大re
+                                            for elem in strategyinfo:
+                                                if elem == 'strategyAddress':
+                                                    strategyAddresses = strategyinfo[elem]
 
             if strategyAddresses == "":
                 print("配资的其中一个交易对策略在小re的返回数据中没有找到，请检查！")
