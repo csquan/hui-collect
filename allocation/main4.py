@@ -10,6 +10,8 @@ import json
 import sys
 from decimal import *
 
+class Stragey:
+    pass
 
 # struct: amount name
 class Token:
@@ -38,7 +40,7 @@ class Params:
     pass
 
 
-# 存储基本usd穿越，其他u一定包含这个
+# 存储基本usd/dai，其他u一定包含这个
 counter_tokens = ["usd"]
 
 def format_addr(addr):
@@ -48,7 +50,10 @@ def format_addr(addr):
         return ('0x' + addr).lower()
 
 
-def getCurrencyinfo(pair):
+def parseCurrencyPair(pair):
+    if '_' not in pair:
+        return pair,"none"
+
     tokenstr = pair.split('_')
     return tokenstr[0].lower(), tokenstr[1].lower()
 
@@ -301,25 +306,42 @@ def getPairProject(str):
 
 
 def add_cross_item(currency, fromChain, toChain, amount, beforeInfo, currencies, crossList):
-
-    if amount > float(currencies[currency].min):
+    #todo:format poly
+    if fromChain == "poly":
+        fromChain = "polygon"
+    if amount > float(currencies[currency]["min"]):
         beforeInfo[currency][fromChain]['amount'] -= amount
         beforeInfo[currency][toChain]['amount'] += amount
 
+        # todo:format poly
+        if fromChain == "polygon":
+            fromChain = "poly"
         crossList.append({
             'from': fromChain,
             'to': toChain,
-            'fromCurrency': currencies[currency].tokens[fromChain].crossSymbol,
-            'toCurrency': currencies[currency].tokens[toChain].crossSymbol,
+            'fromCurrency': currencies[currency]["tokens"][fromChain]["crossSymbol"],
+            'toCurrency': currencies[currency]["tokens"][toChain]["crossSymbol"],
             'amount': amount,
         })
 
 # strategies :chain project pair
 def find_strategies_by_chain_and_currency(chain, currency, strategies):
+    ret = []
+    # todo:format poly
+    if chain == "poly":
+      chain = "polygon"
+
     for project in strategies[chain]:
         for key in strategies[chain][project]:
-            if currency in key:
-                return strategies[chain][project]["strategAddress"]
+            if currency not in key:  # test only.need to restore
+                s = Stragey()
+                tokenstr = key.split('-')
+                s.base = tokenstr[0].lower()
+                s.counter = tokenstr[1].lower()
+                s.chain = chain
+                s.project = project
+                ret.append(s)
+    return ret
 
 
 def calcCrossInit(beforeInfo, dailyReward, tvl, apr, restrategies):
@@ -328,25 +350,19 @@ def calcCrossInit(beforeInfo, dailyReward, tvl, apr, restrategies):
     for currency in beforeInfo:
         strategies = {}
         caps = {}
-        for chain in ['bsc', 'polygon']:
-            strategies[chain] = find_strategies_by_chain_and_cdurrency(chain, currency, restrategies)
+        for chain in ['bsc', 'poly']:
+            strategies[chain] = find_strategies_by_chain_and_currency(chain, currency, restrategies)
             caps[chain] = float(0)
             
-            if strategies[chain] is None:  # 没找到策略，返回
-                sys.exit(1)
+            #if strategies[chain] is None:  # 没找到策略，返回
+            #    sys.exit(1)
 
             for s in strategies[chain]:
-                # 先忽略单币
-                if s.currency1 is None:
+                key = "{}_{}_{}".format(s.base, s.counter, s.project)
+                if key not in apr or float(apr[key]) < float(0.18):
                     continue
 
-                key = "{}_{}_{}".format(s.chain, s.project,
-                                        s.currency0) if s.currency1 is None else "{}_{}_{}_{}".format(
-                    s.chain, s.project, s.currency0, s.currency1)
-                if key not in apr or apr[key] < float(0.18):
-                    continue
-
-                caps[chain] += (dailyReward[key] * float(365) - tvl[key] * apr[key])
+                caps[chain] += (dailyReward[key] * float(365) - float(tvl[key]) * float(apr[key]))
 
         total = float(0)
         for item in beforeInfo[currency].values():
@@ -367,7 +383,7 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
 
     # 计算跨链的最终状态--配资结果  btc_bsc = 100 eth_bsc = 101 usdt_bsc = 102
     # afterInfo = {"btc": [{"bsc": 100}, {"polygon": 200}], "eth": [{"bsc": 101}], "usdt": [{"bsc": 102}]}
-    afterInfo = calcCrossInit(beforeInfo, daily_dict, tvls_dict , aprs_dict, strategies)
+    afterInfo = calcCrossInit(beforeInfo, daily_dict, tvls_dict, aprs_dict, strategies)
 
     # 小re参数数组
     paramsList = []
@@ -380,17 +396,13 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
 
     # 生成跨链参数
     for currency in afterInfo:
-        for chain in ['bsc', 'polygon']:
-            if chain not in afterInfo[currency] or currency_dict[currency].min is None:
-                continue
-            for info in afterInfo[currency]:
-                for k in info.keys():
-                    if currency in beforeInfo.keys():
-                        diff = info[k] - float(beforeInfo[currency][chain]["amount"])
-                        if diff > currency_dict[currency]["min"] or diff < currency_dict[currency]["min"] * -1:
-                            diffMap[currency + '_' + chain] = diff.quantize(
-                                float(10) ** (-1 * currency_dict[currency].crossDecimal),
-                                ROUND_DOWN)
+        for chain in ['bsc', 'poly']:
+            if currency in beforeInfo.keys():
+                if chain in afterInfo[currency]:
+                    diff = float(afterInfo[currency][chain]) - float(beforeInfo[currency][chain]["amount"])
+                    if diff > currency_dict[currency]["min"] or diff < currency_dict[currency]["min"] * -1:
+                        diffMap[currency + '_' + chain] = diff  # todo:format to min decimal
+
 
     for currencyinfo in diffMap:
         targetMap = {
@@ -399,7 +411,7 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
         }
         diff = diffMap[currencyinfo]
 
-        currency, chain = getCurrencyinfo(currencyinfo)
+        currency, chain = parseCurrencyPair(currencyinfo)
 
         if diff < 0:
             add_cross_item(currency, chain, targetMap[chain], diff * -1, beforeInfo, currency_dict, crossList)
@@ -408,15 +420,10 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
             if beforeInfo[currency]['heco']['amount'] > diff:
                 add_cross_item(currency, 'heco', chain, diff, beforeInfo, currency_dict, crossList)
             else:
-
                 add_cross_item(currency, targetMap[chain], chain,
-                               (diff - beforeInfo[currency]['heco']['amount']).quantize(
-                                   float(10) ** (-1 * currency_dict[currency].crossDecimal),
-                                   ROUND_DOWN), beforeInfo, currency_dict, crossList)
-
-                add_cross_item(currency, 'heco', chain, beforeInfo[currency]['heco']['amount'].quantize(
-                    float(10) ** (-1 * currency_dict[currency].crossDecimal),
-                    ROUND_DOWN), beforeInfo, currency_dict, crossList)
+                               (diff - beforeInfo[currency]['heco']['amount']), beforeInfo, currency_dict, crossList)
+                #todo:decimal
+                add_cross_item(currency, 'heco', chain, beforeInfo[currency]['heco']['amount'], beforeInfo, currency_dict, crossList)
 
         print("cross info:{}", crossList)
 
@@ -426,7 +433,7 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
         receiveFromBridge.From = "configaddress2"  # 配置的签名机地址
         receiveFromBridge.To = "configaddress3"  # 配置的合约地址
         receiveFromBridge.Erc20ContractAddr = "configaddress4"  # 配置的token地址
-        receiveFromBridge.Amount = float(crossItem.Amount) * 10e18  # todo:精度配置读取
+        receiveFromBridge.Amount = float(1) * 10e18  # todo:精度配置读取
 
         # 生成全局唯一的task🆔并保存币种和taskID的对应关系
         TaskIds = {}
@@ -462,9 +469,9 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
                                         if elem == 'strategyAddress':
                                             strategyAddresses = strategyinfo[elem]
 
-            if strategyAddresses == "":
-                print("配资的其中一个交易对策略在小re的返回数据中没有找到，请检查！")
-                sys.exit(1)
+            #if strategyAddresses == "":
+            #    print("配资的其中一个交易对策略在小re的返回数据中没有找到，请检查！")
+            #    sys.exit(1)
 
             baseTokenAmount = currency_infos[key].base.amount
             counterTokenAmount = currency_infos[key].counter.amount
@@ -484,21 +491,15 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
         sendToBridge.TaskID = TaskIds["BTC"]
 
         params = Params()
-        params.CrossBalances = crossItem
+        params.CrossBalances = crossList
         params.ReceiveFromBridgeParams = receiveFromBridge
         params.InvestParams = invest
         params.SendToBridgeParams = sendToBridge
 
-        # 序列化本次的小re params
-        ret = pickle.dumps(params)
-        # test
-        aa = pickle.loads(ret)
+        paramsList.append(params)
 
-        paramsList.append(ret)
+    retList = str(paramsList)
 
-    retList = pickle.dumps(paramsList)
-    # test
-    aa = pickle.loads(retList)
 
     return paramsList
 
@@ -630,6 +631,7 @@ def getStrategies(vaultInfoList):
                 for strategyinfo in vaultInfo["strategies"][chainName][projectName]:
                     if projectName not in strategies[chainName.lower()]:
                         strategies[chainName.lower()][projectName.lower()] = {}
+
                     strategies[chainName.lower()][projectName.lower()][strategyinfo["tokenSymbol"].lower()] = strategyinfo["strategyAddress"].lower()
 
     return strategies
@@ -680,7 +682,7 @@ def outputReTask():
         'heco': {
             'amount': float(100000000),
         },
-        'polygon': {
+        'poly': {
             'amount': float(100)
         }
     }
@@ -770,5 +772,4 @@ def outputReTask():
 
 if __name__ == '__main__':
     # todo:判断条件与100比较
-
     outputReTask()
