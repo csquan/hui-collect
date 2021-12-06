@@ -26,8 +26,9 @@ type AlertConf struct {
 }
 
 type ApiConf struct {
-	MarginUrl string
-	LpUrl     string
+	MarginUrl    string
+	LpUrl        string
+	MarginOutUrl string
 }
 
 type BridgeConf struct {

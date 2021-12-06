@@ -21,13 +21,13 @@ type BaseTask struct {
 type ReBalanceState = int
 
 const (
-	FullReBalanceInit                          ReBalanceState = iota
-	FullReBalanceImpermanenceLoss                             //平无常 http请求
-	FullReBalanceClaimLP                                      //拆LP 合约调用
-	FullReBalanceMarginBalanceTransferOut                     //保证金转出至对冲账户
-	FullReBalanceRecycling                                    //资金跨回
-	FullReBalanceParamsCalc                                   // python 计算并创建partRebalanceTask
-	FullReBalanceOndoing                                      // 检查partRebalanceTask状态
+	FullReBalanceInit                     ReBalanceState = iota
+	FullReBalanceMarginIn                                //平无常 http请求
+	FullReBalanceClaimLP                                 //拆LP 合约调用
+	FullReBalanceMarginBalanceTransferOut                //保证金转出至对冲账户
+	FullReBalanceRecycling                               //资金跨回
+	FullReBalanceParamsCalc                              // python 计算并创建partRebalanceTask
+	FullReBalanceOndoing                                 // 检查partRebalanceTask状态
 	FullReBalanceSuccess
 	FullReBalanceFailed
 )
