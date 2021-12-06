@@ -10,7 +10,10 @@ def computeTarget(todo_btc, todo_eth, todo_usdt, argsr, argstt):
     aa, bb, cc, dd, ee, ff, gg , hh, ii, jj, kk, ll, mm = argstt
 
     btc_bsc = todo_btc * ((365* G / _RATE )- gg) / ((365* G / _RATE)- gg  +  (365* K / _RATE )- kk )
+    print("G:", G, "gg:",gg, "G/gg:", G/gg)
+    print("K:", K, "kk:",kk, "K/kk:", K/kk)
     eth_bsc = todo_eth * ((365* H / _RATE )- hh) / ((365* H / _RATE)- hh + (365* I / _RATE )- ii  + (365* J / _RATE )- jj )
+    
     _sub = (365* C / _RATE )- cc + (365* D / _RATE)- dd +(365* F / _RATE )- ff  +(365* G / _RATE )- gg +(365* H / _RATE )- hh
     usdt_bsc= todo_usdt *( _sub ) / ( _sub +(365* J / _RATE )- jj +(365* M / _RATE )- mm)
  
@@ -18,8 +21,8 @@ def computeTarget(todo_btc, todo_eth, todo_usdt, argsr, argstt):
 
 
 def totalReward(argsp, argsr, argst):
-
-    bnb, busd, usdt, cake, btcb, eth = argsp
+    bnb, cake, btcb, eth, busd, usdt = argsp
+    #bnb, busd, usdt, cake, btcb, eth = argsp
     A, B ,C, D, E, F, G , H ,*_ = argsr
     a, b, c, d, e, f, g , h ,*_ = argst
 
@@ -39,7 +42,8 @@ LOW_BOUND = 0
 
 def conSamllRe(argsq, argsp):
     bnb_q, busd_q, btcb_q, eth_q, usdt_q, cake_q = argsq
-    bnb, busd, usdt, cake, btcb, eth = argsp
+    bnb, cake, btcb, eth, busd, usdt = argsp
+    #bnb, busd, usdt, cake, btcb, eth = argsp
     # 约束条件 分为eq 和ineq
     # eq表示 函数结果等于0 ； ineq 表示 表达式大于等于0  
     cons = ({'type': 'ineq', 'fun': lambda x: x[0] - LOW_BOUND},
@@ -97,19 +101,23 @@ def getRandX0(bounds):
         x.append( random.random() * b )
     return x
 
-def minimizeWrapper(x0, argsq, argsp, argsr, argst):
+def minimizeWrapper(x0, argsq, argsp, argsr, argst, boundary):
     res_list = []
     cons = conSamllRe(argsq, argsp)
     for m in (#'Nelder-Mead',
               #'Powell', 
-              'CG', 
-              'BFGS',
-              'L-BFGS-B',
+              #'CG', 
+              #'BFGS',
+              #'L-BFGS-B',
               #'TNC',
               'SLSQP',
             ) :
         ss = time.time()
-        result = minimize(totalReward(argsp, argsr, argst), x0, method=m, constraints=cons)
+        result = minimize( totalReward(argsp, argsr, argst), 
+                           x0, 
+                           method=m, 
+                           bounds=tuple([(LOW_BOUND, b)for b in boundary]),
+                           constraints=cons)
         res_tup = (result.fun, m, x0, result.x)
         if result.success:
             res_list.append(res_tup)
@@ -121,7 +129,7 @@ def minimizeWrapper(x0, argsq, argsp, argsr, argst):
             print('max diff val of all methods:', res_list[-1][0]-res_list[0][0] )
     return res_list[-1] if len(res_list) > 0 else None
 
-LOOP_COUNT = 10
+LOOP_COUNT = 100
 def doCompute(argsq, argsp, argsr, argst):
     bnb_q, busd_q, btcb_q, eth_q, usdt_q, cake_q = argsq
     #argsp = (bnb, busd, usdt, cake, btcb, eth) 
@@ -132,7 +140,7 @@ def doCompute(argsq, argsp, argsr, argst):
     res_list = []
 
     for i in range(LOOP_COUNT):
-        res = minimizeWrapper(getRandX0(boundary), argsq, argsp, argsr, argst)
+        res = minimizeWrapper(getRandX0(boundary), argsq, argsp, argsr, argst, boundary)
         if res:
             res_list.append(res)
     print("len of res list:",len(res_list))
@@ -143,8 +151,9 @@ def doCompute(argsq, argsp, argsr, argst):
         print('Value: %0.6f'%res[0])
         print('Method:', res[1])
         print('Init  X:',res[2])
-        print('Final X:',res[3])
+        print('Final X:',list(map(float, res[3])))
         print('================================================================')
+    print('Boundary:', boundary)
     if len(res_list)==0 :
         return []
     return list(map(float, res_list[-1][3]))
