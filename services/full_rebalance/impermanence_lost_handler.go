@@ -2,6 +2,8 @@ package full_rebalance
 
 import (
 	"encoding/json"
+	"fmt"
+
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
@@ -16,7 +18,7 @@ type impermanenceLostHandler struct {
 }
 
 func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
-	finished, err = checkMarginJobStatus(i.conf.ApiConf.MarginUrl, string(task.ID))
+	finished, err = checkMarginJobStatus(i.conf.ApiConf.MarginUrl, fmt.Sprintf("%d", task.ID))
 	if err != nil {
 		return
 	}
@@ -61,7 +63,6 @@ func (i *impermanenceLostHandler) MoveToNextState(task *types.FullReBalanceTask,
 	return
 }
 
-
 func checkMarginJobStatus(url string, bizNo string) (finished bool, err error) {
 	req := struct {
 		BizNo string `json:"bizNo"`
@@ -72,7 +73,7 @@ func checkMarginJobStatus(url string, bizNo string) (finished bool, err error) {
 		return
 	}
 	resp := &types.NormalResponse{}
-	if err := json.Unmarshal(data, resp); err != nil {
+	if err = json.Unmarshal(data, resp); err != nil {
 		logrus.Errorf("unmarshar lpResponse err:%v", err)
 		return
 	}
@@ -85,6 +86,3 @@ func checkMarginJobStatus(url string, bizNo string) (finished bool, err error) {
 	}
 	return
 }
-
-
-
