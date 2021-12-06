@@ -300,7 +300,8 @@ def getPairProject(str):
     return ret
 
 
-def add_cross_item(currency, fromChain, toChain, amount):
+def add_cross_item(currency, fromChain, toChain, amount, beforeInfo, currencies, crossList):
+
     if amount > float(currencies[currency].min):
         beforeInfo[currency][fromChain]['amount'] -= amount
         beforeInfo[currency][toChain]['amount'] += amount
@@ -328,9 +329,9 @@ def calcCrossInit(beforeInfo, dailyReward, tvl, apr, restrategies):
         strategies = {}
         caps = {}
         for chain in ['bsc', 'polygon']:
-            strategies[chain] = find_strategies_by_chain_and_currency(chain, currency, restrategies)
+            strategies[chain] = find_strategies_by_chain_and_cdurrency(chain, currency, restrategies)
             caps[chain] = float(0)
-
+            
             if strategies[chain] is None:  # 没找到策略，返回
                 sys.exit(1)
 
@@ -357,7 +358,6 @@ def calcCrossInit(beforeInfo, dailyReward, tvl, apr, restrategies):
                 afterInfo[currency] = {
                     k: str(total * v / capsTotal)
                 }
-
     print("calc final state:{}", afterInfo)
     return afterInfo
 
@@ -402,21 +402,21 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
         currency, chain = getCurrencyinfo(currencyinfo)
 
         if diff < 0:
-            add_cross_item(currency, chain, targetMap[chain], diff * -1)
+            add_cross_item(currency, chain, targetMap[chain], diff * -1, beforeInfo, currency_dict, crossList)
 
         else:
             if beforeInfo[currency]['heco']['amount'] > diff:
-                add_cross_item(currency, 'heco', chain, diff)
+                add_cross_item(currency, 'heco', chain, diff, beforeInfo, currency_dict, crossList)
             else:
 
                 add_cross_item(currency, targetMap[chain], chain,
                                (diff - beforeInfo[currency]['heco']['amount']).quantize(
-                                   float(10) ** (-1 * currencies[currency].crossDecimal),
-                                   ROUND_DOWN))
+                                   float(10) ** (-1 * currency_dict[currency].crossDecimal),
+                                   ROUND_DOWN), beforeInfo, currency_dict, crossList)
 
                 add_cross_item(currency, 'heco', chain, beforeInfo[currency]['heco']['amount'].quantize(
-                    float(10) ** (-1 * currencies[currency].crossDecimal),
-                    ROUND_DOWN))
+                    float(10) ** (-1 * currency_dict[currency].crossDecimal),
+                    ROUND_DOWN), beforeInfo, currency_dict, crossList)
 
         print("cross info:{}", crossList)
 
@@ -711,8 +711,8 @@ def outputReTask():
             break
 
     # 没超过阈值
-    if not needReBalance:
-        sys.exit(1)
+    #if not needReBalance:
+    #    sys.exit(1)
 
     # 得到poly上的btc量
     btc_total = 0
