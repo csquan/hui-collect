@@ -59,13 +59,8 @@ func callImpermanentLoss(url string, req *types.ImpermanectLostReq) (err error) 
 		logrus.Errorf("request ImpermanentLoss api err:%v", err)
 		return
 	}
-<<<<<<< Updated upstream
-	resp := &types.NomalResponse{}
-	if err = json.Unmarshal(data, resp); err != nil {
-=======
 	resp := &types.NormalResponse{}
-	if err := json.Unmarshal(data, resp); err != nil {
->>>>>>> Stashed changes
+	if err = json.Unmarshal(data, resp); err != nil {
 		logrus.Errorf("unmarshar lpResponse err:%v", err)
 		return
 	}
