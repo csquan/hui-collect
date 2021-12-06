@@ -5,3 +5,4 @@ Bin
 hermes-rebalance
 *.test
 .agollo
+*.pyc

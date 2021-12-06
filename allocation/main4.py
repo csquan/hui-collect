@@ -10,38 +10,16 @@ import json
 import sys
 from decimal import *
 
-class ChainParams:
-    pass
 
-
-class ProjectParams:
-    pass
-
-
-class CurrencyParams:
-    pass
-
-
-class StategyParams:
-    pass
-
-
-class Currency:
-    pass
-
-
+# struct: amount name
 class Token:
     pass
 
-
-class Pool:
+# struct: base counter
+class Pair:
     pass
 
-
-class CrossItem:
-    pass
-
-
+# re params
 class ReceiveFromBridgeParam:
     pass
 
@@ -53,21 +31,7 @@ class InvestParam:
 class SendToBridgeParam:
     pass
 
-
 class Params:
-    pass
-
-
-# api暂时不可用，测试结构体
-class PoolInfo:
-    pass
-
-
-class ContractInfo:
-    pass
-
-
-class Pair:
     pass
 
 
@@ -78,10 +42,9 @@ chain_infos = {"pancake": "bsc", "biswap": "bsc", "quickswap": "poly", "hsolo": 
 
 counter_tokens = ["usd"]
 
-def getCurrency(pair):
+def getCurrencyinfo(pair):
     tokenstr = pair.split('_')
-    return tokenstr[0].lower()
-
+    return tokenstr[0].lower(),tokenstr[1].lower()
 
 def getPair(str,currencys):
     pair = Pair()
@@ -150,7 +113,7 @@ def getprojectinfo(project, url, currencys):
             # 拼接dailyReward
             tokenPair = getPair(data["poolName"],currencys)
             key = tokenPair.base + '_' + tokenPair.counter + '_' + project
-            dailyReward = Decimal(rewardToken["dayAmount"]) * Decimal(rewardToken["tokenPrice"])
+            dailyReward = float(rewardToken["dayAmount"]) * float(rewardToken["tokenPrice"])
             daily[key] = dailyReward
             reward = reward + dailyReward
         for deposit in data["depositTokenList"]:
@@ -186,7 +149,6 @@ def getpoolinfo(url):
     string = str(ret.content, 'utf-8')
     e = json.loads(string)
     for pool_info in e["data"]["pools_info"]:
-        pool = Pool()
         pool_infos[pool_info["symbol"]] = pool_info
     return pool_infos
 
@@ -202,7 +164,7 @@ def getPairinfo(X):
     currency_info = {}
 
     token1 = Token()
-    currency1 = Currency()
+    currency1 = Pair()
 
     token1.amount = X[0][0]  # X(0)
     token1.name = "bnb"
@@ -217,7 +179,7 @@ def getPairinfo(X):
     currency_info["bnb_busd_biswap"] = currency1
 
     token3 = Token()
-    currency2 = Currency()
+    currency2 = Pair()
 
     token3.amount = X[0][1]  # X(1)
     token3.name = "bnb"
@@ -231,7 +193,7 @@ def getPairinfo(X):
     currency_info["bnb_busd_pancake"] = currency2
 
     token5 = Token()
-    currency3 = Currency()
+    currency3 = Pair()
 
     token5.amount = X[3][3]  # X(15)
     token5.name = "cake"
@@ -245,7 +207,7 @@ def getPairinfo(X):
     currency_info["cake_busd_biswap"] = currency3
 
     token7 = Token()
-    currency4 = Currency()
+    currency4 = Pair()
 
     token7.amount = X[1][1]  # X(5)
     token7.name = "bnb"
@@ -259,7 +221,7 @@ def getPairinfo(X):
     currency_info["bnb_usdt_biswap"] = currency4
 
     token9 = Token()
-    currency5 = Currency()
+    currency5 = Pair()
 
     token9.amount = X[1][2]  # X(6)
     token9.name = "bnb"
@@ -273,7 +235,7 @@ def getPairinfo(X):
     currency_info["bnb_usdt_pancake"] = currency5
 
     token11 = Token()
-    currency6 = Currency()
+    currency6 = Pair()
 
     token11.amount = X[1][3]  # X(7)
     token11.name = "btcb"
@@ -288,7 +250,7 @@ def getPairinfo(X):
     currency_info["btcb_usdt_biswap"] = currency6
 
     token13 = Token()
-    currency7 = Currency()
+    currency7 = Pair()
 
     token13.amount = X[2][0]  # X(8)
     token13.name = "eth"
@@ -303,7 +265,7 @@ def getPairinfo(X):
     currency_info["eth_usdt_biswap"] = currency7
 
     token15 = Token()
-    currency8 = Currency()
+    currency8 = Pair()
 
     token15.amount = X[3][2]  # X(14)
     token15.name = "cake"
@@ -349,6 +311,19 @@ def obj_2_json(obj):
         "poly_quickswapstrategy": obj.poly_quickswapstrategy
     }
 
+def add_cross_item(currency, fromChain, toChain, amount):
+    if amount > Decimal(currencies[currency].min):
+        beforeInfo[currency][fromChain]['amount'] -= amount
+        beforeInfo[currency][toChain]['amount'] += amount
+
+        crossList.append({
+            'from': fromChain,
+            'to': toChain,
+            'fromCurrency': currencies[currency].tokens[fromChain].crossSymbol,
+            'toCurrency': currencies[currency].tokens[toChain].crossSymbol,
+            'amount': amount,
+        })
+
 
 def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
     vaultInfoList = reinfo["vaultInfoList"]
@@ -366,47 +341,46 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
     # cross list
     crossList = []
 
-    # 生成跨链参数, 需要考虑最小值
+    # 生成跨链参数
     for currency in afterInfo:
         for chain in ['bsc', 'polygon']:
+            if chain not in afterInfo[currency] or currency_dict[currency].min is None:
+                continue
             for info in afterInfo[currency]:
                 for k in info.keys():
                     if currency in beforeInfo.keys():
-                        diff = info[k] - Decimal(beforeInfo[currency][chain]["amount"])
+                        diff = info[k] - float(beforeInfo[currency][chain]["amount"])
                         if diff > currency_dict[currency]["min"] or diff < currency_dict[currency]["min"] * -1:
-                            diffMap[currency + '_' + chain] = diff  # todo:format to min decimal
+                            diffMap[currency + '_' + chain] = diff.quantize(Decimal(10) ** (-1 * currency_dict[currency].crossDecimal),
+                                                         ROUND_DOWN)
 
-    for currency in diffMap:
+    for currencyinfo in diffMap:
         targetMap = {
             'bsc': 'poly',
             'poly': 'bsc',
         }
-        diff = diffMap[currency]
-        crossItem = CrossItem()
+        diff = diffMap[currencyinfo]
 
-        # TODO 只考虑了从HECO往其他链搬
-        crossItem.From = "heco"
-        crossItem.To = "bsc"
+        currency, chain = getCurrencyinfo(currencyinfo)
 
-        prefixToken = getCurrency(currency)
-        if Decimal(beforeInfo[prefixToken][crossItem.From]["amount"]) > Decimal(diff):
-            crossItem.Amount = diff  # 绝对值
-            beforeInfo[prefixToken][crossItem.From]["amount"] = str(Decimal(beforeInfo[prefixToken][crossItem.From]["amount"]) - Decimal(diff))
+        if diff < 0:
+            add_cross_item(currency, chain, targetMap[chain], diff * -1)
+
         else:
-            # 前提是heco的大于最小额 format精度
-            crossItem.Amount = beforeInfo[prefixToken][crossItem.From]["amount"]
-            beforeInfo[prefixToken][crossItem.From]["amount"] = 0
+            if beforeInfo[currency]['heco']['amount'] > diff:
+                add_cross_item(currency, 'heco', chain, diff)
+            else:
 
-        if Decimal(beforeInfo[prefixToken]["heco"]["amount"]) > currency_dict[prefixToken]["min"]:
-            #todo:format beforeInfo[currency]["heco"] 精度
-            crossItem.Amount = beforeInfo[prefixToken][crossItem.From]["amount"]
-            beforeInfo[prefixToken][crossItem.From]["amount"] = 0
+                add_cross_item(currency, targetMap[chain], chain,
+                               (diff - beforeInfo[currency]['heco']['amount']).quantize(
+                                   Decimal(10) ** (-1 * currencies[currency].crossDecimal),
+                                   ROUND_DOWN))
 
-            crossItem.FromCurrency = currency_dict[prefixToken]["tokens"][crossItem.From]["crossSymbol"]
-            crossItem.ToCurrency = currency_dict[prefixToken]["tokens"][crossItem.To]["crossSymbol"]
+                add_cross_item(currency, 'heco', chain, beforeInfo[currency]['heco']['amount'].quantize(
+                    Decimal(10) ** (-1 * currencies[currency].crossDecimal),
+                    ROUND_DOWN))
 
-        if Decimal(crossItem.Amount) > 0:
-            crossList.append(crossItem)
+        print("cross info:{}", crossList)
 
         receiveFromBridge = ReceiveFromBridgeParam()
         receiveFromBridge.ChainID = 52  # 配置
@@ -414,7 +388,7 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
         receiveFromBridge.From = "configaddress2"  # 配置的签名机地址
         receiveFromBridge.To = "configaddress3"  # 配置的合约地址
         receiveFromBridge.Erc20ContractAddr = "configaddress4"  # 配置的token地址
-        receiveFromBridge.Amount = Decimal(crossItem.Amount) * 10e18  # todo:精度配置读取
+        receiveFromBridge.Amount = float(crossItem.Amount) * 10e18  # todo:精度配置读取
 
         # 生成全局唯一的task🆔并保存币种和taskID的对应关系
         TaskIds = {}
@@ -540,7 +514,7 @@ def getPrice(price_name, currencys_dict):
                 if items.get('symbol','').lower() == price_name:
                     price = val.get('price','')
                     try:
-                        price = Decimal(price)
+                        price = float(price)
                     except:
                         continue
                     else:
@@ -618,7 +592,7 @@ def outputReTask():
     
     reUrl = 'http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re'
     reinfos = getreinfo(reUrl)
-    threshold = reinfos["threshold"]
+    thresholds = reinfos["threshold"]
     vaultInfoList = reinfos["vaultInfoList"]
     
     # 整理出阈值，当前值 进行比较
@@ -639,7 +613,7 @@ def outputReTask():
     # 得到poly上的btc量
     btc_total = 0
     for controller in beforeInfo["btc"]:
-        btc_total = btc_total + Decimal(beforeInfo["btc"][controller]["amount"])
+        btc_total = btc_total + float(beforeInfo["btc"][controller]["amount"])
 
     poly_btc = btc_total - 100
 
@@ -663,16 +637,41 @@ def outputReTask():
     argsq = (bnb_q, busd_q, btcb_q, eth_q, usdt_q, cake_q)
     print("argsq:",argsq)
 
-    # 下面进行配资计算
+    # 下面进行配资计算,X为结果矩阵，存储X0-15
     from re_optimize import doCompute
     X = doCompute(argsq, argsp, argsr, argstt)
     X = np.array(X).reshape(4, 4)
     print('compute res:',X)
-    # 这里先生成一个测试矩阵X，模拟配资计算结果x0-15
-    #X = np.arange(16).reshape(4, 4)
 
     # 交易对赋值
     currencyPair_infos = getPairinfo(X)
+
+    # 比较阈值
+    needReBalance = False
+
+    thresholdDict = {}
+
+    for threshold in thresholds:
+            thresholdDict[threshold["tokenSymbol"].lower()] = threshold["thresholdAmount"]
+
+    print("threshold info after format:{}".format(thresholdDict))
+
+    for name in thresholdDict:
+        # 没有发现相关资产
+        if name not in beforeInfo:
+            continue
+
+        totalAmount = float(0)
+        for item in beforeInfo[name].values():
+            totalAmount += item['amount']
+
+        needReBalance = totalAmount > float(thresholdDict[name])
+        if needReBalance:
+            break
+
+    # 没超过阈值
+    if not needReBalance:
+        sys.exit(1)
 
     # 拼接结果字串
     paramsList = getReParams(currencyPair_infos, conf_currency_dict, reinfos, beforeInfo)
@@ -696,34 +695,7 @@ def outputReTask():
 if __name__ == '__main__':
     # 首先读取api的pool——info，将5个值累加，判断门槛
 
-    # 获取pool infos todo:判断条件需要修改
-    contractinfo = ContractInfo()
-    contractinfo.heco_vault = "0x1",
-    contractinfo.heco_solostrategy = "0x2",
-    contractinfo.bsc_vault = "0x3",
-    contractinfo.bsc_solostrategy = "0x4",
-    contractinfo.bsc_biswapstrategy = "0x5",
-    contractinfo.bsc_pancakestrategy = "0x6",
-    contractinfo.poly_vault = "0x7",
-    contractinfo.poly_solostrategy = "0x8",
-    contractinfo.poly_quickswapstrategy = "0x9"
-
-    poolinfo = PoolInfo()
-    poolinfo.chain = "heco"
-    poolinfo.chain_id = 50
-    poolinfo.symbol = "HBTC"
-    poolinfo.decimal = 18
-    poolinfo.heco_uncross_quantity = 1000002
-    poolinfo.crossed_quantity_in_bsc_controller = 2
-    poolinfo.crossed_quantity_in_poly_controller = 2
-    poolinfo.bsc_vault_unre_qunatity = 0
-    poolinfo.poly_vault_unre_qunatity = 0
-    poolinfo.contract_info = contractinfo
-
-    total = poolinfo.heco_uncross_quantity + poolinfo.crossed_quantity_in_bsc_controller + poolinfo.crossed_quantity_in_poly_controller + poolinfo.bsc_vault_unre_qunatity + poolinfo.poly_vault_unre_qunatity
-
-    if total < 100:
-       sys.exit(1)
+    #todo:判断条件与100比较
 
     outputReTask()
 
