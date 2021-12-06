@@ -38,10 +38,6 @@ class Params:
     pass
 
 
-# todo:1.放入config中 2.solo怎么考虑？如果作为key 三个链都有这个项目？HSOLO BSOLO PSOLO？
-# 项目和链的对应关系
-chain_infos = {"pancake": "bsc", "biswap": "bsc", "quickswap": "poly", "hsolo": "heco", "bsolo": "bsc", "psolo": "poly"}
-
 counter_tokens = ["usd"]
 
 
@@ -302,20 +298,6 @@ def getPairProject(str):
     return ret
 
 
-def obj_2_json(obj):
-    return {
-        "heco_vault": obj.heco_vault,
-        "heco_solostrategy": obj.heco_solostrategy,
-        "bsc_vault": obj.bsc_vault,
-        "bsc_solostrategy": obj.bsc_solostrategy,
-        "bsc_biswapstrategy": obj.bsc_biswapstrategy,
-        "bsc_pancakestrategy": obj.bsc_pancakestrategy,
-        "poly_vault": obj.poly_vault,
-        "poly_solostrategy": obj.poly_solostrategy,
-        "poly_quickswapstrategy": obj.poly_quickswapstrategy
-    }
-
-
 def add_cross_item(currency, fromChain, toChain, amount):
     if amount > Decimal(currencies[currency].min):
         beforeInfo[currency][fromChain]['amount'] -= amount
@@ -466,7 +448,6 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
         # 拼接策略:从api返回结果中找到对应地址 拼接规则：chain + "_" + project + "strategy"
         # 遍历8个交易对 currency_infos中的key:base_counter_project
         for key in currency_infos:
-            # todo：chain_infos中不存在key对应的project的处理
             info = getPairProject(key)
             for vaultInfo in vaultInfoList:
                 for chainName in vaultInfo["strategies"]:
@@ -474,7 +455,7 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
                         for strategyinfo in vaultInfo["strategies"][chainName][projectName]:
                             if projectName.lower() == info["project"]:
                                 if strategyinfo["tokenSymbol"].lower() == info["base"] + '-' + info[
-                                    "counter"]:  # todo:这里如果project是solo，不能这么比对，大re
+"counter"]:  # todo:这里如果project是solo，不能这么比对，大re
                                     for elem in strategyinfo:
                                         if elem == 'strategyAddress':
                                             strategyAddresses = strategyinfo[elem]
@@ -649,7 +630,7 @@ def getStrategies(vaultInfoList):
                         strategies[chainName.lower()][projectName.lower()] = {}
                     strategies[chainName.lower()][projectName.lower()][strategyinfo["tokenSymbol"].lower()] = strategyinfo["strategyAddress"].lower()
 
-    return strategies;
+    return strategies
 
 
 def outputReTask():
@@ -768,8 +749,6 @@ def outputReTask():
 
 
 if __name__ == '__main__':
-    # 首先读取api的pool——info，将5个值累加，判断门槛
-
     # todo:判断条件与100比较
 
     outputReTask()
