@@ -3,10 +3,11 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
-	"math/big"
 
+	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/services/part_rebalance"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
 )
@@ -17,44 +18,56 @@ type impermanenceLostHandler struct {
 }
 
 func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
-	lpList, err := getLp(i.conf.ApiConf.LpUrl)
+	finished, err = checkMarginJobStatus(i.conf.ApiConf.MarginUrl, fmt.Sprintf("%d", task.ID))
 	if err != nil {
 		return
 	}
-	lpReq := lp2Req(lpList)
-	if err = callImpermanentLoss(i.conf.ApiConf.MarginUrl,
-		&types.ImpermanectLostReq{BizNo: fmt.Sprintf("%d", task.ID), LpList: lpReq}); err != nil {
-		return
-	}
-	return true, types.FullReBalanceImpermanenceLossCheck, nil
+	return true, types.FullReBalanceClaimLP, nil
 }
 
 func (i *impermanenceLostHandler) MoveToNextState(task *types.FullReBalanceTask, nextState types.ReBalanceState) (err error) {
+
+	// TODO
+	// 1.获取 LP
+	var params []*types.ClaimFromVaultParam
+	var tasks []*types.TransactionTask
+	for _, p := range params {
+		t, err := p.CreateTask(task.ID)
+		if err != nil {
+			logrus.Errorf("create ClaimFromVault task from param err:%v task:%v", err, task)
+		}
+		tasks = append(tasks, t)
+	}
+	if tasks, err = part_rebalance.SetNonceAndGasPrice(tasks); err != nil {
+		logrus.Errorf("SetNonceAndGasPrice error:%v task:[%v]", err, task)
+		return
+	}
+	err = utils.CommitWithSession(i.db, func(session *xorm.Session) (execErr error) {
+		if err = i.db.SaveTxTasks(session, tasks); err != nil {
+			logrus.Errorf("save transaction task error:%v tasks:[%v]", err, tasks)
+			return
+		}
+		//move to next state
+		task.State = nextState
+		execErr = i.db.UpdateFullReBalanceTask(session, task)
+		if execErr != nil {
+			logrus.Errorf("update part full_rebalance task error:%v task:[%v]", execErr, task)
+			return
+		}
+		return
+	})
+	return
+
 	task.State = nextState
 	err = i.db.UpdateFullReBalanceTask(i.db.GetSession(), task)
 	return
 }
 
-func getLp(url string) (lpList []*types.LiquidityProvider, err error) {
-	data, err := utils.DoPost(url, nil)
-	if err != nil {
-		logrus.Errorf("request lp err:%v", err)
-		return
-	}
-	lpResponse := &types.LPResponse{}
-	if err = json.Unmarshal(data, lpResponse); err != nil {
-		logrus.Errorf("unmarshar lpResponse err:%v", err)
-		return
-	}
-	if lpResponse.Code != 200 {
-		logrus.Errorf("lpResponse code not 200, msg:%s", lpResponse.Msg)
-		return
-	}
-	lpList = lpResponse.Data.LiquidityProviderList
-	return
-}
-func callImpermanentLoss(url string, req *types.ImpermanectLostReq) (err error) {
-	data, err := utils.DoPost(url + "submit", req)
+func checkMarginJobStatus(url string, bizNo string) (finished bool, err error) {
+	req := struct {
+		BizNo string `json:"bizNo"`
+	}{bizNo}
+	data, err := utils.DoPost(url+"status/query", req)
 	if err != nil {
 		logrus.Errorf("request ImpermanentLoss api err:%v", err)
 		return
@@ -68,32 +81,8 @@ func callImpermanentLoss(url string, req *types.ImpermanectLostReq) (err error) 
 		logrus.Errorf("callImpermanentLoss code not 200, msg:%s", resp.Msg)
 		return
 	}
-	return
-}
-
-func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq) {
-	for _, lp := range lpList {
-		var totalBaseAmount, totalQuoteAmount *big.Int
-		for _, lpinfo := range lp.LpInfoList {
-			add(totalBaseAmount, lpinfo.BaseTokenAmount)
-			add(totalQuoteAmount, lpinfo.QuoteTokenAmount)
-		}
-		r := &types.LpReq{
-			Chain:              lp.Chain,
-			LpTokenAddress:     lp.LpTokenAddress,
-			LpAmount:           lp.LpAmount,
-			Token0OriginAmount: totalBaseAmount.String(),
-			Token1OriginAmount: totalQuoteAmount.String(),
-		}
-		req = append(req, r)
+	if v, ok := resp.Data["status"]; ok {
+		return v.(string) == "SUCCESS", nil
 	}
 	return
-}
-
-func add(x *big.Int, y string) {
-	y1, ok := new(big.Int).SetString(y, 10)
-	if !ok {
-		logrus.Fatalf("lpinfo to request failed, amount:%s", y)
-	}
-	x.Add(x, y1)
 }

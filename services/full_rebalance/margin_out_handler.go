@@ -9,7 +9,7 @@ type marginOutHandler struct {
 }
 
 func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
-	return true, types.FullReBalanceMarginBalanceTransferOutCheck, nil
+	return true, types.FullReBalanceRecycling, nil
 }
 
 func (i *marginOutHandler) MoveToNextState(task *types.FullReBalanceTask, nextState types.ReBalanceState) (err error) {

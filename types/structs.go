@@ -23,11 +23,8 @@ type ReBalanceState = int
 const (
 	FullReBalanceInit                          ReBalanceState = iota
 	FullReBalanceImpermanenceLoss                             //平无常 http请求
-	FullReBalanceImpermanenceLossCheck                        //检查平无常结果 http请求
 	FullReBalanceClaimLP                                      //拆LP 合约调用
-	FullReBalanceClaimLPCheck                                 //拆LP结果检查 TODO
 	FullReBalanceMarginBalanceTransferOut                     //保证金转出至对冲账户
-	FullReBalanceMarginBalanceTransferOutCheck                //保证金转出至对冲账户 结果检查，并创建资金跨回子任务（此处如果合约不支持全部转出，则增加一个获取资金总数的过程。）
 	FullReBalanceRecycling                                    //资金跨回
 	FullReBalanceParamsCalc                                   // python 计算并创建partRebalanceTask
 	FullReBalanceOndoing                                      // 检查partRebalanceTask状态
