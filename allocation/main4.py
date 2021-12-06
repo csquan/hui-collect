@@ -38,7 +38,14 @@ class Params:
     pass
 
 
+# 存储基本usd穿越，其他u一定包含这个
 counter_tokens = ["usd"]
+
+def format_addr(addr):
+    if addr.startswith('0x'):
+        return addr.lower()
+    else:
+        return ('0x' + addr).lower()
 
 
 def getCurrencyinfo(pair):
@@ -102,17 +109,12 @@ def getprojectinfo(project, url, currencys):
         sys.exit(1)
 
     for data in e["data"]:
-        aprs[data["poolName"]] = data["apr"]
-
-        # todo:临时修改
         tokenPair1 = getPair(data["poolName"], currencys)
-        key1 = tokenPair1.base + '_' + tokenPair1.counter + '_' + project
-        tvls[key1] = data["tvl"]
-
+        key = tokenPair1.base + '_' + tokenPair1.counter + '_' + project
+        tvls[key] = data["tvl"]
+        aprs[key] = data["apr"]
         for rewardToken in data["rewardTokenList"]:
             # 拼接dailyReward
-            tokenPair = getPair(data["poolName"], currencys)
-            key = tokenPair.base + '_' + tokenPair.counter + '_' + project
             dailyReward = float(rewardToken["dayAmount"]) * float(rewardToken["tokenPrice"])
             daily[key] = dailyReward
             reward = reward + dailyReward
@@ -120,7 +122,7 @@ def getprojectinfo(project, url, currencys):
             # 首先以tokenAddress到config中查找，获取对应币种的名字
             for name in currencys:
                 for token in currencys[name]["tokens"]:
-                    if currencys[name]["tokens"][token]["addr"] == deposit["tokenAddress"]:
+                    if currencys[name]["tokens"][token]["addr"] == format_addr(deposit["tokenAddress"]):
                         currencys[name]["price"] = deposit["tokenPrice"]
 
     print("totalReward is")
