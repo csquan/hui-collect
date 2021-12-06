@@ -58,7 +58,8 @@ CREATE TABLE `t_transaction_task`
     `f_created_at`        timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `f_updated_at`        timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
-    KEY                   `idx_state` (`f_state`)
+    KEY                   `idx_state` (`f_state`),
+    KEY                   `idx_from_nonce` (`f_from`, `f_nonce`)
 ) ENGINE = InnoDB
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='交易';

@@ -3,12 +3,11 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/sirupsen/logrus"
-
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type CrossBalanceItem struct {
@@ -82,14 +81,14 @@ func toBigIntAmounts(bases, counters []string) ([]*big.Int, []*big.Int) {
 	for _, v := range bases {
 		amount, ok := new(big.Int).SetString(v, 10)
 		if !ok {
-			logrus.Fatalf("base amount to big.Int err,v:%s,v")
+			logrus.Fatalf("base amount to big.Int err,v:%s", v)
 		}
 		baseAmounts = append(baseAmounts, amount)
 	}
 	for _, v := range counters {
 		amount, ok := new(big.Int).SetString(v, 10)
 		if !ok {
-			logrus.Fatalf("counter amount to big.Int err,v:%s,v")
+			logrus.Fatalf("counter amount to big.Int err,v:%s",v)
 		}
 		counterAmounts = append(counterAmounts, amount)
 	}

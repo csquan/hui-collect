@@ -1,27 +1,31 @@
 package full_rebalance
 
 import (
+	"encoding/json"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/services/part_rebalance"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
 type impermanenceLostCheckHandler struct {
-	db types.IDB
+	db   types.IDB
+	conf *config.Config
 }
 
 func (i *impermanenceLostCheckHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
-	// TODO 查询平无常状态
-	//http://phabricator.huobidev.com/w/financial-product-center/hermes/tech-doc/auto-transfer-api-v2/
-	return true, types.FullReBalanceClaimLP, nil
+	finished, err = checkMarginJobStatus(i.conf.ApiConf.MarginUrl, string(task.ID))
+	if err != nil {
+		return
+	}
+	return finished, types.FullReBalanceClaimLP, nil
 }
 
 func (i *impermanenceLostCheckHandler) MoveToNextState(task *types.FullReBalanceTask, nextState types.ReBalanceState) (err error) {
 	// TODO
 	// 1.获取 LP
-	// http://phabricator.huobidev.com/w/financial-product-center/hermes/prd/机枪池二期需求文档/第三阶段后端接口数据需求/
 	var params []*types.ClaimFromVaultParam
 	var tasks []*types.TransactionTask
 	for _, p := range params {
@@ -49,5 +53,29 @@ func (i *impermanenceLostCheckHandler) MoveToNextState(task *types.FullReBalance
 		}
 		return
 	})
+	return
+}
+
+func checkMarginJobStatus(url string, bizNo string) (finished bool, err error) {
+	req := struct {
+		BizNo string `json:"bizNo"`
+	}{bizNo}
+	data, err := utils.DoPost(url+"status/query", req)
+	if err != nil {
+		logrus.Errorf("request ImpermanentLoss api err:%v", err)
+		return
+	}
+	resp := &types.NormalResponse{}
+	if err := json.Unmarshal(data, resp); err != nil {
+		logrus.Errorf("unmarshar lpResponse err:%v", err)
+		return
+	}
+	if resp.Code != 200 {
+		logrus.Errorf("callImpermanentLoss code not 200, msg:%s", resp.Msg)
+		return
+	}
+	if v, ok := resp.Data["status"]; ok {
+		return v.(string) == "SUCCESS", nil
+	}
 	return
 }

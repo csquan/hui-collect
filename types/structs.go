@@ -25,13 +25,13 @@ const (
 	FullReBalanceImpermanenceLoss                             //平无常 http请求
 	FullReBalanceImpermanenceLossCheck                        //检查平无常结果 http请求
 	FullReBalanceClaimLP                                      //拆LP 合约调用
-	FullReBalanceClaimLPCheck                                 //拆LP结果检查
+	FullReBalanceClaimLPCheck                                 //拆LP结果检查 TODO
 	FullReBalanceMarginBalanceTransferOut                     //保证金转出至对冲账户
 	FullReBalanceMarginBalanceTransferOutCheck                //保证金转出至对冲账户 结果检查，并创建资金跨回子任务（此处如果合约不支持全部转出，则增加一个获取资金总数的过程。）
 	FullReBalanceRecycling                                    //资金跨回
 	FullReBalanceParamsCalc                                   // python 计算并创建partRebalanceTask
 	FullReBalanceOndoing                                      // 检查partRebalanceTask状态
- 	FullReBalanceSuccess
+	FullReBalanceSuccess
 	FullReBalanceFailed
 )
 
@@ -163,12 +163,12 @@ type TransactionTask struct {
 	From            string `xorm:"f_from"`
 	To              string `xorm:"f_to"`
 	ContractAddress string `xorm:"f_contract_address"` //当交易类型为授权时，此字段保存spender
-	InputData   string `xorm:"f_input_data"`
-	Cipher      string `xorm:"f_cipher"`
-	EncryptData string `xorm:"f_encrypt_data"`
-	SignData    string `xorm:"f_signed_data"`
-	OrderId     int64  `xorm:"f_order_id"`
-	Hash        string `xorm:"f_hash"`
+	InputData       string `xorm:"f_input_data"`
+	Cipher          string `xorm:"f_cipher"`
+	EncryptData     string `xorm:"f_encrypt_data"`
+	SignData        string `xorm:"f_signed_data"`
+	OrderId         int64  `xorm:"f_order_id"`
+	Hash            string `xorm:"f_hash"`
 }
 
 func (t *TransactionTask) TableName() string {
