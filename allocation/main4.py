@@ -15,9 +15,11 @@ from decimal import *
 class Token:
     pass
 
+
 # struct: base counter
 class Pair:
     pass
+
 
 # re params
 class ReceiveFromBridgeParam:
@@ -31,6 +33,7 @@ class InvestParam:
 class SendToBridgeParam:
     pass
 
+
 class Params:
     pass
 
@@ -39,14 +42,15 @@ class Params:
 # 项目和链的对应关系
 chain_infos = {"pancake": "bsc", "biswap": "bsc", "quickswap": "poly", "hsolo": "heco", "bsolo": "bsc", "psolo": "poly"}
 
-
 counter_tokens = ["usd"]
+
 
 def getCurrencyinfo(pair):
     tokenstr = pair.split('_')
-    return tokenstr[0].lower(),tokenstr[1].lower()
+    return tokenstr[0].lower(), tokenstr[1].lower()
 
-def getPair(str,currencys):
+
+def getPair(str, currencys):
     pair = Pair()
     tokenstr = str.split('/')  # 用/分割str字符串,etc:Cake/WBNB
     print(tokenstr)
@@ -63,7 +67,6 @@ def getPair(str,currencys):
                     str1 = key
                 if currencys[key]["tokens"][info]["symbol"].lower() == str2:
                     str2 = key
-
 
     pair.base = str1
     pair.counter = str2
@@ -87,6 +90,7 @@ def getreinfo(url):
 
     return e["data"]
 
+
 # 关于价格：函数获取价格填写进传入的currencys，同时将这个价格和对应币种返回
 def getprojectinfo(project, url, currencys):
     ret = requests.get(url)
@@ -104,20 +108,20 @@ def getprojectinfo(project, url, currencys):
     for data in e["data"]:
         aprs[data["poolName"]] = data["apr"]
 
-        #todo:临时修改
+        # todo:临时修改
         tokenPair1 = getPair(data["poolName"], currencys)
         key1 = tokenPair1.base + '_' + tokenPair1.counter + '_' + project
         tvls[key1] = data["tvl"]
 
         for rewardToken in data["rewardTokenList"]:
             # 拼接dailyReward
-            tokenPair = getPair(data["poolName"],currencys)
+            tokenPair = getPair(data["poolName"], currencys)
             key = tokenPair.base + '_' + tokenPair.counter + '_' + project
             dailyReward = float(rewardToken["dayAmount"]) * float(rewardToken["tokenPrice"])
             daily[key] = dailyReward
             reward = reward + dailyReward
         for deposit in data["depositTokenList"]:
-            #首先以tokenAddress到config中查找，获取对应币种的名字
+            # 首先以tokenAddress到config中查找，获取对应币种的名字
             for name in currencys:
                 for token in currencys[name]["tokens"]:
                     if currencys[name]["tokens"][token]["addr"] == deposit["tokenAddress"]:
@@ -311,6 +315,7 @@ def obj_2_json(obj):
         "poly_quickswapstrategy": obj.poly_quickswapstrategy
     }
 
+
 def add_cross_item(currency, fromChain, toChain, amount):
     if amount > Decimal(currencies[currency].min):
         beforeInfo[currency][fromChain]['amount'] -= amount
@@ -324,15 +329,63 @@ def add_cross_item(currency, fromChain, toChain, amount):
             'amount': amount,
         })
 
+# strategies :chain project pair
+def find_strategies_by_chain_and_currency(chain, currency, strategies):
+    for project in strategies[chain]:
+        for key in strategies[chain][project]:
+            if currency in key:
+                return strategies[chain][project]["strategAddress"]
 
-def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
+
+def calcCrossInit(beforeInfo, dailyReward, tvl, apr, restrategies):
+    # 计算跨链的最终状态
+    afterInfo = {}
+    for currency in beforeInfo:
+        strategies = {}
+        caps = {}
+        for chain in ['bsc', 'polygon']:
+            strategies[chain] = find_strategies_by_chain_and_currency(chain, currency, restrategies)
+            caps[chain] = Decimal(0)
+
+            if strategies[chain] is None:  # 没找到策略，返回
+                sys.exit(1)
+
+            for s in strategies[chain]:
+                # 先忽略单币
+                if s.currency1 is None:
+                    continue
+
+                key = "{}_{}_{}".format(s.chain, s.project,
+                                        s.currency0) if s.currency1 is None else "{}_{}_{}_{}".format(
+                    s.chain, s.project, s.currency0, s.currency1)
+                if key not in apr or apr[key] < Decimal(0.18):
+                    continue
+
+                caps[chain] += (dailyReward[key] * Decimal(365) - tvl[key] * apr[key])
+
+        total = Decimal(0)
+        for item in beforeInfo[currency].values():
+            total += item['amount']
+
+        capsTotal = sum(caps.values())
+        for k, v in caps.items():
+            if v > 0:
+                afterInfo[currency] = {
+                    k: str(total * v / capsTotal)
+                }
+
+    print("calc final state:{}", afterInfo)
+    return afterInfo
+
+
+def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,daily_dict, tvls_dict,aprs_dict):
     vaultInfoList = reinfo["vaultInfoList"]
 
     # 计算跨链的最终状态--配资结果  btc_bsc = 100 eth_bsc = 101 usdt_bsc = 102
-    afterInfo = {"btc": [{"bsc": 100}, {"polygon": 200}], "eth": [{"bsc": 101}], "usdt": [{"bsc": 102}]}
-    #afterInfo["pbtc"] = {"poly": poly_btc}
+    # afterInfo = {"btc": [{"bsc": 100}, {"polygon": 200}], "eth": [{"bsc": 101}], "usdt": [{"bsc": 102}]}
+    afterInfo = calcCrossInit(beforeInfo, daily_dict, tvls_dict , aprs_dict, strategies)
 
-    #小re参数数组
+    # 小re参数数组
     paramsList = []
 
     # 跨链信息 存储
@@ -351,8 +404,9 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
                     if currency in beforeInfo.keys():
                         diff = info[k] - float(beforeInfo[currency][chain]["amount"])
                         if diff > currency_dict[currency]["min"] or diff < currency_dict[currency]["min"] * -1:
-                            diffMap[currency + '_' + chain] = diff.quantize(Decimal(10) ** (-1 * currency_dict[currency].crossDecimal),
-                                                         ROUND_DOWN)
+                            diffMap[currency + '_' + chain] = diff.quantize(
+                                Decimal(10) ** (-1 * currency_dict[currency].crossDecimal),
+                                ROUND_DOWN)
 
     for currencyinfo in diffMap:
         targetMap = {
@@ -406,7 +460,7 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
         invest.BaseTokenAmount = []
         invest.CounterTokenAmount = []
 
-        #存储此次找到的策略
+        # 存储此次找到的策略
         strategyAddresses = ""
 
         # 拼接策略:从api返回结果中找到对应地址 拼接规则：chain + "_" + project + "strategy"
@@ -414,17 +468,16 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
         for key in currency_infos:
             # todo：chain_infos中不存在key对应的project的处理
             info = getPairProject(key)
-            project = info["project"]
-            # todo：api返回对应币种的contract_info不存在strategystr的处理
             for vaultInfo in vaultInfoList:
-                        for chainName in vaultInfo["strategies"]:
-                            for projectName in vaultInfo["strategies"][chainName]:
-                                for strategyinfo in vaultInfo["strategies"][chainName][projectName]:
-                                    if projectName.lower() == info["project"]:
-                                        if strategyinfo["tokenSymbol"].lower() == info["base"] + '-' + info["counter"]: #todo:这里如果project是solo，不能这么比对，大re
-                                            for elem in strategyinfo:
-                                                if elem == 'strategyAddress':
-                                                    strategyAddresses = strategyinfo[elem]
+                for chainName in vaultInfo["strategies"]:
+                    for projectName in vaultInfo["strategies"][chainName]:
+                        for strategyinfo in vaultInfo["strategies"][chainName][projectName]:
+                            if projectName.lower() == info["project"]:
+                                if strategyinfo["tokenSymbol"].lower() == info["base"] + '-' + info[
+                                    "counter"]:  # todo:这里如果project是solo，不能这么比对，大re
+                                    for elem in strategyinfo:
+                                        if elem == 'strategyAddress':
+                                            strategyAddresses = strategyinfo[elem]
 
             if strategyAddresses == "":
                 print("配资的其中一个交易对策略在小re的返回数据中没有找到，请检查！")
@@ -484,35 +537,36 @@ def getAllDict(currency_dict):
     tvls_dict.update(tvls)
     aprs_dict.update(aprs)
     currencys_dict.update(currencys)
-    #print('-------------------------------------------')
-    #soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
-    #reward, daily, tvls, aprs, currencys = getprojectinfo("solo", soloUrl, currency_dict)
-    #daily_dict.update(daily)
-    #tvls_dict.update(tvls)
-    #aprs_dict.update(aprs)
-    #currencys_dict.update(currencys)
+    # print('-------------------------------------------')
+    # soloUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
+    # reward, daily, tvls, aprs, currencys = getprojectinfo("solo", soloUrl, currency_dict)
+    # daily_dict.update(daily)
+    # tvls_dict.update(tvls)
+    # aprs_dict.update(aprs)
+    # currencys_dict.update(currencys)
     print('-------------------------------------------')
     polygonUrl = 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'
-    reward, daily, tvls, aprs, currencys  = getprojectinfo("quickswap", polygonUrl, currency_dict)
+    reward, daily, tvls, aprs, currencys = getprojectinfo("quickswap", polygonUrl, currency_dict)
     daily_dict.update(daily)
     tvls_dict.update(tvls)
     aprs_dict.update(aprs)
     currencys_dict.update(currencys)
     print('=================================================================')
-    print("daily_dict:",daily_dict)
-    print("tvls_dict:",tvls_dict)
-    print("aprs_dict:",aprs_dict)
-    print("currencys_dict:",currencys_dict)
+    print("daily_dict:", daily_dict)
+    print("tvls_dict:", tvls_dict)
+    print("aprs_dict:", aprs_dict)
+    print("currencys_dict:", currencys_dict)
     print('=================================================================')
 
     return daily_dict, tvls_dict, aprs_dict, currencys_dict
+
 
 def getPrice(price_name, currencys_dict):
     for _, val in currencys_dict.items():
         if 'tokens' in val:
             for _, items in val.get('tokens').items():
-                if items.get('symbol','').lower() == price_name:
-                    price = val.get('price','')
+                if items.get('symbol', '').lower() == price_name:
+                    price = val.get('price', '')
                     try:
                         price = float(price)
                     except:
@@ -521,29 +575,31 @@ def getPrice(price_name, currencys_dict):
                         return price
     return None
 
-NAME_LIST=  ('bnb_usd_biswap', 'bnb_usd_pancake', 'bnb_usdt_biswap', 'bnb_usdt_pancake', 'cake_usd_pancake',
-             'cake_usdt_pancake','btc_usdt_biswap', 'eth_usdt_biswap','eth_usdc_quickswap','eth_usdt_quickswap',
-             'btc_usdc_quickswap','matic_usdc_quickswap','matic_usdt_quickswap',
-            )
+
+NAME_LIST = ('bnb_usd_biswap', 'bnb_usd_pancake', 'bnb_usdt_biswap', 'bnb_usdt_pancake', 'cake_usd_pancake',
+             'cake_usdt_pancake', 'btc_usdt_biswap', 'eth_usdt_biswap', 'eth_usdc_quickswap', 'eth_usdt_quickswap',
+             'btc_usdc_quickswap', 'matic_usdc_quickswap', 'matic_usdt_quickswap',
+             )
+
 
 def matchParams(daily_dict, tvls_dict, aprs_dict, currencys_dict):
     print("--------------------PRICE--------------------")
-    price_name = ("bnb", "cake", "btcb","eth", "busd", "usdt")
-    print("all currencys_dict:",currencys_dict)
+    price_name = ("bnb", "cake", "btcb", "eth", "busd", "usdt")
+    print("all currencys_dict:", currencys_dict)
     price_list = []
     for p in price_name:
         price_list.append(getPrice(p, currencys_dict))
     print(price_name)
     print(price_list)
-    for k,v in dict(zip(price_name,price_list)).items():
-        print("%s:%s"%(k,v))
+    for k, v in dict(zip(price_name, price_list)).items():
+        print("%s:%s" % (k, v))
     # params for price of :
     #    ('bnb', 'cake', 'btcb', 'eth', 'busd', 'usdt')
     argsp = tuple(price_list)
 
     print("---------------------TVL---------------------")
     tvl_name = NAME_LIST
-    #!!!!!假值，用于测试！！！！
+    # !!!!!假值，用于测试！！！！
     tvls_dict.update(matic_usdc_quickswap=10000000.0)
     tvls_dict.update(matic_usdt_quickswap=20000000.0)
     print(tvls_dict)
@@ -552,32 +608,49 @@ def matchParams(daily_dict, tvls_dict, aprs_dict, currencys_dict):
         tvl_list.append(tvls_dict.get(t, None))
     print(tvl_name)
     print(tvl_list)
-    for k,v in dict(zip(tvl_name, tvl_list)).items():
-        print("%s:%s"%(k,v))
+    for k, v in dict(zip(tvl_name, tvl_list)).items():
+        print("%s:%s" % (k, v))
     # params for tvl of :
     #    ( aa, bb, cc, dd, ee, ff, gg, hh, ii, jj, kk, ll, mm ) 
-    #in small re aslo for :
+    # in small re aslo for :
     #    ( a, b, c, d, e, f, g, h, i, j, k, l, m ) 
     argstt = tuple(map(float, tvl_list))
     print("--------------------Daily--------------------")
-    #!!!!!假值，用于测试！！！！
+    # !!!!!假值，用于测试！！！！
     daily_dict.update(matic_usdc_quickswap=1000.0)
     daily_dict.update(matic_usdt_quickswap=2000.0)
-    print("all daily_dict:",daily_dict)
+    print("all daily_dict:", daily_dict)
     daily_name = NAME_LIST
     daily_reward = []
     for d in daily_name:
         daily_reward.append(daily_dict.get(d, None))
     print(daily_name)
     print(daily_reward)
-    for k,v in dict(zip(daily_name,daily_reward)).items():
-        print("%s:%s"%(k,v))
+    for k, v in dict(zip(daily_name, daily_reward)).items():
+        print("%s:%s" % (k, v))
     # params for tvl of :
     #    ( A, B, C, D, E, F, G, H, I, J, K, L, M ) 
     argsr = tuple(map(float, daily_reward))
     print("---------------------Aprs---------------------")
-    #print("all aprs_dict:",aprs_dict)
+    # print("all aprs_dict:",aprs_dict)
     return argsp, argsr, argstt
+
+
+def getStrategies(vaultInfoList):
+    strategies = {}
+
+    for vaultInfo in vaultInfoList:
+        for chainName in vaultInfo["strategies"]:
+            if chainName not in strategies:
+                strategies[chainName.lower()] = {}
+            for projectName in vaultInfo["strategies"][chainName]:
+                for strategyinfo in vaultInfo["strategies"][chainName][projectName]:
+                    if projectName not in strategies[chainName.lower()]:
+                        strategies[chainName.lower()][projectName.lower()] = {}
+                    strategies[chainName.lower()][projectName.lower()][strategyinfo["tokenSymbol"].lower()] = strategyinfo["strategyAddress"].lower()
+
+    return strategies;
+
 
 def outputReTask():
     # 读取config
@@ -589,12 +662,15 @@ def outputReTask():
     daily_dict, tvls_dict, aprs_dict, currencys_dict = getAllDict(conf_currency_dict)
 
     argsp, argsr, argstt = matchParams(daily_dict, tvls_dict, aprs_dict, currencys_dict)
-    
+
     reUrl = 'http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re'
     reinfos = getreinfo(reUrl)
     thresholds = reinfos["threshold"]
     vaultInfoList = reinfos["vaultInfoList"]
-    
+
+    # 生成策略字典
+    strategies = getStrategies(vaultInfoList)
+
     # 整理出阈值，当前值 进行比较
     # {btc:{bsc:{amount:"1", controllerAddress:""},...}}
     beforeInfo = {}
@@ -624,24 +700,24 @@ def outputReTask():
     todo_usdt = 400000
     btc_bsc, eth_bsc, usdt_bsc = computeTarget(todo_btc, todo_eth, todo_usdt, argsr, argstt)
     print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-    print("three target: btc_bsc: %f, eth_bsc: %f, usdt_bsc:%f"%(btc_bsc, eth_bsc, usdt_bsc))
+    print("three target: btc_bsc: %f, eth_bsc: %f, usdt_bsc:%f" % (btc_bsc, eth_bsc, usdt_bsc))
     print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
     # Bnb_q  bnb在bsc上的bnb总量，以下变量类似定义，应该re返回获取，但是目前返回数据不全，所以测试数据 其中Btcb_q Eth_q Usdt_q 由配资内部计算可得
-    bnb_q  = 3000
+    bnb_q = 3000
     cake_q = 2000
     btcb_q = 500000 + btc_bsc
-    eth_q  = 600000 + eth_bsc
+    eth_q = 600000 + eth_bsc
     busd_q = 10000
     usdt_q = 8000 + usdt_bsc
-    
+
     argsq = (bnb_q, busd_q, btcb_q, eth_q, usdt_q, cake_q)
-    print("argsq:",argsq)
+    print("argsq:", argsq)
 
     # 下面进行配资计算,X为结果矩阵，存储X0-15
     from re_optimize import doCompute
     X = doCompute(argsq, argsp, argsr, argstt)
     X = np.array(X).reshape(4, 4)
-    print('compute res:',X)
+    print('compute res:', X)
 
     # 交易对赋值
     currencyPair_infos = getPairinfo(X)
@@ -652,7 +728,7 @@ def outputReTask():
     thresholdDict = {}
 
     for threshold in thresholds:
-            thresholdDict[threshold["tokenSymbol"].lower()] = threshold["thresholdAmount"]
+        thresholdDict[threshold["tokenSymbol"].lower()] = threshold["thresholdAmount"]
 
     print("threshold info after format:{}".format(thresholdDict))
 
@@ -674,7 +750,7 @@ def outputReTask():
         sys.exit(1)
 
     # 拼接结果字串
-    paramsList = getReParams(currencyPair_infos, conf_currency_dict, reinfos, beforeInfo)
+    paramsList = getReParams(currencyPair_infos, conf_currency_dict, reinfos, beforeInfo, strategies, daily_dict, tvls_dict, aprs_dict)
 
     # write db
     conn = pymysql.connect(host=conf["database"]["host"], port=conf["database"]["port"], user=conf["database"]["user"],
@@ -691,12 +767,9 @@ def outputReTask():
     conn.close()
 
 
-
 if __name__ == '__main__':
     # 首先读取api的pool——info，将5个值累加，判断门槛
 
-    #todo:判断条件与100比较
+    # todo:判断条件与100比较
 
     outputReTask()
-
-
