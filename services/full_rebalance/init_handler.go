@@ -3,20 +3,29 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"math/big"
 )
 
 type initHandler struct {
-	db types.IDB
+	db   types.IDB
 	conf *config.Config
 }
 
 func (i *initHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
 	return true, types.FullReBalanceImpermanenceLoss, nil
+}
+
+func (i *initHandler) GetState() types.ReBalanceState {
+	return types.FullReBalanceInit
+}
+
+func (i *initHandler) Do(task *types.FullReBalanceTask) error {
+	return nil
 }
 
 func (i *initHandler) MoveToNextState(task *types.FullReBalanceTask, nextState types.ReBalanceState) (err error) {
@@ -53,7 +62,7 @@ func getLp(url string) (lpList []*types.LiquidityProvider, err error) {
 	return
 }
 func callImpermanentLoss(url string, req *types.ImpermanectLostReq) (err error) {
-	data, err := utils.DoPost(url + "submit", req)
+	data, err := utils.DoPost(url+"submit", req)
 	if err != nil {
 		logrus.Errorf("request ImpermanentLoss api err:%v", err)
 		return
