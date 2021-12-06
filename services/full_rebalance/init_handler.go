@@ -16,6 +16,10 @@ type initHandler struct {
 	conf *config.Config
 }
 
+func (i *initHandler) Name() string {
+	return "full_rebalance_init"
+}
+
 func (i *initHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
 	return true, types.FullReBalanceImpermanenceLoss, nil
 }
@@ -28,7 +32,7 @@ func (i *initHandler) Do(task *types.FullReBalanceTask) error {
 	return nil
 }
 
-func (i *initHandler) MoveToNextState(task *types.FullReBalanceTask, nextState types.ReBalanceState) (err error) {
+func (i *initHandler) MoveState(task *types.FullReBalanceTask, nextState types.ReBalanceState) (err error) {
 	lpList, err := getLp(i.conf.ApiConf.LpUrl)
 	if err != nil {
 		return

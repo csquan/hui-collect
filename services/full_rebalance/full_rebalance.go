@@ -10,8 +10,9 @@ import (
 
 type StateHandler interface {
 	CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error)
-	MoveToNextState(task *types.FullReBalanceTask, nextState types.ReBalanceState) (err error)
+	//movetoCurstate
 	Do(task *types.FullReBalanceTask) error
+	Name() string
 }
 
 type ReBalance struct {
@@ -91,13 +92,14 @@ func (p *ReBalance) Run() (err error) {
 	if !finished {
 		return
 	}
-	nextHandler := p.getHandler(next)
-	if nextHandler == nil {
-		return handler.MoveToNextState(tasks[0], next)
-	}
-	if err := nextHandler.Do(tasks[0]); err != nil {
-		err = handler.MoveToNextState(tasks[0], next)
-		if err != nil {
+	if next == types.FullReBalanceSuccess || next == types.FullReBalanceFailed {
+		//update state
+		tasks[0].State = next
+		return p.db.UpdateFullReBalanceTask(p.db.GetEngine(), tasks[0])
+	} else {
+		nextHandler := p.getHandler(next)
+		if err := nextHandler.Do(tasks[0]); err != nil {
+			logrus.Errorf("handler do err:%v", err)
 			return err
 		}
 	}
