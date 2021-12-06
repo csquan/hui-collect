@@ -2,11 +2,13 @@ package full_rebalance
 
 import (
 	"encoding/json"
+	"fmt"
+	"math/big"
+
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"math/big"
 )
 
 type impermanenceLostHandler struct {
@@ -20,8 +22,8 @@ func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (
 		return
 	}
 	lpReq := lp2Req(lpList)
-	if err := callImpermanentLoss(i.conf.ApiConf.MarginUrl,
-		&types.ImpermanectLostReq{BizNo: string(task.ID), LpList: lpReq}); err != nil {
+	if err = callImpermanentLoss(i.conf.ApiConf.MarginUrl,
+		&types.ImpermanectLostReq{BizNo: fmt.Sprintf("%d", task.ID), LpList: lpReq}); err != nil {
 		return
 	}
 	return true, types.FullReBalanceImpermanenceLossCheck, nil
@@ -40,7 +42,7 @@ func getLp(url string) (lpList []*types.LiquidityProvider, err error) {
 		return
 	}
 	lpResponse := &types.LPResponse{}
-	if err := json.Unmarshal(data, lpResponse); err != nil {
+	if err = json.Unmarshal(data, lpResponse); err != nil {
 		logrus.Errorf("unmarshar lpResponse err:%v", err)
 		return
 	}
@@ -58,7 +60,7 @@ func callImpermanentLoss(url string, req *types.ImpermanectLostReq) (err error) 
 		return
 	}
 	resp := &types.NomalResponse{}
-	if err := json.Unmarshal(data, resp); err != nil {
+	if err = json.Unmarshal(data, resp); err != nil {
 		logrus.Errorf("unmarshar lpResponse err:%v", err)
 		return
 	}
