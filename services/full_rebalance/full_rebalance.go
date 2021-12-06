@@ -29,19 +29,10 @@ func NewReBalanceService(db types.IDB, conf *config.Config) (p *ReBalance, err e
 			types.FullReBalanceImpermanenceLoss: &impermanenceLostHandler{
 				db: db,
 			},
-			types.FullReBalanceImpermanenceLossCheck: &impermanenceLostCheckHandler{
-				db: db,
-			},
 			types.FullReBalanceClaimLP: &claimLPHandler{
 				db: db,
 			},
-			types.FullReBalanceClaimLPCheck: &claimLPCheckHandler{
-				db: db,
-			},
 			types.FullReBalanceMarginBalanceTransferOut: &marginOutHandler{
-				db: db,
-			},
-			types.FullReBalanceMarginBalanceTransferOutCheck: &marginOutCheckHandler{
 				db: db,
 			},
 			types.FullReBalanceRecycling: &recyclingHandler{
