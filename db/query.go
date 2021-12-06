@@ -35,7 +35,7 @@ func (m *Mysql) GetOpenedTransactionTask() (tasks []*types.TransactionTask, err 
 	err = m.engine.Where("f_state != ? and f_state != ?",
 		types.TxSuccessState,
 		types.TxFailedState).
-		Desc("f_type"). //根据state倒叙可以确保授权task先执行
+		Asc("f_from", "f_nonce"). //根据state倒叙可以确保授权task先执行
 		Find(&tasks)
 	return
 }
