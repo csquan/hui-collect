@@ -109,8 +109,8 @@ def getprojectinfo(project, url, currencys):
         sys.exit(1)
 
     for data in e["data"]:
-        tokenPair1 = getPair(data["poolName"], currencys)
-        key = tokenPair1.base + '_' + tokenPair1.counter + '_' + project
+        tokenPair = getPair(data["poolName"], currencys)
+        key = tokenPair.base + '_' + tokenPair.counter + '_' + project
         tvls[key] = data["tvl"]
         aprs[key] = data["apr"]
         for rewardToken in data["rewardTokenList"]:
@@ -642,11 +642,12 @@ def format_token_name(currency_name_set, name):
     return False, name
 
 def outputReTask():
-    # 读取config
     conf = read_yaml("./config.yaml")
 
     conf_currency_dict = conf.get("currencies")
-    currencyName = conf_currency_dict.keys()
+    currencyName = [k for k in sorted(conf_currency_dict.keys(), key=len, reverse=True)]
+
+    print("currencies:{}".format(conf_currency_dict))
 
     daily_dict, tvls_dict, aprs_dict, currencys_dict = getAllDict(conf_currency_dict)
 
@@ -660,10 +661,8 @@ def outputReTask():
     # 生成策略字典
     strategies = getStrategies(vaultInfoList)
 
-    # 整理出阈值，当前值 进行比较
-    beforeInfo = {}
-
     # 计算跨链的初始状态
+    beforeInfo = {}
     for vault in vaultInfoList:
         (ok, name) = format_token_name(currencyName, vault['tokenSymbol'])
         if ok:
@@ -686,6 +685,34 @@ def outputReTask():
         }
     }
     print("init balance info for cross:{}".format(beforeInfo))
+
+    # 整理出阈值， 与当前值 进行比较
+    needReBalance = False
+
+    thresholdDict = {}
+
+    for threshold in thresholds:
+        thresholdDict[threshold["tokenSymbol"].lower()] = threshold["thresholdAmount"]
+
+    print("threshold info after format:{}".format(thresholdDict))
+
+    # 比较阈值
+    for name in thresholdDict:
+        # 没有发现相关资产
+        if name not in beforeInfo:
+            continue
+
+        totalAmount = float(0)
+        for item in beforeInfo[name].values():
+            totalAmount += item['amount']
+
+        needReBalance = totalAmount > float(thresholdDict[name])
+        if needReBalance:
+            break
+
+    # 没超过阈值
+    if not needReBalance:
+        sys.exit(1)
 
     # 得到poly上的btc量
     btc_total = 0
@@ -722,34 +749,6 @@ def outputReTask():
 
     # 交易对赋值
     currencyPair_infos = getPairinfo(X)
-
-    # 比较阈值
-    needReBalance = False
-
-    thresholdDict = {}
-
-    for threshold in thresholds:
-        thresholdDict[threshold["tokenSymbol"].lower()] = threshold["thresholdAmount"]
-
-    print("threshold info after format:{}".format(thresholdDict))
-
-    # 比较阈值
-    for name in thresholdDict:
-        # 没有发现相关资产
-        if name not in beforeInfo:
-            continue
-
-        totalAmount = float(0)
-        for item in beforeInfo[name].values():
-            totalAmount += item['amount']
-
-        needReBalance = totalAmount > float(thresholdDict[name])
-        if needReBalance:
-            break
-
-    # 没超过阈值
-    if not needReBalance:
-        sys.exit(1)
 
     # 拼接结果字串
     paramsList = getReParams(currencyPair_infos, conf_currency_dict, reinfos, beforeInfo, strategies, daily_dict, tvls_dict, aprs_dict)
