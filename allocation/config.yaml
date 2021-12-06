@@ -113,13 +113,13 @@ currencies:
         # crossSymbol: "BUSD"
   cake:  #测试数据
     min: 0.001
-    crossDecimal: 3
+    crossDecimal: 0
     tokens:
       bsc:
         symbol: 'CAKE'
         addr: '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82'
         decimal: 18
-        crossSymbol: "CAKE"
+        #crossSymbol: ""
   bnb:
     min: 0.001
     crossDecimal: 3

@@ -299,7 +299,7 @@ def getPairProject(str):
 
 
 def add_cross_item(currency, fromChain, toChain, amount):
-    if amount > Decimal(currencies[currency].min):
+    if amount > float(currencies[currency].min):
         beforeInfo[currency][fromChain]['amount'] -= amount
         beforeInfo[currency][toChain]['amount'] += amount
 
@@ -327,7 +327,7 @@ def calcCrossInit(beforeInfo, dailyReward, tvl, apr, restrategies):
         caps = {}
         for chain in ['bsc', 'polygon']:
             strategies[chain] = find_strategies_by_chain_and_currency(chain, currency, restrategies)
-            caps[chain] = Decimal(0)
+            caps[chain] = float(0)
 
             if strategies[chain] is None:  # 没找到策略，返回
                 sys.exit(1)
@@ -340,12 +340,12 @@ def calcCrossInit(beforeInfo, dailyReward, tvl, apr, restrategies):
                 key = "{}_{}_{}".format(s.chain, s.project,
                                         s.currency0) if s.currency1 is None else "{}_{}_{}_{}".format(
                     s.chain, s.project, s.currency0, s.currency1)
-                if key not in apr or apr[key] < Decimal(0.18):
+                if key not in apr or apr[key] < float(0.18):
                     continue
 
-                caps[chain] += (dailyReward[key] * Decimal(365) - tvl[key] * apr[key])
+                caps[chain] += (dailyReward[key] * float(365) - tvl[key] * apr[key])
 
-        total = Decimal(0)
+        total = float(0)
         for item in beforeInfo[currency].values():
             total += item['amount']
 
@@ -387,7 +387,7 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
                         diff = info[k] - float(beforeInfo[currency][chain]["amount"])
                         if diff > currency_dict[currency]["min"] or diff < currency_dict[currency]["min"] * -1:
                             diffMap[currency + '_' + chain] = diff.quantize(
-                                Decimal(10) ** (-1 * currency_dict[currency].crossDecimal),
+                                float(10) ** (-1 * currency_dict[currency].crossDecimal),
                                 ROUND_DOWN)
 
     for currencyinfo in diffMap:
@@ -409,11 +409,11 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies,da
 
                 add_cross_item(currency, targetMap[chain], chain,
                                (diff - beforeInfo[currency]['heco']['amount']).quantize(
-                                   Decimal(10) ** (-1 * currencies[currency].crossDecimal),
+                                   float(10) ** (-1 * currencies[currency].crossDecimal),
                                    ROUND_DOWN))
 
                 add_cross_item(currency, 'heco', chain, beforeInfo[currency]['heco']['amount'].quantize(
-                    Decimal(10) ** (-1 * currencies[currency].crossDecimal),
+                    float(10) ** (-1 * currencies[currency].crossDecimal),
                     ROUND_DOWN))
 
         print("cross info:{}", crossList)
@@ -632,6 +632,12 @@ def getStrategies(vaultInfoList):
 
     return strategies
 
+def format_token_name(currency_name_set, name):
+    for k in currency_name_set:
+        if name.lower().find(k) >= 0:
+            return True, k
+
+    return False, name
 
 def outputReTask():
     # 读取config
@@ -653,19 +659,31 @@ def outputReTask():
     strategies = getStrategies(vaultInfoList)
 
     # 整理出阈值，当前值 进行比较
-    # {btc:{bsc:{amount:"1", controllerAddress:""},...}}
     beforeInfo = {}
 
-    # 计算跨链的初始状态--todo:这里多个etc对应的值
+    # 计算跨链的初始状态
     for vault in vaultInfoList:
-        for name in currencyName:
-            controller = {}
-            if vault["tokenSymbol"].lower().find(name) > 0:
-                for chain in vault["activeAmount"].keys():
-                    controller[chain.lower()] = vault["activeAmount"][chain]
-            if controller:
-                beforeInfo[name.lower()] = controller
+        (ok, name) = format_token_name(currencyName, vault['tokenSymbol'])
+        if ok:
+            for chain in vault['activeAmount']:
+                if name not in beforeInfo:
+                    beforeInfo[name] = {}
+
+                beforeInfo[name][chain.lower()] = vault['activeAmount'][chain]
+                beforeInfo[name][chain.lower()]['amount'] = float(beforeInfo[name][chain.lower()]['amount'])
                 # total = total + vault.activeAmount[chain]
+    beforeInfo['usdt'] = {
+        'bsc': {
+            'amount': float(0),
+        },
+        'heco': {
+            'amount': float(100000000),
+        },
+        'polygon': {
+            'amount': float(100)
+        }
+    }
+    print("init balance info for cross:{}".format(beforeInfo))
 
     # 得到poly上的btc量
     btc_total = 0
@@ -713,6 +731,7 @@ def outputReTask():
 
     print("threshold info after format:{}".format(thresholdDict))
 
+    # 比较阈值
     for name in thresholdDict:
         # 没有发现相关资产
         if name not in beforeInfo:
