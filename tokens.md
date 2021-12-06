@@ -15,4 +15,4 @@
 |DAI|poly|0x8f3cf7ad23cd3cadbd9735aff958023239c6a063| 18| DAI|1|-|
 |HUSD|heco|0x0298c2b32eae4da002a15f36fdf7615bea3da047| 8| HUSD|-|-|
 |BUSD|bsc| 0xe9e7cea3dedca5984780bafc599bd69add087d56| 18| BUSD|-|-|
-
+|Cake|bsc|0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82| 18|Cake|0|-|
