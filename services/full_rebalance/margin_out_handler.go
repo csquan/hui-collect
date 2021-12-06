@@ -3,6 +3,7 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -14,7 +15,7 @@ type marginOutHandler struct {
 	conf *config.Config
 }
 
-func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error){
+func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 	if err = createMarginOutJob(i.conf.ApiConf.MarginUrl, fmt.Sprintf("%d", task.ID)); err != nil {
 		return
 	}
@@ -59,7 +60,7 @@ func checkMarginOutJobStatus(url string, bizNo string) (finished bool, err error
 		logrus.Errorf("margin job query status err:%v", err)
 	}
 	resp := &types.NormalResponse{}
-	if err := json.Unmarshal(data, resp); err != nil {
+	if err = json.Unmarshal(data, resp); err != nil {
 		logrus.Errorf("unmarshar lpResponse err:%v", err)
 		return
 	}
