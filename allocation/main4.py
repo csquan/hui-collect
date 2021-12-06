@@ -8,6 +8,7 @@ import pickle
 import numpy as np
 import json
 import sys
+from decimal import *
 
 class ChainParams:
     pass
@@ -149,7 +150,7 @@ def getprojectinfo(project, url, currencys):
             # 拼接dailyReward
             tokenPair = getPair(data["poolName"],currencys)
             key = tokenPair.base + '_' + tokenPair.counter + '_' + project
-            dailyReward = float(rewardToken["dayAmount"]) * float(rewardToken["tokenPrice"])
+            dailyReward = Decimal(rewardToken["dayAmount"]) * Decimal(rewardToken["tokenPrice"])
             daily[key] = dailyReward
             reward = reward + dailyReward
         for deposit in data["depositTokenList"]:
@@ -371,7 +372,7 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
             for info in afterInfo[currency]:
                 for k in info.keys():
                     if currency in beforeInfo.keys():
-                        diff = info[k] - float(beforeInfo[currency][chain]["amount"])
+                        diff = info[k] - Decimal(beforeInfo[currency][chain]["amount"])
                         if diff > currency_dict[currency]["min"] or diff < currency_dict[currency]["min"] * -1:
                             diffMap[currency + '_' + chain] = diff  # todo:format to min decimal
 
@@ -388,15 +389,15 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
         crossItem.To = "bsc"
 
         prefixToken = getCurrency(currency)
-        if float(beforeInfo[prefixToken][crossItem.From]["amount"]) > float(diff):
+        if Decimal(beforeInfo[prefixToken][crossItem.From]["amount"]) > Decimal(diff):
             crossItem.Amount = diff  # 绝对值
-            beforeInfo[prefixToken][crossItem.From]["amount"] = str(float(beforeInfo[prefixToken][crossItem.From]["amount"]) - float(diff))
+            beforeInfo[prefixToken][crossItem.From]["amount"] = str(Decimal(beforeInfo[prefixToken][crossItem.From]["amount"]) - Decimal(diff))
         else:
             # 前提是heco的大于最小额 format精度
             crossItem.Amount = beforeInfo[prefixToken][crossItem.From]["amount"]
             beforeInfo[prefixToken][crossItem.From]["amount"] = 0
 
-        if float(beforeInfo[prefixToken]["heco"]["amount"]) > currency_dict[prefixToken]["min"]:
+        if Decimal(beforeInfo[prefixToken]["heco"]["amount"]) > currency_dict[prefixToken]["min"]:
             #todo:format beforeInfo[currency]["heco"] 精度
             crossItem.Amount = beforeInfo[prefixToken][crossItem.From]["amount"]
             beforeInfo[prefixToken][crossItem.From]["amount"] = 0
@@ -404,7 +405,7 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
             crossItem.FromCurrency = currency_dict[prefixToken]["tokens"][crossItem.From]["crossSymbol"]
             crossItem.ToCurrency = currency_dict[prefixToken]["tokens"][crossItem.To]["crossSymbol"]
 
-        if float(crossItem.Amount) > 0:
+        if Decimal(crossItem.Amount) > 0:
             crossList.append(crossItem)
 
         receiveFromBridge = ReceiveFromBridgeParam()
@@ -413,7 +414,7 @@ def getReParams(currency_infos, currency_dict,reinfo, beforeInfo):
         receiveFromBridge.From = "configaddress2"  # 配置的签名机地址
         receiveFromBridge.To = "configaddress3"  # 配置的合约地址
         receiveFromBridge.Erc20ContractAddr = "configaddress4"  # 配置的token地址
-        receiveFromBridge.Amount = float(crossItem.Amount) * 10e18  # todo:精度配置读取
+        receiveFromBridge.Amount = Decimal(crossItem.Amount) * 10e18  # todo:精度配置读取
 
         # 生成全局唯一的task🆔并保存币种和taskID的对应关系
         TaskIds = {}
@@ -539,7 +540,7 @@ def getPrice(price_name, currencys_dict):
                 if items.get('symbol','').lower() == price_name:
                     price = val.get('price','')
                     try:
-                        price = float(price)
+                        price = Decimal(price)
                     except:
                         continue
                     else:
@@ -638,7 +639,7 @@ def outputReTask():
     # 得到poly上的btc量
     btc_total = 0
     for controller in beforeInfo["btc"]:
-        btc_total = btc_total + float(beforeInfo["btc"][controller]["amount"])
+        btc_total = btc_total + Decimal(beforeInfo["btc"][controller]["amount"])
 
     poly_btc = btc_total - 100
 
