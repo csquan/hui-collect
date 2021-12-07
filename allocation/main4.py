@@ -726,7 +726,7 @@ def jsonRelize(paramsList):
 
         jsonstr = json.dumps(counterTokenAmount)
 
-        jsons = jsons + jsonstr[1:len(jsonstr) - 1] + "}},{\"InvestParams\":"
+        jsons = jsons + jsonstr[1:len(jsonstr) - 1] + "},\"InvestParams\":"
 
         jsons = jsons + json.dumps(param.ReceiveFromBridgeParams, default=receiveobj_2_json)
 
