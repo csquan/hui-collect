@@ -1,2 +1,15 @@
 db: 'mysql+pymysql://root:12345678@localhost:3306/rebalance'
 
+bridge_port:
+  heco: "111111"
+  bsc: "22222"
+  polygon: "33333"
+
+
+chain:
+  heco:
+    id: 128
+  bsc:
+    id: 56
+  polygon:
+    id: 137

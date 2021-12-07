@@ -46,6 +46,14 @@ class Token(Base):
                                                                                             self.crossSymbol)
 
 
+class PartReBalanceTask(Base):
+    __tablename__ = 't_part_rebalance_task'
+    id = Column(Integer, primary_key=True, autoincrement=True, name='f_id')
+    params = Column(TEXT, name='f_params')
+    message = Column(TEXT, name='f_message')
+    state = Column(SmallInteger, name='f_state')
+
+
 def find_strategies_by_chain_and_currency(session, chain, currency):
     return session.query(Strategy).filter(Strategy.chain == chain).filter(
         or_(Strategy.currency0 == currency, Strategy.currency1 == currency))
@@ -66,3 +74,21 @@ def find_currency_by_address(session, address):
         raise ValueError('find more than one token with address:{}', address)
 
     return token[0].currency
+
+
+def find_part_re_balance_open_tasks(session):
+    q = session.query(PartReBalanceTask).filter(PartReBalanceTask.state.not_in([5, 6]))
+    tasks = [x for x in q]
+    if len(tasks) == 0:
+        return None
+
+    return tasks
+
+
+def create_part_re_balance_task(session, params):
+    p = PartReBalanceTask()
+    p.params = params
+    p.message = ''
+    p.state = 0
+
+    session.add(p)

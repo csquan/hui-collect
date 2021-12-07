@@ -1,15 +1,15 @@
 # -*- coding:utf-8 -*-
+import traceback
 import requests
 import yaml
-import numpy as np
 import json
 import utils
+import time
 
 from functools import reduce
 from decimal import *
 from sqlalchemy.orm import sessionmaker
 from orm import *
-from scipy.optimize import minimize
 
 targetChain = ['bsc', 'polygon']
 
@@ -58,105 +58,123 @@ class Project:
         return e['data']
 
 
-def calc(session, currencies):
+def generate_strategy_key(chain, project, currencies):
+    currencies = list(filter(lambda x: x is not None, currencies))
+    currencies.sort(key=len, reverse=True)
+    return "{}_{}_{}".format(chain, project, '_'.join(currencies))
+
+
+def calc(conf, session, currencies):
+    res = {}
+
     # 注意usdt与usd的区分，别弄混了
-    currencyName = [k for k in sorted(currencies.keys(), key=len, reverse=True)]
+    currency_names = [k for k in sorted(currencies.keys(), key=len, reverse=True)]
 
     print("currencies:{}".format(currencies))
 
     # 获取rebalance所需业务信息
-    reBalanceInputInfo = get_pool_info("http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re")
+    re_balance_input_info = get_pool_info("http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re")
 
-    thresholdOrg = reBalanceInputInfo['threshold']
-    vaultInfoList = reBalanceInputInfo['vaultInfoList']
+    threshold_org = re_balance_input_info['threshold']
+    vault_info_list = re_balance_input_info['vaultInfoList']
 
     # 整理出阈值，当前值 进行比较 {usdt:{bsc:{amount:"1", controllerAddress:""}}}
-    thresholdFormat = {}
-    beforeInfo = {}
+    threshold_format = {}
+    account_info = {}
+    strategy_addresses = {}
 
     # 计算跨链的初始状态
-    for vault in vaultInfoList:
-        (ok, name) = format_token_name(currencyName, vault['tokenSymbol'])
+    for vault in vault_info_list:
+        (ok, name) = format_token_name(currency_names, vault['tokenSymbol'])
         if ok:
             for chain in vault['activeAmount']:
-                if name not in beforeInfo:
-                    beforeInfo[name] = {}
+                if name not in account_info:
+                    account_info[name] = {}
 
-                beforeInfo[name][chain.lower()] = vault['activeAmount'][chain]
-                beforeInfo[name][chain.lower()]['amount'] = Decimal(beforeInfo[name][chain.lower()]['amount'])
-                # total = total + vault.activeAmount[chain]
-    beforeInfo['usdt'] = {
-        'bsc': {
-            'amount': Decimal(0),
-        },
-        'heco': {
-            'amount': Decimal(1000),
-        },
-        'polygon': {
-            'amount': Decimal(100)
-        }
-    }
+                account_info[name][chain.lower()] = vault['activeAmount'][chain]
+                account_info[name][chain.lower()]['amount'] = Decimal(account_info[name][chain.lower()]['amount'])
+                account_info[name][chain.lower()]['controller'] = account_info[name][chain.lower()]['controllerAddress']
 
-    beforeInfo['eth'] = {
-        'bsc': {
-            'amount': Decimal(1),
-        },
-        'heco': {
-            'amount': Decimal(0),
-        },
-        'polygon': {
-            'amount': Decimal(0)
-        }
-    }
-    beforeInfo['btc'] = {
-        'bsc': {
-            'amount': Decimal(1),
-        },
-        'heco': {
-            'amount': Decimal(0),
-        },
-        'polygon': {
-            'amount': Decimal(0)
-        }
-    }
+            for chain, proj_dict in vault['strategies'].items():
+                for project, st_list in proj_dict.items():
+                    for st in st_list:
+                        tokens = [format_token_name(currency_names, c)[1] for c in st['tokenSymbol'].split('-')]
+                        strategy_addresses[generate_strategy_key(chain.lower(), project.lower(), tokens)] = st[
+                            'strategyAddress']
 
-    beforeInfo['cake'] = {
-        'bsc': {
-            'amount': Decimal(1),
-        }
-    }
-
-    beforeInfo['bnb'] = {
-        'bsc': {
-            'amount': Decimal(2000),
-        }
-    }
-    print("init balance info for cross:{}".format(beforeInfo))
+    # account_info['usdt'] = {
+    #     'bsc': {
+    #         'amount': Decimal(0),
+    #     },
+    #     'heco': {
+    #         'amount': Decimal(10000000),
+    #     },
+    #     'polygon': {
+    #         'amount': Decimal(0)
+    #     }
+    # }
+    #
+    # account_info['eth'] = {
+    #     'bsc': {
+    #         'amount': Decimal(100),
+    #     },
+    #     'heco': {
+    #         'amount': Decimal(0),
+    #     },
+    #     'polygon': {
+    #         'amount': Decimal(0)
+    #     }
+    # }
+    # account_info['btc'] = {
+    #     'bsc': {
+    #         'amount': Decimal(10),
+    #     },
+    #     'heco': {
+    #         'amount': Decimal(0),
+    #     },
+    #     'polygon': {
+    #         'amount': Decimal(0)
+    #     }
+    # }
+    #
+    # account_info['cake'] = {
+    #     'bsc': {
+    #         'amount': Decimal(0),
+    #     }
+    # }
+    #
+    # account_info['bnb'] = {
+    #     'bsc': {
+    #         'amount': Decimal(2000),
+    #     }
+    # }
+    print("init balance info for cross:{}".format(account_info))
+    print("strategy address info:{}".format(strategy_addresses))
 
     # 计算阈值
-    for threshold in thresholdOrg:
-        (ok, name) = format_token_name(currencyName, threshold['tokenSymbol'])
+    for threshold in threshold_org:
+        (ok, name) = format_token_name(currency_names, threshold['tokenSymbol'])
         if ok:
-            thresholdFormat[name] = threshold['thresholdAmount']
-    print("threshold info after format:{}".format(thresholdFormat))
+            threshold_format[name] = threshold['thresholdAmount']
+    print("threshold info after format:{}".format(threshold_format))
 
     # 比较阈值
-    needReBalance = False
-    for name in thresholdFormat:
+    need_re_balance = False
+    for name in threshold_format:
         # 没有发现相关资产
-        if name not in beforeInfo:
+        if name not in account_info:
             continue
 
         total = Decimal(0)
-        for item in beforeInfo[name].values():
+        for item in account_info[name].values():
             total += item['amount']
 
-        needReBalance = total > Decimal(thresholdFormat[name])
-        if needReBalance:
+        need_re_balance = total > Decimal(threshold_format[name])
+        if need_re_balance:
             break
 
     # 没超过阈值
-    if not needReBalance:
+    if not need_re_balance:
         exit()
 
     # 获取apr等信息
@@ -164,20 +182,15 @@ def calc(session, currencies):
     projects = [
         Project('bsc', 'pancake', 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'),
         Project('bsc', 'biswap', 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=476'),
-        Project('bsc', 'solo', 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=76'),
+        Project('bsc', 'solo.top', 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=76'),
         # Project('polygon', 'quickswap', 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'),
     ]
 
     # chain_project_coin1_coin2
     apr = {}
     price = {}
-    dailyReward = {}
+    daily_reward = {}
     tvl = {}
-
-    def generate_key(chain, project, currencies):
-        currencies = list(filter(lambda x: x is not None, currencies))
-        currencies.sort(key=len, reverse=True)
-        return "{}_{}_{}".format(chain, project, '_'.join(currencies))
 
     for p in projects:
         info = p.get_info()
@@ -188,116 +201,152 @@ def calc(session, currencies):
                 if currency is not None and currency not in price:
                     price[currency] = Decimal(token['tokenPrice'])
 
-                names = [format_token_name(currencyName, c)[1] for c in pool['poolName'].split("/")]
-                key = generate_key(p.chain, p.name, names)
+                names = [format_token_name(currency_names, c)[1] for c in pool['poolName'].split("/")]
+                key = generate_strategy_key(p.chain, p.name, names)
 
                 apr[key] = Decimal(pool['apr'])
                 tvl[key] = Decimal(pool['tvl'])
-                dailyReward[key] = reduce(lambda x, y: x + y,
-                                          map(lambda t: Decimal(t['tokenPrice']) * Decimal(t['dayAmount']),
-                                              pool['rewardTokenList']))
+                daily_reward[key] = reduce(lambda x, y: x + y,
+                                           map(lambda t: Decimal(t['tokenPrice']) * Decimal(t['dayAmount']),
+                                               pool['rewardTokenList']))
 
-    print("apr info:{}", apr)
-    print("price info:{}", price)
-    print("daily reward info:{}", dailyReward)
-    print("tvl info:{}", tvl)
+    print("apr info:{}".format(apr))
+    print("price info:{}".format(price))
+    print("daily reward info:{}".format(daily_reward))
+    print("tvl info:{}".format(tvl))
 
     # 计算跨链的最终状态
-    afterInfo = {}
-    for currency in beforeInfo:
-        strategies = {}
+    after_balance_info = {}
+    for currency in account_info:
+        strategy_addresses = {}
         caps = {}
         for chain in ['bsc', 'polygon']:
-            strategies[chain] = find_strategies_by_chain_and_currency(session, chain, currency)
+            strategy_addresses[chain] = find_strategies_by_chain_and_currency(session, chain, currency)
             caps[chain] = Decimal(0)
 
-            for s in strategies[chain]:
+            for s in strategy_addresses[chain]:
                 # 先忽略单币
                 if s.currency1 is None:
                     continue
 
-                key = generate_key(s.chain, s.project, [s.currency0, s.currency1])
+                key = generate_strategy_key(s.chain, s.project, [s.currency0, s.currency1])
                 if key not in apr or apr[key] < Decimal(0.18):
                     continue
 
-                caps[chain] += (dailyReward[key] * Decimal(365) / Decimal(0.18) - tvl[key])
+                caps[chain] += (daily_reward[key] * Decimal(365) / Decimal(0.18) - tvl[key])
 
         total = Decimal(0)
-        for item in beforeInfo[currency].values():
+        for item in account_info[currency].values():
             total += item['amount']
 
-        capsTotal = sum(caps.values())
+        caps_total = sum(caps.values())
         for k, v in caps.items():
             if v > 0:
-                afterInfo[currency] = {
-                    k: str(total * v / capsTotal)
+                after_balance_info[currency] = {
+                    k: str(total * v / caps_total)
                 }
 
-    print("calc final state:{}", afterInfo)
+    print("calc final state:{}", after_balance_info)
 
     # 跨链信息
-    diffMap = {}
+    balance_diff_map = {}
     # cross list
-    crossList = []
+    res['cross_balances'] = []
+    # send to bridge
+    res['send_to_bridge_params'] = []
+    res['receive_from_bridge_params'] = []
 
     # 生成跨链参数, 需要考虑最小值
-    for currency in afterInfo:
+    for currency in after_balance_info:
         for chain in ['bsc', 'polygon']:
-            if chain not in afterInfo[currency] or currencies[currency].min is None:
+            if chain not in after_balance_info[currency] or currencies[currency].min is None:
                 continue
 
-            diff = Decimal(afterInfo[currency][chain]) - beforeInfo[currency][chain]['amount']
+            diff = Decimal(after_balance_info[currency][chain]) - account_info[currency][chain]['amount']
             if diff > Decimal(currencies[currency].min) or diff < Decimal(
                     currencies[currency].min) * -1:
-                if currency not in diffMap:
-                    diffMap[currency] = {}
-                diffMap[currency][chain] = diff.quantize(Decimal(10) ** (-1 * currencies[currency].crossDecimal),
-                                                         ROUND_DOWN)  # format to min decimal
+                if currency not in balance_diff_map:
+                    balance_diff_map[currency] = {}
+                balance_diff_map[currency][chain] = diff.quantize(
+                    Decimal(10) ** (-1 * currencies[currency].crossDecimal),
+                    ROUND_DOWN)  # format to min decimal
 
-    print("diff map:{}", diffMap)
+    print("diff map:{}", balance_diff_map)
 
-    def add_cross_item(currency, fromChain, toChain, amount):
+    def add_cross_item(currency, from_chain, to_chain, amount):
         if amount > Decimal(currencies[currency].min):
-            beforeInfo[currency][fromChain]['amount'] -= amount
-            beforeInfo[currency][toChain]['amount'] += amount
+            token_decimal = currencies[currency].tokens[from_chain].decimal
 
-            crossList.append({
-                'from': fromChain,
-                'to': toChain,
-                'fromCurrency': currencies[currency].tokens[fromChain].crossSymbol,
-                'toCurrency': currencies[currency].tokens[toChain].crossSymbol,
+            account_info[currency][from_chain]['amount'] -= amount
+            account_info[currency][to_chain]['amount'] += amount
+
+            res['cross_balances'].append({
+                'from_chain': from_chain,
+                'to_chain': to_chain,
+                'from_addr': conf['bridge_port'][from_chain],
+                'to_addr': conf['bridge_port'][to_chain],
+                'from_currency': currencies[currency].tokens[from_chain].crossSymbol,
+                'to_currency': currencies[currency].tokens[to_chain].crossSymbol,
                 'amount': amount,
             })
 
-    for currency in diffMap:
-        targetMap = {
+            task_id = '{}'.format(time.time_ns() * 100)
+            res['send_to_bridge_params'].append({
+                'chain_name': from_chain,
+                'chain_id': conf['chain'][from_chain],
+                'from': conf['bridge_port'][from_chain],
+                'to': account_info[currency][from_chain]['controller'],
+                'bridge_address': conf['bridge_port'][from_chain],
+                'amount': amount * (Decimal(10) ** token_decimal),
+                'task_id': task_id
+            })
+            res['receive_from_bridge_params'].append({
+                'chain_name': to_chain,
+                'chain_id': conf['chain'][to_chain],
+                'from': conf['bridge_port'][to_chain],
+                'to': account_info[currency][to_chain]['controller'],
+                "erc20_contract_addr": currencies[currency].tokens[from_chain].address,
+                'amount': amount * (Decimal(10) ** token_decimal),
+                'task_id': task_id,
+            })
+
+    for currency in balance_diff_map:
+        target_chain = {
             'bsc': 'polygon',
             'polygon': 'bsc',
         }
 
-        for chain in diffMap[currency]:
-            diff = diffMap[currency][chain]
+        for chain in balance_diff_map[currency]:
+            diff = balance_diff_map[currency][chain]
 
             if diff < 0:
-                add_cross_item(currency, chain, targetMap[chain], diff * -1)
+                add_cross_item(currency, chain, target_chain[chain], diff * -1)
 
             else:
-                if beforeInfo[currency]['heco']['amount'] > diff:
+                if account_info[currency]['heco']['amount'] > diff:
                     add_cross_item(currency, 'heco', chain, diff)
                 else:
 
-                    add_cross_item(currency, targetMap[chain], chain,
-                                   (diff - beforeInfo[currency]['heco']['amount']).quantize(
+                    add_cross_item(currency, target_chain[chain], chain,
+                                   (diff - account_info[currency]['heco']['amount']).quantize(
                                        Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                                        ROUND_DOWN))
 
-                    add_cross_item(currency, 'heco', chain, beforeInfo[currency]['heco']['amount'].quantize(
+                    add_cross_item(currency, 'heco', chain, account_info[currency]['heco']['amount'].quantize(
                         Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                         ROUND_DOWN))
 
-    print("cross info:{}", json.dumps(crossList, cls=utils.DecimalEncoder))
+    # receive from bridge
 
-    calc_invest(session, 'bsc', beforeInfo, price, dailyReward, apr, tvl)
+    print("cross info:{}", json.dumps(res, cls=utils.DecimalEncoder))
+
+    res['invest_params'] = []
+    for chain in targetChain:
+        info = calc_invest(session, chain, account_info, price, daily_reward, apr, tvl)
+        for strategy, amounts in info.items():
+            info = get_info_by_strategy_str(strategy)
+
+    return res
 
 
 def get_info_by_strategy_str(lp):
@@ -329,7 +378,6 @@ def calc_invest(session, chain, balance_info_dict, price_dict, daily_reward_dict
         if len(lpKeys) <= 0:
             break
 
-        print(lpKeys)
         # 找到top1 与top2
         top = []
         apr1 = apr_dict[lpKeys[0]]
@@ -364,18 +412,13 @@ def calc_invest(session, chain, balance_info_dict, price_dict, daily_reward_dict
                 lpKeys.remove(key)
                 apr_dict.pop(key)
 
+    for k in [key for key in invest_calc_result.keys()]:
+        if len(invest_calc_result[k].keys()) == 0:
+            invest_calc_result.pop(k)
+
     print('invest info:{}'.format(json.dumps(invest_calc_result, cls=utils.DecimalEncoder)))
-    # invest_items = []
-    # #生成配资结果
-    # for k, balances in invest_calc_result.items():
-    #     infos = get_info_by_strategy_str(key)
-    #     strategies = [s for s in
-    #                   find_strategies_by_chain_project_and_currencies(session, chain, infos[0][1], infos[1], infos[2])]
-    #
-    #     strategy = strategies[0]
-    #     data = {}
-    #     for currency, balance in balances.items():
-    #         pass
+
+    return invest_calc_result
 
 
 def get_balance(balance_dict, currency, chain):
@@ -427,8 +470,6 @@ def fill_cap(chain, strategy, daily_reward_dict, tvl_dict, balance_dict, price_d
 
 
 if __name__ == '__main__':
-    # calc_demo()
-    # exit(0)
     # 读取config
     conf = read_yaml("./wang.yaml")
 
@@ -447,4 +488,28 @@ if __name__ == '__main__':
             curr.tokens = {}
         curr.tokens[t.chain] = t
 
-    calc(session, currencies)
+    session.close()
+
+    while True:
+        time.sleep(3)
+        try:
+            session = sessionmaker(db)()
+
+            # 已经有小re了
+            tasks = find_part_re_balance_open_tasks(session)
+            if tasks is not None:
+                continue
+
+            params = calc(conf, session, currencies)
+            if params is None:
+                continue
+
+            create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
+            session.commit()
+
+        except Exception as e:
+            print("except happens:{}".format(e))
+            # print("{}".format(e.__traceback__))
+            print(traceback.format_exc())
+        finally:
+            session.close()
