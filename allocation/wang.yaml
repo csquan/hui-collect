@@ -13,3 +13,21 @@ chain:
     id: 56
   polygon:
     id: 137
+
+project:
+  - chain: 'bsc'
+    name: 'pancake'
+    url: 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'
+  - chain: 'bsc'
+    name: 'biswap'
+    url: 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=476'
+  - chain: 'bsc'
+    name: 'solo.top'
+    url: 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=76'
+  - chain: 'polygon'
+    name: 'quickswap'
+    url: 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'
+
+
+
+

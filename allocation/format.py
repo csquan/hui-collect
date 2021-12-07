@@ -102,50 +102,51 @@ def calc(conf, session, currencies):
                 for project, st_list in proj_dict.items():
                     for st in st_list:
                         tokens = [format_token_name(currency_names, c)[1] for c in st['tokenSymbol'].split('-')]
-                        strategy_addresses[generate_strategy_key(chain.lower(), project.lower(), tokens)] = st['strategyAddress']
+                        strategy_addresses[generate_strategy_key(chain.lower(), project.lower(), tokens)] = st[
+                            'strategyAddress']
 
     account_info['usdt'] = {
-         'bsc': {
+        'bsc': {
             'amount': Decimal(0),
-            'controller':''
-         },
-         'heco': {
-             'amount': Decimal(10000000),
-             'controller': ''
-         },
-         'polygon': {
-             'amount': Decimal(0),
-             'controller': ''
-         }
+            'controller': ''
+        },
+        'heco': {
+            'amount': Decimal(10000000),
+            'controller': ''
+        },
+        'polygon': {
+            'amount': Decimal(0),
+            'controller': ''
+        }
     }
 
     account_info['eth'] = {
-         'bsc': {
-             'amount': Decimal(100),
-             "controller": ""
-         },
-         'heco': {
+        'bsc': {
+            'amount': Decimal(100),
+            "controller": ""
+        },
+        'heco': {
             'amount': Decimal(0),
-             "controller": ""
-         },
-         'polygon': {
-             'amount': Decimal(0),
-             "controller": ""
-         }
+            "controller": ""
+        },
+        'polygon': {
+            'amount': Decimal(0),
+            "controller": ""
+        }
     }
     account_info['btc'] = {
-         'bsc': {
-             'amount': Decimal(10),
-             "controller": ""
-         },
-         'heco': {
-             'amount': Decimal(0),
-             "controller": ""
-         },
-         'polygon': {
-             'amount': Decimal(0),
-             "controller": ""
-         }
+        'bsc': {
+            'amount': Decimal(10),
+            "controller": ""
+        },
+        'heco': {
+            'amount': Decimal(0),
+            "controller": ""
+        },
+        'polygon': {
+            'amount': Decimal(0),
+            "controller": ""
+        }
     }
     #
     # account_info['cake'] = {
@@ -189,13 +190,7 @@ def calc(conf, session, currencies):
         return
 
     # 获取apr等信息
-
-    projects = [
-        Project('bsc', 'pancake', 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=63'),
-        Project('bsc', 'biswap', 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=476'),
-        Project('bsc', 'solo.top', 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=76'),
-        # Project('polygon', 'quickswap', 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'),
-    ]
+    projects = [Project(p['chain'], p['name'], p['url']) for p in conf['project']]
 
     # chain_project_coin1_coin2
     apr = {}
@@ -361,9 +356,9 @@ def calc(conf, session, currencies):
         info = calc_invest(session, chain, account_info, price, daily_reward, apr, tvl)
         for strategy, amounts in info.items():
             info1 = get_info_by_strategy_str(strategy)
-            #从strategy_addresses里面根据key：strategy查找
+            # 从strategy_addresses里面根据key：strategy查找
             strategyAddresses.append(strategy_addresses[strategy])
-            #amounts 有两个币种对应的值，需要区分base和counter
+            # amounts 有两个币种对应的值，需要区分base和counter
             baseTokenAmount.append(0)
             counterTokenAmount.append(0)
 
@@ -379,10 +374,6 @@ def calc(conf, session, currencies):
         'counterTokenAmount': task_id,
     })
     """
-
-
-
-
 
     return res
 
@@ -534,8 +525,8 @@ if __name__ == '__main__':
             session = sessionmaker(db)()
 
             # 已经有小re了
-            #tasks = find_part_re_balance_open_tasks(session)
-            #if tasks is not None:
+            # tasks = find_part_re_balance_open_tasks(session)
+            # if tasks is not None:
             #    continue
 
             params = calc(conf, session, currencies)
