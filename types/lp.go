@@ -8,6 +8,7 @@ type LPResponse struct {
 	Data *Data  `json:"data"`
 }
 type Data struct {
+	VaultInfoList []*VaultInfo `json:"vaultInfoList"`
 	LiquidityProviderList []*LiquidityProvider `json:"liquidityProviderList"`
 }
 type LiquidityProvider struct {
@@ -29,6 +30,22 @@ type LpInfo struct {
 	BaseTokenAmount   string `json:"baseTokenAmount"`
 	QuoteTokenAmount  string `json:"quoteTokenAmount"`
 }
+type VaultInfo struct {
+	TokenSymbol  string `json:"tokenSymbol"`
+	ActiveAmount struct {
+		BSC  *ControllerInfo `json:"BSC"`
+		Heco *ControllerInfo `json:"Heco"`
+		Polygon *ControllerInfo `json:"Polygon"`
+	} `json:"activeAmount"`
+}
+
+type ControllerInfo struct {
+	Amount            string `json:"amount"`
+	ControllerAddress string `json:"controllerAddress"`
+}
+
+
+
 
 //平无常接口参数
 type ImpermanectLostReq struct {

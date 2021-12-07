@@ -26,7 +26,7 @@ type IReader interface {
 type IWriter interface {
 	GetSession() *xorm.Session
 	GetEngine() *xorm.Engine
-
+	SaveRebalanceTask(itf xorm.Interface, tasks *PartReBalanceTask) (err error)
 	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
 	UpdateFullReBalanceTask(itf xorm.Interface, task *FullReBalanceTask) error
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error

@@ -56,8 +56,10 @@ type Config struct {
 }
 
 type ChainInfo struct {
+	ID      int `mapstructure:"id"`
 	RpcUrl  string `mapstructure:"rpc_url"`
 	Timeout int    `mapstructure:"timeout"`
+	BridgeAddress string `mapstructure:"bridge_address"`
 }
 
 func (c *Config) init() {
