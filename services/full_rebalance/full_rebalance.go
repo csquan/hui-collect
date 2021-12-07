@@ -44,18 +44,16 @@ func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, e
 			},
 			types.FullReBalanceMarginIn: &impermanenceLostHandler{
 				conf: conf,
-				db: db,
+				db:   db,
 			},
-			types.FullReBalanceClaimLP: &claimLPHandler{
-				db: db,
-			},
+			types.FullReBalanceClaimLP: newClaimLpHandler(conf, db),
 			types.FullReBalanceMarginBalanceTransferOut: &marginOutHandler{
 				conf: conf,
-				db: db,
+				db:   db,
 			},
 			types.FullReBalanceRecycling: &recyclingHandler{
 				conf: conf,
-				db: db,
+				db:   db,
 			},
 			// // 计算状态由python处理
 			// //types.FullReBalanceParamsCalc: &paramsCalcHandler{
@@ -84,7 +82,7 @@ func checkState(state types.FullReBalanceState) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("state:%d err", state)
+	return fmt.Errorf("unexpected state")
 }
 
 func (p *FullReBalance) Run() (err error) {
@@ -113,7 +111,7 @@ func (p *FullReBalance) Run() (err error) {
 		return
 	}
 	if err := checkState(next); err != nil {
-		return err
+		return fmt.Errorf("state err:%v,state:%d,tid:%d,handler:%s", err, next, tasks[0].ID, handler.Name())
 	}
 	if next == types.FullReBalanceSuccess || next == types.FullReBalanceFailed {
 		//update state

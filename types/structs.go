@@ -149,6 +149,7 @@ type TransactionTask struct {
 	*Base           `xorm:"extends"`
 	*BaseTask       `xorm:"extends"`
 	RebalanceId     uint64 `xorm:"f_rebalance_id"`
+	FullRebalanceId uint64 `xorm:"f_full_rebalance_id"`
 	TransactionType int    `xorm:"f_type"`
 	Nonce           uint64 `xorm:"f_nonce"`
 	GasPrice        string `xorm:"f_gas_price"`
@@ -195,10 +196,28 @@ type CrossSubTask struct {
 	TaskNo       uint64 `xorm:"f_task_no"`
 	BridgeTaskId uint64 `xorm:"f_bridge_task_id"` //跨链桥task_id
 	ParentTaskId uint64 `xorm:"f_parent_id"`      //父任务id
-	// ChainFrom    string
-	// ChainTo      string
-	// CurrencyFrom string
-	// CurrencyTo   string
-	Amount string `xorm:"f_amount"`
-	State  int    `xorm:"f_state"`
+	Amount       string `xorm:"f_amount"`
+	State        int    `xorm:"f_state"`
+}
+
+type LPInfo struct {
+	LPindex          int    `json:"lpIndex"`
+	LPAmount         string `json:"lpAmount"`
+	BaseTokenAddress string `json:"baseTokenAddress"`
+	QoteTokenAddress string `json:"quoteTokenAddress"`
+	BaseTokenSymbol  string `json:"baseTokenSymbol"`
+	QuoteTokenSymbol string `json:"quoteTokenSymbol"`
+	BaseTokenAmount  string `json:"baseTokenAmount"`
+	QuoteTokenAmount string `json:"quoteTokenAmount"`
+	StrategyAddress  string `json:"strategyAddress"`
+}
+
+type LP struct {
+	Chain       string    `json:"chain"`
+	ChainId     int       `json:"chainId"`
+	Symbol      string    `json:"lpSymbol"`
+	LPAmount    string    `json:"lpAmount"`
+	LPTokenAddr string    `json:"lpTokenAddress"`
+	LPPlatform  string    `json:"lpPlatform"`
+	Infos       []*LpInfo `json:"lpInfoList"`
 }

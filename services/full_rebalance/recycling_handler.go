@@ -3,6 +3,7 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
@@ -28,7 +29,7 @@ const (
 	chainHeco = "heco"
 )
 
-func (r *recyclingHandler) Name() string{
+func (r *recyclingHandler) Name() string {
 	return "recycling_handler"
 }
 
@@ -50,12 +51,12 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		polySend := r.buildSendToBridgeParam(vault, chainPoly)
 		var receiveBsc, receivePoly *types.ReceiveFromBridgeParam
 		receiveBsc, err = r.buildReceiveFromBridgeParam(vault, chainHeco, chainBsc, m, vault.TokenSymbol)
-		if err != nil{
+		if err != nil {
 			logrus.Errorf("buildReceiveFromBridgeParam err:%v", err)
 			return
 		}
 		receivePoly, err = r.buildReceiveFromBridgeParam(vault, chainHeco, chainPoly, m, vault.TokenSymbol)
-		if err != nil{
+		if err != nil {
 			logrus.Errorf("buildReceiveFromBridgeParam err:%v", err)
 			return
 		}
@@ -80,11 +81,11 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 
 func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	partTask, err := r.db.GetPartReBalanceTaskByFullRebalanceID(task.ID)
-	if err != nil{
+	if err != nil {
 		logrus.Errorf("GetPartReBalanceTaskByFullRebalanceID err:%v", err)
 		return
 	}
-	if partTask == nil{
+	if partTask == nil {
 		err = fmt.Errorf("GetPartReBalanceTaskByFullRebalanceID err:%v", err)
 		logrus.Error(err)
 		return
@@ -98,25 +99,6 @@ func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 		finished = false
 		return
 	}
-}
-
-func getLpData(url string) (lpList *types.Data, err error) {
-	data, err := utils.DoRequest(url, "GET", nil)
-	if err != nil {
-		logrus.Errorf("request lp err:%v", err)
-		return
-	}
-	lpResponse := &types.LPResponse{}
-	if err = json.Unmarshal(data, lpResponse); err != nil {
-		logrus.Errorf("unmarshar lpResponse err:%v", err)
-		return
-	}
-	if lpResponse.Code != 200 {
-		logrus.Errorf("lpResponse code not 200, msg:%s", lpResponse.Msg)
-		return
-	}
-	lpList = lpResponse.Data
-	return
 }
 
 func (r *recyclingHandler) buildSendToBridgeParam(vault *types.VaultInfo, chainName string) (sendParam *types.SendToBridgeParam) {
