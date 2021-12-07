@@ -133,6 +133,9 @@ def getPairFromSlashStr(str, currencys):
 
 def getreinfo(url):
     ret = requests.get(url)
+    if ret.status_code != 200:
+        print("re url服务异常")
+        sys.exit(1)
     string = str(ret.content, 'utf-8')
     e = json.loads(string)
 
@@ -680,60 +683,60 @@ def format_token_name(currency_name_set, name):
 
     return False, name
 
-def jsonRelize(paramsList):
+def jsonRelize(param):
     # 开始序列化，一次性序列化整个结构体不行，思路：解开直至基本类型，然后用json.dumps
     jsons = ""
-    for param in paramsList:
-        jsons = jsons + "{\"CrossBalances\":["
-        for crossItem in param.CrossBalances:
-            if jsons != "{\"CrossBalances\":[":
-                jsons = jsons + ","
-            jsons = jsons + json.dumps(crossItem)
-        jsons = jsons + "]"
 
-        jsons = jsons + ",\"ReceiveFromBridgeParams\":"
+    jsons = jsons + "{\"CrossBalances\":["
+    for crossItem in param.CrossBalances:
+        if jsons != "{\"CrossBalances\":[":
+            jsons = jsons + ","
+        jsons = jsons + json.dumps(crossItem)
+    jsons = jsons + "]"
 
-        jsonstr = jsons + json.dumps(param.InvestParams, default=investobj_2_json)
+    jsons = jsons + ",\"ReceiveFromBridgeParams\":"
 
-        jsons = jsonstr[:len(jsonstr)-1] + ","
+    jsonstr = jsons + json.dumps(param.InvestParams, default=investobj_2_json)
 
-        # 依次展开三个数组，json
-        Addresss = []
-        StrategyAddress = {}
-        for address in param.InvestParams.StrategyAddresses:
-            Addresss.append(address)
-        StrategyAddress["StrategyAddresses"] = Addresss
+    jsons = jsonstr[:len(jsonstr)-1] + ","
 
-        jsonstr = json.dumps(StrategyAddress)
+    # 依次展开三个数组，json
+    Addresss = []
+    StrategyAddress = {}
+    for address in param.InvestParams.StrategyAddresses:
+        Addresss.append(address)
+    StrategyAddress["StrategyAddresses"] = Addresss
 
-        jsons = jsons + jsonstr[1:len(jsonstr) - 1] + ","
+    jsonstr = json.dumps(StrategyAddress)
 
-        baseAmount = []
-        BaseTokenAmount = {}
-        for amount in param.InvestParams.BaseTokenAmount:
-            baseAmount.append(str(amount))
-        BaseTokenAmount["BaseTokenAmount"] = baseAmount
+    jsons = jsons + jsonstr[1:len(jsonstr) - 1] + ","
 
-        jsonstr = json.dumps(BaseTokenAmount)
+    baseAmount = []
+    BaseTokenAmount = {}
+    for amount in param.InvestParams.BaseTokenAmount:
+        baseAmount.append(str(amount))
+    BaseTokenAmount["BaseTokenAmount"] = baseAmount
 
-        jsons = jsons + jsonstr[1:len(jsonstr) - 1] + ","
+    jsonstr = json.dumps(BaseTokenAmount)
 
-        counterAmount = []
-        counterTokenAmount = {}
-        for amount in param.InvestParams.CounterTokenAmount:
-            counterAmount.append(str(amount))
-        counterTokenAmount["CounterTokenAmount"] = counterAmount
+    jsons = jsons + jsonstr[1:len(jsonstr) - 1] + ","
 
-        jsonstr = json.dumps(counterTokenAmount)
+    counterAmount = []
+    counterTokenAmount = {}
+    for amount in param.InvestParams.CounterTokenAmount:
+        counterAmount.append(str(amount))
+    counterTokenAmount["CounterTokenAmount"] = counterAmount
 
-        jsons = jsons + jsonstr[1:len(jsonstr) - 1] + "},\"InvestParams\":"
+    jsonstr = json.dumps(counterTokenAmount)
 
-        jsons = jsons + json.dumps(param.ReceiveFromBridgeParams, default=receiveobj_2_json)
+    jsons = jsons + jsonstr[1:len(jsonstr) - 1] + "},\"InvestParams\":"
 
-        jsons = jsons + ",\"SendToBridgeParams\":"
-        jsons = jsons + json.dumps(param.SendToBridgeParams, default=sendobj_2_json)
-        jsons = jsons + "}"
-        return jsons
+    jsons = jsons + json.dumps(param.ReceiveFromBridgeParams, default=receiveobj_2_json)
+
+    jsons = jsons + ",\"SendToBridgeParams\":"
+    jsons = jsons + json.dumps(param.SendToBridgeParams, default=sendobj_2_json)
+    jsons = jsons + "}"
+    return jsons
 
 def outputReTask():
     conf = read_yaml("./config.yaml")
@@ -850,21 +853,25 @@ def outputReTask():
     paramsList = getReParams(currencyPair_infos, conf_currency_dict, reinfos, beforeInfo, strategies, daily_dict,
                              tvls_dict, aprs_dict)
 
-    # 开始序列化，一次性序列化整个结构体不行，思路：解开直至基本类型，然后用json.dumps
-    jsons = jsonRelize(paramsList)
 
     # write db
     conn = pymysql.connect(host=conf["database"]["host"], port=conf["database"]["port"], user=conf["database"]["user"],
                            passwd=conf["database"]["passwd"], db=conf["database"]["db"], charset='utf8')
     print(conn)
 
-    # cursor = db.cursor()
+    cursor = conn.cursor()
 
     # 遍历paramsList，每个元素写入
-    # cursor.execute('''insert into Rebalance_params values()''')
+    # 开始序列化，一次性序列化整个结构体不行，思路：解开直至基本类型，然后用json.dumps
+    for params in paramsList:
+        jsons = jsonRelize(params)
+        sqlstr = ("INSERT INTO t_part_rebalance_task (f_full_rebalance_id,f_state,f_params,f_message) VALUES(%s, %d,%s,%s)") % (params.ReceiveFromBridgeParams.TaskID, 0, jsons, "")
 
-    # cursor.close()
-    # db.commit()
+        print(sqlstr)
+        #cursor.execute('''insert into Rebalance_params values()''')
+
+    cursor.close()
+    db.commit()
     conn.close()
 
 
