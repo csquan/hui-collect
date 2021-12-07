@@ -396,11 +396,13 @@ func (b *Bridge) GetTaskDetail(taskID uint64) (*TaskDetailResult, error) {
 }
 
 func (b *Bridge) GetChainId(chain string) (int, bool) {
+	chain = strings.ToUpper(chain)
 	id, ok := b.chains[chain]
 	return id, ok
 }
 
 func (b *Bridge) GetAccountId(addr string, chainId int) (uint64, bool) {
+	addr = strings.ToLower(addr)
 	k := fmt.Sprintf("%d/%s", chainId, addr)
 	acoountId, ok := b.accounts[k]
 	if !ok {
