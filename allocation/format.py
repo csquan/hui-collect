@@ -52,6 +52,9 @@ class Project:
 
     def get_info(self):
         res = requests.get(self.url)
+        if res.status_code != 200:
+            print("re url服务异常")
+            sys.exit(1)
         string = str(res.content, 'utf-8')
         print(string)
         e = json.loads(string)
@@ -99,43 +102,51 @@ def calc(conf, session, currencies):
                 for project, st_list in proj_dict.items():
                     for st in st_list:
                         tokens = [format_token_name(currency_names, c)[1] for c in st['tokenSymbol'].split('-')]
-                        strategy_addresses[generate_strategy_key(chain.lower(), project.lower(), tokens)] = st[
-                            'strategyAddress']
+                        strategy_addresses[generate_strategy_key(chain.lower(), project.lower(), tokens)] = st['strategyAddress']
 
-    # account_info['usdt'] = {
-    #     'bsc': {
-    #         'amount': Decimal(0),
-    #     },
-    #     'heco': {
-    #         'amount': Decimal(10000000),
-    #     },
-    #     'polygon': {
-    #         'amount': Decimal(0)
-    #     }
-    # }
-    #
-    # account_info['eth'] = {
-    #     'bsc': {
-    #         'amount': Decimal(100),
-    #     },
-    #     'heco': {
-    #         'amount': Decimal(0),
-    #     },
-    #     'polygon': {
-    #         'amount': Decimal(0)
-    #     }
-    # }
-    # account_info['btc'] = {
-    #     'bsc': {
-    #         'amount': Decimal(10),
-    #     },
-    #     'heco': {
-    #         'amount': Decimal(0),
-    #     },
-    #     'polygon': {
-    #         'amount': Decimal(0)
-    #     }
-    # }
+    account_info['usdt'] = {
+         'bsc': {
+            'amount': Decimal(0),
+            'controller':''
+         },
+         'heco': {
+             'amount': Decimal(10000000),
+             'controller': ''
+         },
+         'polygon': {
+             'amount': Decimal(0),
+             'controller': ''
+         }
+    }
+
+    account_info['eth'] = {
+         'bsc': {
+             'amount': Decimal(100),
+             "controller": ""
+         },
+         'heco': {
+            'amount': Decimal(0),
+             "controller": ""
+         },
+         'polygon': {
+             'amount': Decimal(0),
+             "controller": ""
+         }
+    }
+    account_info['btc'] = {
+         'bsc': {
+             'amount': Decimal(10),
+             "controller": ""
+         },
+         'heco': {
+             'amount': Decimal(0),
+             "controller": ""
+         },
+         'polygon': {
+             'amount': Decimal(0),
+             "controller": ""
+         }
+    }
     #
     # account_info['cake'] = {
     #     'bsc': {
@@ -218,13 +229,13 @@ def calc(conf, session, currencies):
     # 计算跨链的最终状态
     after_balance_info = {}
     for currency in account_info:
-        strategy_addresses = {}
+        strategies = {}
         caps = {}
         for chain in ['bsc', 'polygon']:
-            strategy_addresses[chain] = find_strategies_by_chain_and_currency(session, chain, currency)
+            strategies[chain] = find_strategies_by_chain_and_currency(session, chain, currency)
             caps[chain] = Decimal(0)
 
-            for s in strategy_addresses[chain]:
+            for s in strategies[chain]:
                 # 先忽略单币
                 if s.currency1 is None:
                     continue
@@ -341,10 +352,37 @@ def calc(conf, session, currencies):
     print("cross info:{}", json.dumps(res, cls=utils.DecimalEncoder))
 
     res['invest_params'] = []
+
+    strategyAddresses = []
+    baseTokenAmount = []
+    counterTokenAmount = []
+
     for chain in targetChain:
         info = calc_invest(session, chain, account_info, price, daily_reward, apr, tvl)
         for strategy, amounts in info.items():
-            info = get_info_by_strategy_str(strategy)
+            info1 = get_info_by_strategy_str(strategy)
+            #从strategy_addresses里面根据key：strategy查找
+            strategyAddresses.append(strategy_addresses[strategy])
+            #amounts 有两个币种对应的值，需要区分base和counter
+            baseTokenAmount.append(0)
+            counterTokenAmount.append(0)
+
+    """
+    res['invest_params'].append({
+        'chain_name': to_chain,
+        'chain_id': conf['chain'][to_chain],
+        'from': conf['bridge_port'][to_chain],
+        'to': account_info[currency][to_chain]['controller'],
+
+        "strategyAddresses": currencies[currency].tokens[from_chain].address,
+        'baseTokenAmount': amount * (Decimal(10) ** token_decimal),
+        'counterTokenAmount': task_id,
+    })
+    """
+
+
+
+
 
     return res
 
@@ -496,9 +534,9 @@ if __name__ == '__main__':
             session = sessionmaker(db)()
 
             # 已经有小re了
-            tasks = find_part_re_balance_open_tasks(session)
-            if tasks is not None:
-                continue
+            #tasks = find_part_re_balance_open_tasks(session)
+            #if tasks is not None:
+            #    continue
 
             params = calc(conf, session, currencies)
             if params is None:

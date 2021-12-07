@@ -40,7 +40,7 @@ func createMarginOutJob(url string, bizNo string) (err error) {
 	req := struct {
 		BizNo string `json:"bizNo"`
 	}{BizNo: fmt.Sprintf("%s", bizNo)}
-	data, err := utils.DoPost(url, req)
+	data, err := utils.DoRequest(url, "POST", req)
 	if err != nil {
 		logrus.Errorf("margin job query status err:%v", err)
 	}
@@ -59,7 +59,7 @@ func checkMarginOutJobStatus(url string, bizNo string) (finished bool, err error
 	req := struct {
 		BizNo string `json:"bizNo"`
 	}{BizNo: bizNo}
-	data, err := utils.DoPost(url, req)
+	data, err := utils.DoRequest(url, "POST", req)
 	if err != nil {
 		logrus.Errorf("margin job query status err:%v", err)
 	}

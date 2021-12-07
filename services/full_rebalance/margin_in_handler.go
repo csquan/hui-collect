@@ -3,6 +3,7 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/shopspring/decimal"
 	"math/big"
 
 	"github.com/sirupsen/logrus"
@@ -25,7 +26,11 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 	if err != nil {
 		return
 	}
-	lpReq := lp2Req(lpList)
+	lpReq, err := lp2Req(lpList)
+	if err != nil{
+		logrus.Errorf("build margin_in params err:%v", err)
+		return
+	}
 	if err = callImpermanentLoss(i.conf.ApiConf.MarginUrl,
 		&types.ImpermanectLostReq{BizNo: fmt.Sprintf("%d", task.ID), LpList: lpReq}); err != nil {
 		return
@@ -47,7 +52,7 @@ func checkMarginJobStatus(url string, bizNo string) (finished bool, err error) {
 	req := struct {
 		BizNo string `json:"bizNo"`
 	}{bizNo}
-	data, err := utils.DoPost(url+"status/query", req)
+	data, err := utils.DoRequest(url+"status/query", "POST", req)
 	if err != nil {
 		logrus.Errorf("request ImpermanentLoss api err:%v", err)
 		return
@@ -68,7 +73,7 @@ func checkMarginJobStatus(url string, bizNo string) (finished bool, err error) {
 }
 
 func getLp(url string) (lpList []*types.LiquidityProvider, err error) {
-	data, err := utils.DoGet(url, nil)
+	data, err := utils.DoRequest(url, "GET", nil)
 	if err != nil {
 		logrus.Errorf("request lp err:%v", err)
 		return
@@ -86,7 +91,7 @@ func getLp(url string) (lpList []*types.LiquidityProvider, err error) {
 	return
 }
 func callImpermanentLoss(url string, req *types.ImpermanectLostReq) (err error) {
-	data, err := utils.DoPost(url+"submit", req)
+	data, err := utils.DoRequest(url+"submit","POST", req)
 	if err != nil {
 		logrus.Errorf("request ImpermanentLoss api err:%v", err)
 		return
@@ -103,12 +108,24 @@ func callImpermanentLoss(url string, req *types.ImpermanectLostReq) (err error) 
 	return
 }
 
-func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq) {
+func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {
 	for _, lp := range lpList {
-		var totalBaseAmount, totalQuoteAmount *big.Int
+		totalBaseAmount := decimal.Zero
+		totalQuoteAmount := decimal.Zero
 		for _, lpinfo := range lp.LpInfoList {
-			add(totalBaseAmount, lpinfo.BaseTokenAmount)
-			add(totalQuoteAmount, lpinfo.QuoteTokenAmount)
+			var baseAmount, quoteAmount decimal.Decimal
+			baseAmount, err = decimal.NewFromString(lpinfo.BaseTokenAmount)
+			if err != nil {
+				logrus.Errorf("BaseTokenAmount to decimal err:%v", err)
+				return nil, err
+			}
+			quoteAmount, err = decimal.NewFromString(lpinfo.QuoteTokenAmount)
+			if err != nil {
+				logrus.Errorf("QuoteTokenAmount to decimal err:%v", err)
+				return nil, err
+			}
+			totalBaseAmount = totalBaseAmount.Add(baseAmount)
+			totalQuoteAmount = totalQuoteAmount.Add(quoteAmount)
 		}
 		r := &types.LpReq{
 			Chain:              lp.Chain,

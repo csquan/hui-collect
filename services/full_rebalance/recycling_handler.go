@@ -101,7 +101,7 @@ func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 }
 
 func getLpData(url string) (lpList *types.Data, err error) {
-	data, err := utils.DoGet(url, nil)
+	data, err := utils.DoRequest(url, "GET", nil)
 	if err != nil {
 		logrus.Errorf("request lp err:%v", err)
 		return

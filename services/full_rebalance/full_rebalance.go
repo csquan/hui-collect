@@ -43,15 +43,18 @@ func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, e
 				db: db,
 			},
 			types.FullReBalanceMarginIn: &impermanenceLostHandler{
+				conf: conf,
 				db: db,
 			},
 			types.FullReBalanceClaimLP: &claimLPHandler{
 				db: db,
 			},
 			types.FullReBalanceMarginBalanceTransferOut: &marginOutHandler{
+				conf: conf,
 				db: db,
 			},
 			types.FullReBalanceRecycling: &recyclingHandler{
+				conf: conf,
 				db: db,
 			},
 			// // 计算状态由python处理

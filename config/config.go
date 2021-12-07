@@ -27,7 +27,7 @@ type AlertConf struct {
 
 type ApiConf struct {
 	MarginUrl    string
-	LpUrl        string
+	LpUrl        string `mapstructure:"lp_url"`
 	MarginOutUrl string
 }
 
