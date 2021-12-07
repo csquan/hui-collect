@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS `t_part_rebalance_task`;
 CREATE TABLE `t_part_rebalance_task`
 (
     `f_id`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `f_full_rebalance_id` bigint(20) unsigned NOT NULL COMMENT '大r任务id',
+    `f_full_rebalance_id` bigint(20) unsigned  COMMENT '大r任务id',
     `f_state`             tinyint(4) NOT NULL DEFAULT '0' COMMENT 'init build ongoing success failed',
     `f_params`            text      NOT NULL COMMENT '任务数据',
     `f_message`           text      NOT NULL COMMENT '',
@@ -33,7 +33,7 @@ DROP TABLE IF EXISTS `t_transaction_task`;
 CREATE TABLE `t_transaction_task`
 (
     `f_id`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `f_full_rebalance_id` bigint(20) unsigned NOT NULL COMMENT '大r任务id',
+    `f_full_rebalance_id` bigint(20) unsigned  COMMENT '大r任务id',
     `f_rebalance_id`      int(11) NOT NULL DEFAULT '0' COMMENT '小r任务 id',
     `f_message`           text         NOT NULL COMMENT '',
     `f_type`              tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:transferIn 1:invest',
