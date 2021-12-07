@@ -16,6 +16,10 @@ type impermanenceLostHandler struct {
 	conf *config.Config
 }
 
+func (i *impermanenceLostHandler) Name() string {
+	return "full_rebalance_impermanenceLost"
+}
+
 func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) {
 	lpList, err := getLp(i.conf.ApiConf.LpUrl)
 	if err != nil {
@@ -38,7 +42,6 @@ func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (
 	}
 	return true, types.FullReBalanceClaimLP, nil
 }
-
 
 func checkMarginJobStatus(url string, bizNo string) (finished bool, err error) {
 	req := struct {

@@ -15,6 +15,10 @@ type marginOutHandler struct {
 	conf *config.Config
 }
 
+func (i *marginOutHandler) Name() string {
+	return "full_rebalance_marginOut"
+}
+
 func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 	if err = createMarginOutJob(i.conf.ApiConf.MarginUrl, fmt.Sprintf("%d", task.ID)); err != nil {
 		return
@@ -54,7 +58,7 @@ func createMarginOutJob(url string, bizNo string) (err error) {
 func checkMarginOutJobStatus(url string, bizNo string) (finished bool, err error) {
 	req := struct {
 		BizNo string `json:"bizNo"`
-	}{BizNo: fmt.Sprintf("%d", bizNo)}
+	}{BizNo: bizNo}
 	data, err := utils.DoPost(url, req)
 	if err != nil {
 		logrus.Errorf("margin job query status err:%v", err)
