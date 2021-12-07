@@ -59,16 +59,17 @@ def parseCurrencyPair(pair):
     return tokenstr[0].lower(), tokenstr[1].lower()
 
 
-def getPairFromDashStr(pair):
+def getPairFromDashStr(str):
     pair = Pair()
-    tokenstr = pair.split('-')
+    tokenstr = str.split('-')
 
-    if tokenstr[0] in counter_tokens:
-        pair.counter = tokenstr[0]
-        pair.base = tokenstr[1]
-    elif tokenstr[1] in counter_tokens:
-        pair.counter = tokenstr[1]
-        pair.base = tokenstr[0]
+    for counter in counter_tokens:
+       if counter in tokenstr[0]:
+            pair.counter = tokenstr[0]
+            pair.base = tokenstr[1]
+       elif counter in tokenstr[1]:
+            pair.counter = tokenstr[1]
+            pair.base = tokenstr[0]
 
     return pair
 
@@ -333,18 +334,15 @@ def add_cross_item(currency, fromChain, toChain, amount, beforeInfo, currencies,
 def find_strategies_by_chain_and_currency(chain, currency, strategies):
     ret = []
 
-    if chain == "poly":
-        chain = "polygon"
-
     for project in strategies[chain]:
         for key in strategies[chain][project]:
             if currency not in key:  # test only.need to restore
                 s = Stragey()
+                pair = getPairFromDashStr(key)
 
                 # 如果key对应的交易对不含有counter_tokens(usd，dai),可以直接continue
-                if key not in counter_tokens:
+                if pair.counter is None:
                     continue
-                pair = getPairFromDashStr(key)
                 s.base = pair.base
                 s.counter = pair.counter
                 s.chain = chain
@@ -359,7 +357,7 @@ def calcCrossInit(beforeInfo, dailyReward, tvl, apr, restrategies):
     for currency in beforeInfo:
         strategies = {}
         caps = {}
-        for chain in ['bsc', 'poly']:
+        for chain in ['bsc', 'polygon']:
             strategies[chain] = find_strategies_by_chain_and_currency(chain, currency, restrategies)
             caps[chain] = float(0)
 
@@ -415,8 +413,8 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies, d
 
     for currencyinfo in diffMap:
         targetMap = {
-            'bsc': 'poly',
-            'poly': 'bsc',
+            'bsc': 'polygon',
+            'polygon': 'bsc',
         }
         diff = diffMap[currencyinfo]
 
@@ -683,9 +681,6 @@ def outputReTask():
             for chain in vault['activeAmount']:
                 if name not in beforeInfo:
                     beforeInfo[name] = {}
-                # 名字统一
-                if chain.lower() == "polygon":
-                    chain = "poly"
                 beforeInfo[name][chain.lower()] = vault['activeAmount'][chain]
                 beforeInfo[name][chain.lower()]['amount'] = float(beforeInfo[name][chain.lower()]['amount'])
                 # total = total + vault.activeAmount[chain]
@@ -739,6 +734,7 @@ def outputReTask():
 
     from re_optimize import computeTarget
     # 三个todo值，这里先做假值，后面需要到config取
+    """
     todo_btc = 1000
     todo_eth = 20000
     todo_usdt = 400000
@@ -759,9 +755,11 @@ def outputReTask():
 
     # 下面进行配资计算,X为结果矩阵，存储X0-15
     from re_optimize import doCompute
-    X = doCompute(argsq, argsp, argsr, argstt)
-    X = np.array(X).reshape(4, 4)
-    print('compute res:', X)
+    #X = doCompute(argsq, argsp, argsr, argstt)
+    #X = np.array(X).reshape(4, 4)
+    #print('compute res:', X)
+    """
+    X = np.arange(16).reshape(4, 4)
 
     # 交易对赋值
     currencyPair_infos = getPairinfo(X)

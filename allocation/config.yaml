@@ -20,7 +20,7 @@ currencies:
         addr: '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c'
         decimal: 18
         crossSymbol: "BTC"
-      poly:
+      polygon:
         symbol: 'WBTC'
         addr: '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6'
         decimal: 8
@@ -40,7 +40,7 @@ currencies:
         decimal: 18
         min: 0.01
         crossSymbol: "ETH"
-      poly:
+      polygon:
         symbol: 'WETH'
         addr: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619'
         decimal: 18
@@ -61,7 +61,7 @@ currencies:
         decimal: 18
         min: 10
         crossSymbol: "USDT"
-      poly:
+      polygon:
         symbol: 'USDT'
         addr: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f'
         decimal: 6
@@ -76,7 +76,7 @@ currencies:
         addr: '0x9362bbef4b8313a8aa9f0c9808b80577aa26b73b'
         decimal: 6
         crossSymbol: "USDC"
-      poly:
+      polygon:
         symbol: 'USDC'
         addr: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'
         decimal: 6
@@ -90,7 +90,7 @@ currencies:
         addr: '0x9362bbef4b8313a8aa9f0c9808b80577aa26b73b'
         decimal: 18
         crossSymbol: "DAI"
-      poly:
+      polygon:
         symbol: 'DAI'
         addr: '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'
         decimal: 18
@@ -129,7 +129,7 @@ currencies:
         addr: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c'
         decimal: 18
         crossSymbol: "BNB"
-      poly:
+      polygon:
         symbol: 'BNB'
         addr: ''
         decimal: 18
