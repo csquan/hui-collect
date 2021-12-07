@@ -53,8 +53,7 @@ class Project:
     def get_info(self):
         res = requests.get(self.url)
         if res.status_code != 200:
-            print("re url服务异常")
-            sys.exit(1)
+            return None
         string = str(res.content, 'utf-8')
         print(string)
         e = json.loads(string)
