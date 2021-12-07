@@ -76,7 +76,7 @@ def calc(conf, session, currencies):
     print("currencies:{}".format(currencies))
 
     # 获取rebalance所需业务信息
-    re_balance_input_info = get_pool_info("http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re")
+    re_balance_input_info = get_pool_info(conf['pool']['url'])
 
     threshold_org = re_balance_input_info['threshold']
     vault_info_list = re_balance_input_info['vaultInfoList']

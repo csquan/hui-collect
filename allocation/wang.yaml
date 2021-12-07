@@ -14,6 +14,9 @@ chain:
   polygon:
     id: 137
 
+pool:
+  url: 'http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re'
+
 project:
   - chain: 'bsc'
     name: 'pancake'
@@ -24,9 +27,9 @@ project:
   - chain: 'bsc'
     name: 'solo.top'
     url: 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=76'
-  - chain: 'polygon'
-    name: 'quickswap'
-    url: 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'
+#  - chain: 'polygon'
+#    name: 'quickswap'
+#    url: 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'
 
 
 
