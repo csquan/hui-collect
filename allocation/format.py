@@ -90,7 +90,7 @@ def calc(session, currencies):
             'amount': Decimal(0),
         },
         'heco': {
-            'amount': Decimal(10000000),
+            'amount': Decimal(1000),
         },
         'polygon': {
             'amount': Decimal(100)
@@ -128,7 +128,7 @@ def calc(session, currencies):
 
     beforeInfo['bnb'] = {
         'bsc': {
-            'amount': Decimal(20000),
+            'amount': Decimal(2000),
         }
     }
     print("init balance info for cross:{}".format(beforeInfo))
@@ -174,6 +174,11 @@ def calc(session, currencies):
     dailyReward = {}
     tvl = {}
 
+    def generate_key(chain, project, currencies):
+        currencies = list(filter(lambda x: x is not None, currencies))
+        currencies.sort(key=len, reverse=True)
+        return "{}_{}_{}".format(chain, project, '_'.join(currencies))
+
     for p in projects:
         info = p.get_info()
 
@@ -181,23 +186,10 @@ def calc(session, currencies):
             for token in pool['rewardTokenList'] + pool['depositTokenList']:
                 currency = find_currency_by_address(session, format_addr(token['tokenAddress']))
                 if currency is not None and currency not in price:
-                    price[currency] = token['tokenPrice']
+                    price[currency] = Decimal(token['tokenPrice'])
 
-                key = "{}_{}".format(p.chain, p.name)
-                for c in pool['poolName'].split("/"):
-                    ok, fc = format_token_name(currencyName, c)
-                    key = "{}_{}".format(key, fc)
-
-                apr[key] = Decimal(pool['apr'])
-                tvl[key] = Decimal(pool['tvl'])
-                dailyReward[key] = reduce(lambda x, y: x + y,
-                                          map(lambda t: Decimal(t['tokenPrice']) * Decimal(t['dayAmount']),
-                                              pool['rewardTokenList']))
-
-                key = "{}_{}".format(p.chain, p.name)
-                for c in reversed(pool['poolName'].split("/")):
-                    ok, fc = format_token_name(currencyName, c)
-                    key = "{}_{}".format(key, fc)
+                names = [format_token_name(currencyName, c)[1] for c in pool['poolName'].split("/")]
+                key = generate_key(p.chain, p.name, names)
 
                 apr[key] = Decimal(pool['apr'])
                 tvl[key] = Decimal(pool['tvl'])
@@ -224,9 +216,7 @@ def calc(session, currencies):
                 if s.currency1 is None:
                     continue
 
-                key = "{}_{}_{}".format(s.chain, s.project,
-                                        s.currency0) if s.currency1 is None else "{}_{}_{}_{}".format(
-                    s.chain, s.project, s.currency0, s.currency1)
+                key = generate_key(s.chain, s.project, [s.currency0, s.currency1])
                 if key not in apr or apr[key] < Decimal(0.18):
                     continue
 
@@ -307,452 +297,133 @@ def calc(session, currencies):
 
     print("cross info:{}", json.dumps(crossList, cls=utils.DecimalEncoder))
 
-    calc_invest_bsc(beforeInfo, price, dailyReward, apr, tvl)
-#
-#
-# def calc_invest_poly(balance_info_dict, price_dict, daily_reward_dict, apr_dict, tvl_dict):
-#     # 确定最终的资产分布情况
-#     # X(0) = bnb_amt_biswap_busd
-#     # X(3) = busd_amt_biswap_bnb
-#
-#     # X(1) = bnb_amt_pancake_busd
-#     # X(2) = busd_amt_pancake_bnb
-#
-#     # X(15) = cake_amt_pancake_busd
-#     # X(4) = busd_amt_pancake_cake
-#
-#     # X(5) = bnb_amt_biswap_usdt
-#     # X(11) = usdt_amt_biswap_bnb
-#
-#     # X(6) = bnb_amt_pancake_usdt
-#     # X(12) = usdt_amt_pancake_bnb
-#
-#     # X(7) = btcb_amt_biswap_usdt
-#     # X(10) = usdt_amt_biswap_btcb
-#
-#     # X(8) = eth_amt_biswap_usdt
-#     # X(9) = usdt_amt_biswap_eth
-#
-#     # X(14) = cake_amt_pancake_usdt
-#     # X(13) = usdt_amt_pancake_cake
-#
-#     # X(16) = eth_amt_quickswap_usdc
-#     # X(21) = usdc_amt_quickswap_eth
-#
-#     # X(17) = eth_amt_quickswap_usdt
-#     # X(22) = usdt_amt_quickswap_eth
-#
-#     # X(18) = btc_amt_quickswap_usdc
-#     # X(23) = usdc_amt_quickswap_btc
-#
-#     # X(19) = matic_amt_quickswap_usdc
-#     # X(24) = usdc_amt_quickswap_matic
-#
-#     # X(20) = matic_amt_quickswap_usdt
-#     # X(25) = usdt_amt_quickswap_matic
-#
-#     # X(26) = bnb_bsolotop_amt
-#     # X(27) = cake_bsolotop_amt
-#     # X(28) = btcb_bsolotop_amt
-#     # X(29) = eth_bsolotop_amt
-#     # X(30) = busd_bsolotop_amt
-#     # X(31) = usdt_bsolotop_amt
-#
-#     # X(32) = btc_psolotop_amt
-#     # X(33) = eth_psolotop_amt
-#     # X(34) = matic_psolotop_amt
-#     # X(35) = usdt_psolotop_amt
-#     # X(36) = usdc_psolotop_amt
-#
-#     def get_amount(currency, chain):
-#         if currency not in balance_info_dict:
-#             return 0
-#
-#         if chain not in balance_info_dict[currency]:
-#             return 0
-#
-#         if 'amount' not in balance_info_dict[currency][chain]:
-#             return 0
-#
-#         return float(balance_info_dict[currency][chain]['amount'])
-#
-#     def get_price(currency):
-#         if currency not in price_dict:
-#             return 0
-#
-#         return float(price_dict[currency])
-#
-#     def get_reward(key):
-#         if key not in daily_reward_dict:
-#             return 0
-#
-#         return float(daily_reward_dict[key])
-#
-#     def get_apr(key):
-#         if key not in apr_dict:
-#             return 0
-#
-#         return float(apr_dict[key])
-#
-#     def get_tvl(key):
-#         if key not in tvl_dict:
-#             return 0
-#
-#         return float(tvl_dict[key])
-#
-#     def function(x):
-#         input = [
-#             ['bsc', 'biswap', 'bnb', 'usd', x[0], x[3]],
-#             ['bsc', 'pancake', 'bnb', 'usd', x[1], x[2]],
-#             ['bsc', 'pancake', 'cake', 'usd', x[15], x[4]],
-#             ['bsc', 'biswap', 'bnb', 'usdt', x[5], x[11]],
-#             ['bsc', 'pancake', 'bnb', 'usdt', x[6], x[12]],
-#             ['bsc', 'biswap', 'btc', 'usdt', x[7], x[10]],
-#             ['bsc', 'biswap', 'eth', 'usdt', x[8], x[9]],
-#             ['bsc', 'pancake', 'cake', 'usdt', x[14], x[13]],
-#             # ['polygon', 'quickswap', 'eth', 'usdc', x[16], x[21]],
-#             # ['polygon', 'quickswap', 'eth', 'usdt', x[17], x[22]],
-#             # ['polygon', 'quickswap', 'btc', 'usdc', x[18], x[23]],
-#             # ['polygon', 'quickswap', 'matic', 'usdc', x[19], x[24]],
-#             # ['polygon', 'quickswap', 'matic', 'usdt', x[20], x[25]],
-#         ]
-#
-#         total = 0
-#
-#         for [chain, project, c1, c2, x1, x2] in input:
-#             key = '{}_{}_{}_{}'.format(chain, project, c1, c2)
-#             if get_apr(key) < 0.18:
-#                 # print('apr too low:{}, {}', key, get_apr(key))
-#                 continue
-#
-#             base = get_price(c1) * x1 + get_price(c2) * x2 + get_tvl(key)
-#
-#             if base <= 0.1:
-#                 continue
-#
-#             r = get_reward(key) * (get_price(c1) * x1 + get_price(c2) * x2) / base
-#             total += r
-#
-#         return total * -1
-#
-#     # bounds = (
-#     #     (0, get_amount('bnb', 'bsc')),
-#     #     (0, get_amount('bnb', 'bsc')),
-#     #     (0, get_amount('usd', 'bsc')),
-#     #     (0, get_amount('usd', 'bsc')),
-#     #     (0, get_amount('usd', 'bsc')),
-#     #     (0, get_amount('bnb', 'bsc')),
-#     #     (0, get_amount('bnb', 'bsc')),
-#     #     (0, get_amount('btc', 'bsc')),
-#     #     (0, get_amount('eth', 'bsc')),
-#     #     (0, get_amount('usdt', 'bsc')),
-#     #     (0, get_amount('usdt', 'bsc')),
-#     #     (0, get_amount('usdt', 'bsc')),
-#     #     (0, get_amount('usdt', 'bsc')),
-#     #     (0, get_amount('usdt', 'bsc')),
-#     #     (0, get_amount('cake', 'bsc')),
-#     #     (0, get_amount('cake', 'bsc')),
-#     # )
-#
-#     cons = [
-#         {'type': 'ineq', 'fun': lambda x: x[0]},
-#         {'type': 'ineq', 'fun': lambda x: x[1]},
-#         {'type': 'ineq', 'fun': lambda x: x[2]},
-#         {'type': 'ineq', 'fun': lambda x: x[3]},
-#         {'type': 'ineq', 'fun': lambda x: x[4]},
-#         {'type': 'ineq', 'fun': lambda x: x[5]},
-#         {'type': 'ineq', 'fun': lambda x: x[6]},
-#         {'type': 'ineq', 'fun': lambda x: x[7]},
-#         {'type': 'ineq', 'fun': lambda x: x[8]},
-#         {'type': 'ineq', 'fun': lambda x: x[9]},
-#         {'type': 'ineq', 'fun': lambda x: x[10]},
-#         {'type': 'ineq', 'fun': lambda x: x[11]},
-#         {'type': 'ineq', 'fun': lambda x: x[12]},
-#         {'type': 'ineq', 'fun': lambda x: x[13]},
-#         {'type': 'ineq', 'fun': lambda x: x[14]},
-#         {'type': 'ineq', 'fun': lambda x: x[15]},
-#         # {'type': 'ineq', 'fun': lambda x: x[16]},
-#         # {'type': 'ineq', 'fun': lambda x: x[17]},
-#         # {'type': 'ineq', 'fun': lambda x: x[18]},
-#         # {'type': 'ineq', 'fun': lambda x: x[19]},
-#         # {'type': 'ineq', 'fun': lambda x: x[20]},
-#         # {'type': 'ineq', 'fun': lambda x: x[21]},
-#         # {'type': 'ineq', 'fun': lambda x: x[22]},
-#         # {'type': 'ineq', 'fun': lambda x: x[23]},
-#         # {'type': 'ineq', 'fun': lambda x: x[24]},
-#         # {'type': 'ineq', 'fun': lambda x: x[25]},
-#
-#         {'type': 'ineq', 'fun': lambda x: get_amount('btc', 'bsc') - x[7]},
-#         {'type': 'ineq', 'fun': lambda x: get_amount('eth', 'bsc') - x[8]},
-#         {'type': 'ineq', 'fun': lambda x: get_amount('cake', 'bsc') - x[14] - x[15]},
-#         {'type': 'ineq', 'fun': lambda x: get_amount('bnb', 'bsc') - x[0] - x[1] - x[5] - x[6]},
-#         {'type': 'ineq', 'fun': lambda x: get_amount('usd', 'bsc') - x[2] - x[3] - x[4]},
-#         {'type': 'ineq', 'fun': lambda x: get_amount('usdt', 'bsc') - x[9] - x[10] - x[11] - x[12] - x[13]},
-#
-#         # {'type': 'ineq', 'fun': lambda x: get_amount('btc', 'polygon') - x[18]},
-#         # {'type': 'ineq', 'fun': lambda x: get_amount('eth', 'polygon') - x[16] - x[17]},
-#         # {'type': 'ineq', 'fun': lambda x: get_amount('matic', 'polygon') - x[19] - x[20]},
-#         # {'type': 'ineq', 'fun': lambda x: get_amount('usdt', 'polygon') - x[22] - x[25]},
-#         # {'type': 'ineq', 'fun': lambda x: get_amount('usdc', 'polygon') - x[23] - x[24]},
-#
-#         {'type': 'eq', 'fun': lambda x: x[0] * get_price('bnb') - x[3] * get_price('usd')},
-#         {'type': 'eq', 'fun': lambda x: x[1] * get_price('bnb') - x[2] * get_price('usd')},
-#         {'type': 'eq', 'fun': lambda x: x[15] * get_price('cake') - x[4] * get_price('usd')},
-#         {'type': 'eq', 'fun': lambda x: x[5] * get_price('bnb') - x[11] * get_price('usdt')},
-#         {'type': 'eq', 'fun': lambda x: x[6] * get_price('bnb') - x[12] * get_price('usdt')},
-#         {'type': 'eq', 'fun': lambda x: x[7] * get_price('btc') - x[10] * get_price('usdt')},
-#         {'type': 'eq', 'fun': lambda x: x[8] * get_price('eth') - x[9] * get_price('usdt')},
-#         {'type': 'eq', 'fun': lambda x: x[14] * get_price('cake') - x[13] * get_price('usdt')},
-#         # {'type': 'eq', 'fun': lambda x: x[16] * get_price('eth') - x[21] * get_price('usdc')},
-#         # {'type': 'eq', 'fun': lambda x: x[17] * get_price('eth') - x[22] * get_price('usdt')},
-#         # {'type': 'eq', 'fun': lambda x: x[18] * get_price('btc') - x[23] * get_price('usdc')},
-#         # {'type': 'eq', 'fun': lambda x: x[19] * get_price('matic') - x[24] * get_price('usdc')},
-#         # {'type': 'eq', 'fun': lambda x: x[20] * get_price('matic') - x[25] * get_price('usdt')},
-#     ]
-#
-#     initx = [0] * 16
-#
-#     # print(initx)
-#     res = minimize(function,
-#                    x0=np.array(initx),
-#                    #    bounds=bounds,
-#                    constraints=cons,
-#                    )
-#     print("""
-#     total info: btc:{} eth:{}, cake:{} bnb:{} usdt:{}
-#     success: {}
-#     message: {}
-#     value: {}
-#     price btc:{} eth:{} cake:{} bnb:{} usdt:{}
-#     biswap tvl:{} apr:{} btc:{} usdt:{}
-#     biswap tvl:{} apr:{} eth:{} usdt:{}
-#     biswap tvl:{} apr:{} bnb:{} usdt:{}
-#     pancake tvl:{} apr:{} bnb:{} usdt:{}
-#     pancake tvl:{} apr:{} cake:{} usdt:{}
-#     total invest btc:{} eth:{} cake:{} bnb:{} usdt:{}
-#     diff btc:{} eth:{} cake:{} bnb:{} usdt:{}
-#     """.format(
-#         get_amount('btc', 'bsc'), get_amount('eth', 'bsc'), get_amount('cake', 'bsc'),
-#         get_amount('bnb', 'bsc'),
-#         get_amount('usdt', 'bsc'),
-#         res.success,
-#         res.message,
-#         res.fun,
-#         get_price('btc'), get_price('eth'), get_price('cake'), get_price('bnb'), get_price('usdt'),
-#         tvl_dict['bsc_biswap_btc_usdt'], apr_dict['bsc_biswap_btc_usdt'], res.x[7], res.x[10],
-#         tvl_dict['bsc_biswap_eth_usdt'], apr_dict['bsc_biswap_eth_usdt'], res.x[8], res.x[9],
-#         tvl_dict['bsc_biswap_bnb_usdt'], apr_dict['bsc_biswap_bnb_usdt'], res.x[5], res.x[11],
-#         tvl_dict['bsc_pancake_bnb_usdt'], apr_dict['bsc_pancake_bnb_usdt'], res.x[6], res.x[12],
-#         tvl_dict['bsc_pancake_cake_usdt'], apr_dict['bsc_pancake_cake_usdt'], res.x[14], res.x[13],
-#         res.x[7], res.x[8], res.x[14], res.x[5] + res.x[6],
-#                                        res.x[9] + res.x[10] + res.x[11] + res.x[12] + res.x[13],
-#                                        get_amount('btc', 'bsc') - res.x[7],
-#                                        get_amount('eth', 'bsc') - res.x[8],
-#                                        get_amount('cake', 'bsc') - res.x[14],
-#                                        get_amount('bnb', 'bsc') - res.x[5] - res.x[6],
-#                                        get_amount('usdt', 'bsc') - (
-#                                                res.x[9] + res.x[10] + res.x[11] + res.x[12] + res.x[13])))
-#     print(res.x)
+    calc_invest(session, 'bsc', beforeInfo, price, dailyReward, apr, tvl)
 
 
-def calc_invest_bsc(balance_info_dict, price_dict, daily_reward_dict, apr_dict, tvl_dict):
-    # 确定最终的资产分布情况
-    # X(0) = bnb_amt_biswap_busd
-    # X(3) = busd_amt_biswap_bnb
-
-    # X(1) = bnb_amt_pancake_busd
-    # X(2) = busd_amt_pancake_bnb
-
-    # X(15) = cake_amt_pancake_busd
-    # X(4) = busd_amt_pancake_cake
-
-    # X(5) = bnb_amt_biswap_usdt
-    # X(11) = usdt_amt_biswap_bnb
-
-    # X(6) = bnb_amt_pancake_usdt
-    # X(12) = usdt_amt_pancake_bnb
-
-    # X(7) = btcb_amt_biswap_usdt
-    # X(10) = usdt_amt_biswap_btcb
-
-    # X(8) = eth_amt_biswap_usdt
-    # X(9) = usdt_amt_biswap_eth
-
-    # X(14) = cake_amt_pancake_usdt
-    # X(13) = usdt_amt_pancake_cake
-
-    def get_amount(currency, chain):
-        if currency not in balance_info_dict:
-            return 0.00001
-
-        if chain not in balance_info_dict[currency]:
-            return 0.00001
-
-        if 'amount' not in balance_info_dict[currency][chain]:
-            return 0.00001
-
-        return float(balance_info_dict[currency][chain]['amount'])
-
-    def get_price(currency):
-        if currency not in price_dict:
-            return 0
-
-        return float(price_dict[currency])
-
-    def get_reward(key):
-        if key not in daily_reward_dict:
-            return 0
-
-        return float(daily_reward_dict[key])
-
-    def get_apr(key):
-        if key not in apr_dict:
-            return 0
-
-        return float(apr_dict[key])
-
-    def get_tvl(key):
-        if key not in tvl_dict:
-            return 0
-
-        return float(tvl_dict[key])
-
-    def function(x):
-        input = [
-            ['bsc', 'biswap', 'bnb', 'usd', x[0], x[3]],
-            ['bsc', 'pancake', 'bnb', 'usd', x[1], x[2]],
-            ['bsc', 'pancake', 'cake', 'usd', x[15], x[4]],
-            ['bsc', 'biswap', 'bnb', 'usdt', x[5], x[11]],
-            ['bsc', 'pancake', 'bnb', 'usdt', x[6], x[12]],
-            ['bsc', 'biswap', 'btc', 'usdt', x[7], x[10]],
-            ['bsc', 'biswap', 'eth', 'usdt', x[8], x[9]],
-            ['bsc', 'pancake', 'cake', 'usdt', x[14], x[13]],
-        ]
-
-        total = 0
-
-        for [chain, project, c1, c2, x1, x2] in input:
-            key = '{}_{}_{}_{}'.format(chain, project, c1, c2)
-            if get_apr(key) < 0.18:
-                # print('apr too low:{}, {}', key, get_apr(key))
-                continue
-
-            base = get_price(c1) * x1 + get_price(c2) * x2 + get_tvl(key)
-
-            # if base <= 0.01:
-            #     continue
-
-            r = get_reward(key) * (get_price(c1) * x1 + get_price(c2) * x2) / base
-            total += r
-
-        return total * -1
-
-    bounds = (
-        (0, get_amount('bnb', 'bsc')),
-        (0, get_amount('bnb', 'bsc')),
-        (0, get_amount('usd', 'bsc')),
-        (0, get_amount('usd', 'bsc')),
-        (0, get_amount('usd', 'bsc')),
-        (0, get_amount('bnb', 'bsc')),
-        (0, get_amount('bnb', 'bsc')),
-        (0, get_amount('btc', 'bsc')),
-        (0, get_amount('eth', 'bsc')),
-        (0, get_amount('usdt', 'bsc')),
-        (0, get_amount('usdt', 'bsc')),
-        (0, get_amount('usdt', 'bsc')),
-        (0, get_amount('usdt', 'bsc')),
-        (0, get_amount('usdt', 'bsc')),
-        (0, get_amount('cake', 'bsc')),
-        (0, get_amount('cake', 'bsc')),
-    )
-
-    cons = [
-        # {'type': 'ineq', 'fun': lambda x: x[0]},
-        # {'type': 'ineq', 'fun': lambda x: x[1]},
-        # {'type': 'ineq', 'fun': lambda x: x[2]},
-        # {'type': 'ineq', 'fun': lambda x: x[3]},
-        # {'type': 'ineq', 'fun': lambda x: x[4]},
-        # {'type': 'ineq', 'fun': lambda x: x[5]},
-        # {'type': 'ineq', 'fun': lambda x: x[6]},
-        # {'type': 'ineq', 'fun': lambda x: x[7]},
-        # {'type': 'ineq', 'fun': lambda x: x[8]},
-        # {'type': 'ineq', 'fun': lambda x: x[9]},
-        # {'type': 'ineq', 'fun': lambda x: x[10]},
-        # {'type': 'ineq', 'fun': lambda x: x[11]},
-        # {'type': 'ineq', 'fun': lambda x: x[12]},
-        # {'type': 'ineq', 'fun': lambda x: x[13]},
-        # {'type': 'ineq', 'fun': lambda x: x[14]},
-        # {'type': 'ineq', 'fun': lambda x: x[15]},
-        #
-        #
-        {'type': 'ineq', 'fun': lambda x: get_amount('btc', 'bsc') - x[7]},
-        {'type': 'ineq', 'fun': lambda x: get_amount('eth', 'bsc') - x[8]},
-        {'type': 'ineq', 'fun': lambda x: get_amount('cake', 'bsc') - x[14] - x[15]},
-        {'type': 'ineq', 'fun': lambda x: get_amount('bnb', 'bsc') - x[0] - x[1] - x[5] - x[6]},
-        {'type': 'ineq', 'fun': lambda x: get_amount('usd', 'bsc') - x[2] - x[3] - x[4]},
-        {'type': 'ineq', 'fun': lambda x: get_amount('usdt', 'bsc') - x[9] - x[10] - x[11] - x[12] - x[13]},
-
-        # {'type': 'eq', 'fun': lambda x: x[0] * get_price('bnb') - x[3] * get_price('usd')},
-        # {'type': 'eq', 'fun': lambda x: x[1] * get_price('bnb') - x[2] * get_price('usd')},
-        {'type': 'eq', 'fun': lambda x: x[15] * get_price('cake') - x[4] * get_price('usd')},
-        # {'type': 'eq', 'fun': lambda x: x[5] * get_price('bnb') - x[11] * get_price('usdt')},
-        # {'type': 'eq', 'fun': lambda x: x[6] * get_price('bnb') - x[12] * get_price('usdt')},
-        {'type': 'eq', 'fun': lambda x: x[7] * get_price('btc') - x[10] * get_price('usdt')},
-        {'type': 'eq', 'fun': lambda x: x[8] * get_price('eth') - x[9] * get_price('usdt')},
-        # {'type': 'eq', 'fun': lambda x: x[14] * get_price('cake') - x[13] * get_price('usdt')},
-    ]
-
-    initx = [0] * 16
-
-    # print(initx)
-    res = minimize(function,
-                   x0=np.array(initx),
-                   bounds=bounds,
-                   constraints=cons,
-                   )
-    print("""
-    total info: btc:{} eth:{}, cake:{} bnb:{} usdt:{}
-    success: {}
-    message: {}
-    value: {}
-    price btc:{} eth:{} cake:{} bnb:{} usdt:{}
-    biswap tvl:{} apr:{} btc:{} usdt:{}
-    biswap tvl:{} apr:{} eth:{} usdt:{}
-    biswap tvl:{} apr:{} bnb:{} usdt:{}
-    pancake tvl:{} apr:{} bnb:{} usdt:{}
-    pancake tvl:{} apr:{} cake:{} usdt:{}
-    total invest btc:{} eth:{} cake:{} bnb:{} usdt:{}
-    diff btc:{} eth:{} cake:{} bnb:{} usdt:{}
-    """.format(
-        get_amount('btc', 'bsc'), get_amount('eth', 'bsc'), get_amount('cake', 'bsc'),
-        get_amount('bnb', 'bsc'),
-        get_amount('usdt', 'bsc'),
-        res.success,
-        res.message,
-        res.fun,
-        get_price('btc'), get_price('eth'), get_price('cake'), get_price('bnb'), get_price('usdt'),
-        tvl_dict['bsc_biswap_btc_usdt'], apr_dict['bsc_biswap_btc_usdt'], res.x[7], res.x[10],
-        tvl_dict['bsc_biswap_eth_usdt'], apr_dict['bsc_biswap_eth_usdt'], res.x[8], res.x[9],
-        tvl_dict['bsc_biswap_bnb_usdt'], apr_dict['bsc_biswap_bnb_usdt'], res.x[5], res.x[11],
-        tvl_dict['bsc_pancake_bnb_usdt'], apr_dict['bsc_pancake_bnb_usdt'], res.x[6], res.x[12],
-        tvl_dict['bsc_pancake_cake_usdt'], apr_dict['bsc_pancake_cake_usdt'], res.x[14], res.x[13],
-        res.x[7], res.x[8], res.x[14], res.x[5] + res.x[6],
-                                       res.x[9] + res.x[10] + res.x[11] + res.x[12] + res.x[13],
-                                       get_amount('btc', 'bsc') - res.x[7],
-                                       get_amount('eth', 'bsc') - res.x[8],
-                                       get_amount('cake', 'bsc') - res.x[14],
-                                       get_amount('bnb', 'bsc') - res.x[5] - res.x[6],
-                                       get_amount('usdt', 'bsc') - (
-                                               res.x[9] + res.x[10] + res.x[11] + res.x[12] + res.x[13])))
-    print(res.x)
+def get_info_by_strategy_str(lp):
+    data = lp.split('_')
+    if len(data) < 3:
+        return None, None
+    elif len(data) == 3:
+        return data, data[2], None
+    else:
+        return data, data[2], data[3]
 
 
-# def calc_invest(chain, balance_info_dict, price_dict, daily_reward_dict, apr_dict, tvl_dict):
-#     # 项目列表
-#     lps = apr_dict.items()
-#     sorted(apr_dict.items(), key=lambda item: item[1], reverse=True)
-#
-#     pass
+def calc_invest(session, chain, balance_info_dict, price_dict, daily_reward_dict, apr_dict, tvl_dict):
+    # 项目列表
+
+    def f(key):
+        infos = get_info_by_strategy_str(key)
+        strategies = [s for s in
+                      find_strategies_by_chain_project_and_currencies(session, chain, infos[0][1], infos[1], infos[2])]
+        return len(strategies) > 0
+
+    invest_calc_result = {}
+
+    detla = Decimal(0.005)
+
+    while True:
+        lpKeys = [k for k in sorted(apr_dict, key=apr_dict.get, reverse=True)]
+        lpKeys = list(filter(f, lpKeys))
+        if len(lpKeys) <= 0:
+            break
+
+        print(lpKeys)
+        # 找到top1 与top2
+        top = []
+        apr1 = apr_dict[lpKeys[0]]
+        aprTarget = Decimal(0.01)
+        for key in lpKeys:
+
+            if abs(apr_dict[key] - apr1) < detla:
+                top.append(key)
+            else:
+                aprTarget = apr_dict[key]
+                break
+
+        for key in top:
+            filled, vol, changes = fill_cap(chain, key, daily_reward_dict, tvl_dict, balance_info_dict, price_dict,
+                                            max(aprTarget, apr1 - detla))
+
+            if key not in invest_calc_result:
+                invest_calc_result[key] = {}
+
+            for k, v in changes.items():
+                if k not in invest_calc_result[key]:
+                    invest_calc_result[key][k] = Decimal(0)
+
+                invest_calc_result[key][k] += v * -1
+                balance_info_dict[k][chain]['amount'] += v
+
+            tvl_dict[key] += vol
+            apr_dict[key] = daily_reward_dict[key] * 365 / tvl_dict[key]
+
+            # 说明没有对应资产了
+            if not filled:
+                lpKeys.remove(key)
+                apr_dict.pop(key)
+
+    print('invest info:{}'.format(json.dumps(invest_calc_result, cls=utils.DecimalEncoder)))
+    # invest_items = []
+    # #生成配资结果
+    # for k, balances in invest_calc_result.items():
+    #     infos = get_info_by_strategy_str(key)
+    #     strategies = [s for s in
+    #                   find_strategies_by_chain_project_and_currencies(session, chain, infos[0][1], infos[1], infos[2])]
+    #
+    #     strategy = strategies[0]
+    #     data = {}
+    #     for currency, balance in balances.items():
+    #         pass
+
+
+def get_balance(balance_dict, currency, chain):
+    if currency not in balance_dict:
+        return Decimal(0)
+    if chain not in balance_dict[currency]:
+        return Decimal(0)
+    return balance_dict[currency][chain]['amount']
+
+
+def get_price(price_dict, currency):
+    if currency not in price_dict:
+        return Decimal(0)
+
+    return price_dict[currency]
+
+
+# 返回值 1. 是否填满了，2 填充量是多少 3.资产余额变化
+def fill_cap(chain, strategy, daily_reward_dict, tvl_dict, balance_dict, price_dict, target_apr):
+    cap = (daily_reward_dict[strategy] * Decimal(365) / target_apr - tvl_dict[strategy])
+    data, c0, c1 = get_info_by_strategy_str(strategy)
+    if c0 is None:
+        return False, 0, {}
+
+    # 单币
+    if c1 is None:
+        if get_price(price_dict, c0) == Decimal(0):
+            return False, 0, {}
+
+        vol = min(cap / get_price(price_dict, c0), get_balance(balance_dict, c0, chain))
+        if vol <= 0:
+            return False, 0, {}
+
+        return cap == vol, vol, {c0: -1 * vol}
+
+    # 双币
+    vol = min(get_balance(balance_dict, c0, chain) * get_price(price_dict, c0),
+              get_balance(balance_dict, c1, chain) * get_price(price_dict, c1), cap / 2)
+
+    if vol <= 0:
+        return False, 0, {}
+
+    amount0 = vol / get_price(price_dict, c0)
+    amount1 = vol / get_price(price_dict, c1)
+    if amount0 > 0 and amount1 > 0:
+        return cap == vol * 2, vol * 2, {c0: - amount0, c1: -amount1}
+
+    return False, 0, {}
 
 
 if __name__ == '__main__':
