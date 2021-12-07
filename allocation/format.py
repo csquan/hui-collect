@@ -175,7 +175,7 @@ def calc(conf, session, currencies):
 
     # 没超过阈值
     if not need_re_balance:
-        exit()
+        return
 
     # 获取apr等信息
 

@@ -7,7 +7,6 @@ import numpy as np
 import json
 import sys
 
-
 class Stragey:
     pass
 
@@ -23,9 +22,11 @@ class Pair:
 
 
 # re params
-class ReceiveFromBridgeParam:
+class CrossBalance:
     pass
 
+class ReceiveFromBridgeParam:
+    pass
 
 class InvestParam:
     pass
@@ -43,6 +44,37 @@ class Params:
 counter_tokens = ["usd", "dai"]
 
 
+def investobj_2_json(obj):
+    return {
+        "ChainId": obj.ChainId,
+        "ChainName": obj.ChainName,
+        "From": obj.From,
+        "To": obj.To
+    }
+
+def receiveobj_2_json(obj):
+    return {
+        "ChainId": obj.ChainID,
+        "ChainName": obj.ChainName,
+        "From": obj.From,
+        "To": obj.To,
+        "Erc20ContractAddr": obj.Erc20ContractAddr,
+        "Amount": obj.Amount,
+        "TaskID": obj.TaskID,
+    }
+
+def sendobj_2_json(obj):
+    return {
+        "ChainId": obj.ChainId,
+        "ChainName": obj.ChainName,
+        "From": obj.From,
+        "To": obj.To,
+        "BridgeAddress": obj.BridgeAddress,
+        "Amount": obj.Amount,
+        "TaskID": obj.TaskID,
+    }
+
+
 def format_addr(addr):
     if addr.startswith('0x'):
         return addr.lower()
@@ -51,10 +83,6 @@ def format_addr(addr):
 
 
 def parseCurrencyPair(pair):
-    # 单币
-    if '_' not in pair:
-        return pair, "none"
-
     tokenstr = pair.split('_')
     return tokenstr[0].lower(), tokenstr[1].lower()
 
@@ -105,6 +133,9 @@ def getPairFromSlashStr(str, currencys):
 
 def getreinfo(url):
     ret = requests.get(url)
+    if ret.status_code != 200:
+        print("re url服务异常")
+        sys.exit(1)
     string = str(ret.content, 'utf-8')
     e = json.loads(string)
 
@@ -404,7 +435,7 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies, d
 
     # 生成跨链参数
     for currency in afterInfo:
-        for chain in ['bsc', 'poly']:
+        for chain in ['bsc', 'polygon']:
             if currency in beforeInfo.keys():
                 if chain in afterInfo[currency]:
                     diff = float(afterInfo[currency][chain]) - float(beforeInfo[currency][chain]["amount"])
@@ -450,7 +481,7 @@ def getReParams(currency_infos, currency_dict, reinfo, beforeInfo, strategies, d
         TaskIds["BTC"] = receiveFromBridge.TaskID
 
         invest = InvestParam()
-        invest.ChinId = 52  # 配置
+        invest.ChainId = 52  # 配置
         invest.ChainName = "bsc"  # 配置
         invest.From = "configaddress2"  # 配置的签名机地址
         invest.To = "configaddress3"  # 配置的合约地址 ----这个应该是contract_info中对应链的vault地址
@@ -652,6 +683,60 @@ def format_token_name(currency_name_set, name):
 
     return False, name
 
+def jsonRelize(param):
+    # 开始序列化，一次性序列化整个结构体不行，思路：解开直至基本类型，然后用json.dumps
+    jsons = ""
+
+    jsons = jsons + "{\"CrossBalances\":["
+    for crossItem in param.CrossBalances:
+        if jsons != "{\"CrossBalances\":[":
+            jsons = jsons + ","
+        jsons = jsons + json.dumps(crossItem)
+    jsons = jsons + "]"
+
+    jsons = jsons + ",\"ReceiveFromBridgeParams\":"
+
+    jsonstr = jsons + json.dumps(param.InvestParams, default=investobj_2_json)
+
+    jsons = jsonstr[:len(jsonstr)-1] + ","
+
+    # 依次展开三个数组，json
+    Addresss = []
+    StrategyAddress = {}
+    for address in param.InvestParams.StrategyAddresses:
+        Addresss.append(address)
+    StrategyAddress["StrategyAddresses"] = Addresss
+
+    jsonstr = json.dumps(StrategyAddress)
+
+    jsons = jsons + jsonstr[1:len(jsonstr) - 1] + ","
+
+    baseAmount = []
+    BaseTokenAmount = {}
+    for amount in param.InvestParams.BaseTokenAmount:
+        baseAmount.append(str(amount))
+    BaseTokenAmount["BaseTokenAmount"] = baseAmount
+
+    jsonstr = json.dumps(BaseTokenAmount)
+
+    jsons = jsons + jsonstr[1:len(jsonstr) - 1] + ","
+
+    counterAmount = []
+    counterTokenAmount = {}
+    for amount in param.InvestParams.CounterTokenAmount:
+        counterAmount.append(str(amount))
+    counterTokenAmount["CounterTokenAmount"] = counterAmount
+
+    jsonstr = json.dumps(counterTokenAmount)
+
+    jsons = jsons + jsonstr[1:len(jsonstr) - 1] + "},\"InvestParams\":"
+
+    jsons = jsons + json.dumps(param.ReceiveFromBridgeParams, default=receiveobj_2_json)
+
+    jsons = jsons + ",\"SendToBridgeParams\":"
+    jsons = jsons + json.dumps(param.SendToBridgeParams, default=sendobj_2_json)
+    jsons = jsons + "}"
+    return jsons
 
 def outputReTask():
     conf = read_yaml("./config.yaml")
@@ -768,18 +853,25 @@ def outputReTask():
     paramsList = getReParams(currencyPair_infos, conf_currency_dict, reinfos, beforeInfo, strategies, daily_dict,
                              tvls_dict, aprs_dict)
 
+
     # write db
     conn = pymysql.connect(host=conf["database"]["host"], port=conf["database"]["port"], user=conf["database"]["user"],
                            passwd=conf["database"]["passwd"], db=conf["database"]["db"], charset='utf8')
     print(conn)
 
-    # cursor = db.cursor()
+    cursor = conn.cursor()
 
     # 遍历paramsList，每个元素写入
-    # cursor.execute('''insert into Rebalance_params values()''')
+    # 开始序列化，一次性序列化整个结构体不行，思路：解开直至基本类型，然后用json.dumps
+    for params in paramsList:
+        jsons = jsonRelize(params)
+        sqlstr = ("INSERT INTO t_part_rebalance_task (f_full_rebalance_id,f_state,f_params,f_message) VALUES(%s, %d,%s,%s)") % (params.ReceiveFromBridgeParams.TaskID, 0, jsons, "")
 
-    # cursor.close()
-    # db.commit()
+        print(sqlstr)
+        #cursor.execute('''insert into Rebalance_params values()''')
+
+    cursor.close()
+    db.commit()
     conn.close()
 
 

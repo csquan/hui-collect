@@ -41,21 +41,22 @@ def computeTarget(todo_btc, todo_eth, todo_usdt, argsr, argstt, argsa):
     return btc_bsc, eth_bsc, usdt_bsc
 
 
-def totalReward(argsp, argsr, argst):
+def totalReward(argsp, argsr, argst, argsa):
     bnb, cake, btcb, eth, busd, usdt = argsp
     #bnb, busd, usdt, cake, btcb, eth = argsp
-    A, B ,C, D, E, F, G , H ,*_ = argsr
-    a, b, c, d, e, f, g , h ,*_ = argst
+    A,  B , C,  D,  E,  F,  G ,  H , *_ = argsr
+    a,  b,  c,  d,  e,  f,  g ,  h , *_ = argst
+    Aa, Bb, Cc, Dd, Ee, Ff, Gg , Hh, *_ = argsa
 
     func = lambda x: (-1)*(
-            (bnb*x[0] + busd*x[3])/(bnb*x[0] + busd*x[3] + a )*A + \
-            (bnb*x[1] + busd*x[2])/(bnb*x[1] + busd*x[2] + b )*B + \
-            (bnb*x[5] + usdt*x[11])/(bnb*x[5] + usdt*x[11] + c )*C + \
-            (bnb*x[6] + usdt*x[12])/(bnb*x[6] + usdt*x[12] + d )*D + \
-            (cake*x[15] + busd*x[4])/(cake*x[15] + busd*x[4] + e )*E + \
-            (cake*x[14] + usdt*x[13])/(cake*x[14] + usdt*x[13] + f )*F + \
-            (btcb*x[7] + usdt*x[10])/(btcb*x[7] + usdt*x[10] + g )*G + \
-            (eth*x[8] + usdt*x[9])/(eth*x[8] + usdt*x[9] + h )*H 
+            (((bnb*x[0] + busd*x[3])/(bnb*x[0] + busd*x[3] + a )*A) if Aa>=_RATE and x[0]>0 and x[3]>0 else (0)) + \
+            (((bnb*x[1] + busd*x[2])/(bnb*x[1] + busd*x[2] + b )*B) if Bb>=_RATE and x[1]>0 and x[2]>0 else (0)) + \
+            (((bnb*x[5] + usdt*x[11])/(bnb*x[5] + usdt*x[11] + c )*C) if Cc>=_RATE and x[5]>0 and x[11]>0 else (0)) + \
+            (((bnb*x[6] + usdt*x[12])/(bnb*x[6] + usdt*x[12] + d )*D) if Dd>=_RATE and x[6]>0 and x[12]>0 else (0)) + \
+            (((cake*x[15] + busd*x[4])/(cake*x[15] + busd*x[4] + e )*E)   if Ee >=_RATE and x[15]>0 and x[4]>0 else (0)) + \
+            (((cake*x[14] + usdt*x[13])/(cake*x[14] + usdt*x[13] + f )*F) if Ff >=_RATE and x[14]>0 and x[13]>0 else (0)) + \
+            (((btcb*x[7] + usdt*x[10])/(btcb*x[7] + usdt*x[10] + g )*G)   if Gg >=_RATE and x[7]>0 and x[10]>0 else (0)) + \
+            (((eth*x[8] + usdt*x[9])/(eth*x[8] + usdt*x[9] + h )*H)   if Hh >=_RATE and x[8]>0 and x[9]>0 else (0))
           )
     return func
 
@@ -99,7 +100,7 @@ def conSamllRe(argsq, argsp):
             {'type': 'ineq', 'fun': lambda x: cake_q - x[14]}, 
             {'type': 'ineq', 'fun': lambda x: x[15] - LOW_BOUND},
             {'type': 'ineq', 'fun': lambda x: cake_q - x[15]}, 
-            {'type': 'ineq', 'fun': lambda x: usdt_q - x[10] - x[11] - x[12] - x[13]}, 
+            {'type': 'ineq', 'fun': lambda x: usdt_q - x[9] - x[10] - x[11] - x[12] - x[13]},  #x[9]???????
             {'type': 'ineq', 'fun': lambda x: busd_q - x[2] - x[3] - x[4]}, 
             {'type': 'ineq', 'fun': lambda x: bnb_q - x[0] - x[1]- x[5] - x[6]}, 
             {'type': 'ineq', 'fun': lambda x: cake_q - x[14] - x[15]}, 
@@ -122,7 +123,7 @@ def getRandX0(bounds):
         x.append( random.random() * b )
     return x
 
-def minimizeWrapper(x0, argsq, argsp, argsr, argst, boundary):
+def minimizeWrapper(x0, argsq, argsp, argsr, argst, argsa, boundary):
     res_list = []
     cons = conSamllRe(argsq, argsp)
     for m in (#'Nelder-Mead',
@@ -134,7 +135,7 @@ def minimizeWrapper(x0, argsq, argsp, argsr, argst, boundary):
               'SLSQP',
             ) :
         ss = time.time()
-        result = minimize( totalReward(argsp, argsr, argst), 
+        result = minimize( totalReward(argsp, argsr, argst, argsa), 
                            x0, 
                            method=m, 
                            bounds=tuple([(LOW_BOUND, b)for b in boundary]),
@@ -151,20 +152,27 @@ def minimizeWrapper(x0, argsq, argsp, argsr, argst, boundary):
     return res_list[-1] if len(res_list) > 0 else None
 
 LOOP_COUNT = 100
-def doCompute(argsq, argsp, argsr, argst):
+def doCompute(argsq, argsp, argsr, argst, argsa):
+    ss = time.time()
+
     bnb_q, busd_q, btcb_q, eth_q, usdt_q, cake_q = argsq
-    #argsp = (bnb, busd, usdt, cake, btcb, eth) 
-    #argsr = (A, B ,C, D, E, F, G ,H)
-    #argst = (a, b, c, d, e, f, g, h)
+    bnb, cake, btcb, eth, busd, usdt = argsp
+    A, B ,C, D, E, F, G, H, *_= argsr
+    aa, bb, cc, dd, ee, ff, gg, hh, *_ = argst
+    Aa, Bb, Cc, Dd, Ee, Ff, Gg, Hh, *_ = argsa
+    
     boundary = (bnb_q, bnb_q, busd_q, busd_q, busd_q, bnb_q, bnb_q, btcb_q,
                 eth_q, usdt_q, usdt_q, usdt_q, usdt_q, usdt_q, cake_q, cake_q)
     res_list = []
 
     for i in range(LOOP_COUNT):
-        res = minimizeWrapper(getRandX0(boundary), argsq, argsp, argsr, argst, boundary)
+        res = minimizeWrapper(getRandX0(boundary), argsq, argsp, argsr, argst, argsa, boundary)
         if res:
             res_list.append(res)
+
     print("len of res list:",len(res_list))
+    print("Time cost: %0.3f"%(time.time()-ss))
+
     res_list.sort(key=lambda k:k[0], reverse=True)
     for res in res_list:
         #print('Time cost: %0.6f'%(time.time()-ss))
@@ -175,9 +183,47 @@ def doCompute(argsq, argsp, argsr, argst):
         print('Final X:',list(map(float, res[3])))
         print('================================================================')
     print('Boundary:', boundary)
+    print("argsa:", Aa, Bb, Cc, Dd, Ee, Ff, Gg, Hh)
     if len(res_list)==0 :
         return []
-    return list(map(float, res_list[-1][3]))
+
+    X = list(map(float, res_list[-1][3]))
+    Val = res_list[-1][0]
+    print("""
+    total info: btc:{} eth:{}, cake:{} bnb:{} usdt:{}
+    success: {}
+    message: {}
+    value: {}
+    price btc:{} eth:{} cake:{} bnb:{} usdt:{}
+    biswap tvl:{} apr:{} btc:{} usdt:{}
+    biswap tvl:{} apr:{} eth:{} usdt:{}
+    biswap tvl:{} apr:{} bnb:{} usdt:{}
+    pancake tvl:{} apr:{} bnb:{} usdt:{}
+    pancake tvl:{} apr:{} cake:{} usdt:{}
+    total invest btc:{} eth:{} cake:{} bnb:{} usdt:{}
+    diff btc:{} eth:{} cake:{} bnb:{} usdt:{}
+    """.format(
+        btcb_q , eth_q, cake_q, bnb_q, usdt_q,
+        True,
+        "",
+        Val,
+        btcb, eth, cake, bnb, usdt,
+        gg, Gg, X[7], X[10],
+        hh, Hh, X[8], X[9],
+        cc, Cc, X[5], X[11],
+        dd, Dd, X[6], X[12],
+        ff, Ff, X[14], X[13],
+        X[7], X[8], X[14], X[5] + X[6],
+        X[9] + X[10] + X[11] + X[12] + X[13],
+        btcb_q - X[7],
+        eth_q  - X[8],
+        cake_q - X[14],
+        bnb_q- X[5] - X[6],
+        usdt_q - (X[9] + X[10] + X[11] + X[12] + X[13])
+        )
+    )
+
+    return X
 
 if __name__ == '__main__':
     pass

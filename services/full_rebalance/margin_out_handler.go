@@ -28,7 +28,7 @@ func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 	return
 }
 
-func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
+func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	finished, err = checkMarginOutJobStatus(i.conf.ApiConf.MarginUrl+"status/query", fmt.Sprintf("%d", task.ID))
 	if err != nil {
 		return
@@ -39,7 +39,7 @@ func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 func createMarginOutJob(url string, bizNo string) (err error) {
 	req := struct {
 		BizNo string `json:"bizNo"`
-	}{BizNo: fmt.Sprintf("%d", bizNo)}
+	}{BizNo: fmt.Sprintf("%s", bizNo)}
 	data, err := utils.DoPost(url, req)
 	if err != nil {
 		logrus.Errorf("margin job query status err:%v", err)

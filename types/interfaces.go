@@ -6,11 +6,11 @@ import (
 
 //go:generate mockgen -source=$GOFILE -destination=./mock/mock_db.go -package=mock
 type IReader interface {
-	//GetPartReBalanceTasks(state types.PartReBalanceState) ([]*types.PartReBalanceTask, error)
 
+	GetPartReBalanceTaskByFullRebalanceID(fullRebalanceID uint64) (task *PartReBalanceTask, err error)
+	//GetPartReBalanceTasks(state types.PartReBalanceState) ([]*types.PartReBalanceTask, error)
 	GetOpenedPartReBalanceTasks() ([]*PartReBalanceTask, error)
 	GetOpenedFullReBalanceTasks() ([]*FullReBalanceTask, error)
-
 	GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType TransactionType) ([]*TransactionTask, error)
 
 	GetOpenedTransactionTask() ([]*TransactionTask, error)
@@ -26,7 +26,7 @@ type IReader interface {
 type IWriter interface {
 	GetSession() *xorm.Session
 	GetEngine() *xorm.Engine
-
+	SaveRebalanceTask(itf xorm.Interface, tasks *PartReBalanceTask) (err error)
 	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
 	UpdateFullReBalanceTask(itf xorm.Interface, task *FullReBalanceTask) error
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error

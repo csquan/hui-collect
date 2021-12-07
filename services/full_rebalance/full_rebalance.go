@@ -9,7 +9,7 @@ import (
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
-var states []types.ReBalanceState = []types.ReBalanceState{
+var states []types.FullReBalanceState = []types.FullReBalanceState{
 	types.FullReBalanceInit,
 	types.FullReBalanceMarginIn,
 	types.FullReBalanceClaimLP,
@@ -22,23 +22,23 @@ var states []types.ReBalanceState = []types.ReBalanceState{
 }
 
 type StateHandler interface {
-	CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error)
+	CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error)
 	//movetoCurstate
 	Do(task *types.FullReBalanceTask) error
 	Name() string
 }
 
-type ReBalance struct {
+type FullReBalance struct {
 	db       types.IDB
 	config   *config.Config
-	handlers map[types.ReBalanceState]StateHandler
+	handlers map[types.FullReBalanceState]StateHandler
 }
 
-func NewReBalanceService(db types.IDB, conf *config.Config) (p *ReBalance, err error) {
-	p = &ReBalance{
+func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, err error) {
+	p = &FullReBalance{
 		db:     db,
 		config: conf,
-		handlers: map[types.ReBalanceState]StateHandler{
+		handlers: map[types.FullReBalanceState]StateHandler{
 			types.FullReBalanceInit: &initHandler{
 				db: db,
 			},
@@ -51,31 +51,31 @@ func NewReBalanceService(db types.IDB, conf *config.Config) (p *ReBalance, err e
 			types.FullReBalanceMarginBalanceTransferOut: &marginOutHandler{
 				db: db,
 			},
-			// types.FullReBalanceRecycling: &recyclingHandler{
-			// 	db: db,
-			// },
+			types.FullReBalanceRecycling: &recyclingHandler{
+				db: db,
+			},
 			// // 计算状态由python处理
 			// //types.FullReBalanceParamsCalc: &paramsCalcHandler{
 			// //	db: db,
 			// //},
-			// types.FullReBalanceOndoing: &doPartRebalanceHandler{
-			// 	db: db,
-			// },
+			types.FullReBalanceOndoing: &doPartRebalanceHandler{
+				db: db,
+			},
 		},
 	}
 
 	return
 }
 
-func (p *ReBalance) getHandler(state types.ReBalanceState) StateHandler {
+func (p *FullReBalance) getHandler(state types.FullReBalanceState) StateHandler {
 	return p.handlers[state]
 }
 
-func (p *ReBalance) Name() string {
+func (p *FullReBalance) Name() string {
 	return "full_rebalance"
 }
 
-func checkState(state types.ReBalanceState) error {
+func checkState(state types.FullReBalanceState) error {
 	for _, v := range states {
 		if v == state {
 			return nil
@@ -84,7 +84,7 @@ func checkState(state types.ReBalanceState) error {
 	return fmt.Errorf("state:%d err", state)
 }
 
-func (p *ReBalance) Run() (err error) {
+func (p *FullReBalance) Run() (err error) {
 	tasks, err := p.db.GetOpenedFullReBalanceTasks()
 	if err != nil {
 		return

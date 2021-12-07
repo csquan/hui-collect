@@ -8,7 +8,17 @@ type LPResponse struct {
 	Data *Data  `json:"data"`
 }
 type Data struct {
+	Thresholds            []*Threshold         `json:"threshold"`
+	VaultInfoList         []*VaultInfo         `json:"vaultInfoList"`
 	LiquidityProviderList []*LiquidityProvider `json:"liquidityProviderList"`
+}
+type Threshold struct {
+	TokenAddress    string  `json:"tokenAddress"`
+	TokenSymbol     string  `json:"tokenSymbol"`
+	Chain           string  `json:"chain"`
+	ChainId         int     `json:"chainId"`
+	ThresholdAmount float64 `json:"thresholdAmount"`
+	Decimal         int     `json:"decimal"`
 }
 type LiquidityProvider struct {
 	Chain          string    `json:"chain"`
@@ -29,26 +39,36 @@ type LpInfo struct {
 	BaseTokenAmount   string `json:"baseTokenAmount"`
 	QuoteTokenAmount  string `json:"quoteTokenAmount"`
 }
+type VaultInfo struct {
+	TokenSymbol  string `json:"tokenSymbol"`
+	ActiveAmount struct {
+		BSC     *ControllerInfo `json:"BSC"`
+		Heco    *ControllerInfo `json:"Heco"`
+		Polygon *ControllerInfo `json:"Polygon"`
+	} `json:"activeAmount"`
+}
+
+type ControllerInfo struct {
+	Amount            string `json:"amount"`
+	ControllerAddress string `json:"controllerAddress"`
+}
 
 //平无常接口参数
 type ImpermanectLostReq struct {
-	BizNo  string `json:"bizNo"`
-	LpList []*LpReq  `json:"lpList"`
+	BizNo  string   `json:"bizNo"`
+	LpList []*LpReq `json:"lpList"`
 }
 
 type LpReq struct {
 	Chain              string `json:"chain"`
 	LpTokenAddress     string `json:"lpTokenAddress"`
-	LpAmount           string    `json:"lpAmount"`
-	Token0OriginAmount string    `json:"token0OriginAmount"`
-	Token1OriginAmount string    `json:"token1OriginAmount"`
+	LpAmount           string `json:"lpAmount"`
+	Token0OriginAmount string `json:"token0OriginAmount"`
+	Token1OriginAmount string `json:"token1OriginAmount"`
 }
 
 type NormalResponse struct {
-	Code int    `json:"code"`
-	Msg  string `json:"msg"`
+	Code int                    `json:"code"`
+	Msg  string                 `json:"msg"`
 	Data map[string]interface{} `json:"data"`
 }
-
-
-

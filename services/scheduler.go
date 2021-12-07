@@ -2,6 +2,7 @@ package services
 
 import (
 	"github.com/starslabhq/hermes-rebalance/bridge"
+	"github.com/starslabhq/hermes-rebalance/services/full_rebalance"
 	"os"
 	"sync"
 	"time"
@@ -35,10 +36,10 @@ func NewServiceScheduler(conf *config.Config, db types.IDB, closeCh <-chan os.Si
 }
 
 func (t *ServiceScheduler) Start() {
-	//reBalance, err := rebalance.NewReBalanceService(t.db, t.conf)
-	//if err != nil {
-	//	logrus.Fatalf("new rebalance service error: %v", err)
-	//}
+	fullReBalance, err := full_rebalance.NewReBalanceService(t.db, t.conf)
+	if err != nil {
+		logrus.Fatalf("new rebalance service error: %v", err)
+	}
 	partReBalance, err := part_rebalance.NewPartReBalanceService(t.db, t.conf)
 	if err != nil {
 		logrus.Fatalf("new part rebalance service error: %v", err)
@@ -61,7 +62,7 @@ func (t *ServiceScheduler) Start() {
 	//create cross service
 
 	t.services = []types.IAsyncService{
-		//reBalance,
+		fullReBalance,
 		partReBalance,
 		transaction,
 		crossService,

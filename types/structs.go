@@ -18,16 +18,16 @@ type BaseTask struct {
 	Message string `xorm:"f_message"`
 }
 
-type ReBalanceState = int
+type FullReBalanceState = int
 
 const (
-	FullReBalanceInit                     ReBalanceState = iota
-	FullReBalanceMarginIn                                //平无常 http请求
-	FullReBalanceClaimLP                                 //拆LP 合约调用
-	FullReBalanceMarginBalanceTransferOut                //保证金转出至对冲账户
-	FullReBalanceRecycling                               //资金跨回
-	FullReBalanceParamsCalc                              // python 计算并创建partRebalanceTask
-	FullReBalanceOndoing                                 // 检查partRebalanceTask状态
+	FullReBalanceInit     FullReBalanceState = iota
+	FullReBalanceMarginIn                    //平无常 http请求
+	FullReBalanceClaimLP                     //拆LP 合约调用
+	FullReBalanceMarginBalanceTransferOut    //保证金转出至对冲账户
+	FullReBalanceRecycling                   //资金跨回
+	FullReBalanceParamsCalc                  // python 计算并创建partRebalanceTask
+	FullReBalanceOndoing                     // 检查partRebalanceTask状态
 	FullReBalanceSuccess
 	FullReBalanceFailed
 )
@@ -97,9 +97,10 @@ func (p *FullReBalanceTask) TableName() string {
 }
 
 type PartReBalanceTask struct {
-	*Base     `xorm:"extends"`
-	*BaseTask `xorm:"extends"`
-	Params    string `xorm:"f_params"`
+	*Base           `xorm:"extends"`
+	*BaseTask       `xorm:"extends"`
+	FullRebalanceID uint64 `xorm:"f_full_rebalance_id"`
+	Params          string `xorm:"f_params"`
 }
 
 func (p *PartReBalanceTask) TableName() string {

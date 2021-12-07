@@ -4,6 +4,18 @@ import (
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
+func (m *Mysql) GetPartReBalanceTaskByFullRebalanceID(fullRebalanceID uint64) (task *types.PartReBalanceTask, err error) {
+	task = &types.PartReBalanceTask{}
+	ok, err := m.engine.Where("f_full_rebalance_id == ?", fullRebalanceID).Get(task)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	return task, nil
+}
+
 func (m *Mysql) GetOpenedPartReBalanceTasks() (tasks []*types.PartReBalanceTask, err error) {
 	tasks = make([]*types.PartReBalanceTask, 0)
 	err = m.engine.Where("f_state != ? and f_state != ?",
