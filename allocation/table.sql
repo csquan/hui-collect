@@ -80,7 +80,7 @@ create TABLE `t_token` (
     `f_symbol`       varchar(255)        NOT NULL COMMENT 'token symbol',
     `f_address`      varchar(255)        NOT NULL COMMENT 'token contract address',
     `f_decimal`      integer             NOT NULL COMMENT '精度',
-    `f_cross_symbol` varchar(255)        NOT NULL COMMENT 'cross bridge symbol',
+    `f_cross_symbol` varchar(255)         COMMENT 'cross bridge symbol',
     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */
 )
     ENGINE = InnoDB
@@ -91,14 +91,14 @@ insert into t_token(f_currency, f_chain, f_symbol, f_address, f_decimal, f_cross
 values ('btc', 'heco', 'HBTC', '0x66a79d23e58475d2738179ca52cd0b41d73f0bea', 18, 'btc'),
        ('btc', 'bsc', 'BTCB', '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c', 18, 'btc'),
        ('btc', 'polygon', 'WBTC', '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6', 8, 'btc'),
-       ('bnb', 'bsc', 'BNB', '', 18, 'bnb'),
-       ('cake', 'bsc', 'CAKE', '', 18, 'cake'),
-       ('matic', 'bsc', 'MATIC', '', 18, 'matic'),
+       ('bnb', 'bsc', 'BNB', '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c', 18, 'bnb'),
+       ('cake', 'bsc', 'CAKE', '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82', 18, 'cake'),
+       ('matic', 'bsc', 'MATIC', '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270', 18, 'matic'),
        ('eth', 'heco', 'ETH', '0x64ff637fb478863b7468bc97d30a5bf3a428a1fd', 18, 'eth'),
        ('eth', 'bsc', 'ETH', '0x2170ed0880ac9a755fd29b2688956bd959f933f8', 18, 'eth'),
        ('eth', 'polygon', 'WETH', '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619', 18, 'eth'),
        ('usdt', 'heco', 'USDT', '0xa71edc38d189767582c38a3145b5873052c3e47a', 18, 'usdt'),
-       ('usdt', 'bsc', 'USDT', '0x55d398326f99059fF775485246999027B3197955', 18, 'usdt'),
+       ('usdt', 'bsc', 'USDT', '0x55d398326f99059ff775485246999027b3197955', 18, 'usdt'),
        ('usdt', 'polygon', 'USDT', '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', 6, 'usdt'),
        ('usdc', 'heco', 'USDC', '0x9362bbef4b8313a8aa9f0c9808b80577aa26b73b', 6, 'usdc'),
        ('usdc', 'polygon', 'USDC', '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', 6, 'usdc'),
