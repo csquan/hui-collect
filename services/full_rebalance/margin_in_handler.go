@@ -68,7 +68,7 @@ func checkMarginJobStatus(url string, bizNo string) (finished bool, err error) {
 }
 
 func getLp(url string) (lpList []*types.LiquidityProvider, err error) {
-	data, err := utils.DoPost(url, nil)
+	data, err := utils.DoGet(url, nil)
 	if err != nil {
 		logrus.Errorf("request lp err:%v", err)
 		return
