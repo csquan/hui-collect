@@ -41,7 +41,7 @@ class Params:
 
 
 # 存储基本usd/dai，其他u一定包含这个
-counter_tokens = ["usd"]
+counter_tokens = ["usd","dai"]
 
 def format_addr(addr):
     if addr.startswith('0x'):
@@ -51,8 +51,9 @@ def format_addr(addr):
 
 
 def parseCurrencyPair(pair):
+    # 单币
     if '_' not in pair:
-        return pair,"none"
+        return pair, "none"
 
     tokenstr = pair.split('_')
     return tokenstr[0].lower(), tokenstr[1].lower()
@@ -69,8 +70,6 @@ def getPair(str, currencys):
     for key in currencys:
         for info in currencys[key]["tokens"]:
             for t in currencys[key]["tokens"][info]:
-                if key == "eth" and info == "poly":
-                    print("poly")
                 if currencys[key]["tokens"][info]["symbol"].lower() == str1:
                     str1 = key
                 if currencys[key]["tokens"][info]["symbol"].lower() == str2:
@@ -93,8 +92,6 @@ def getreinfo(url):
     ret = requests.get(url)
     string = str(ret.content, 'utf-8')
     e = json.loads(string)
-
-    print(e["data"])
 
     return e["data"]
 
@@ -150,7 +147,6 @@ def getprojectinfo(project, url, currencys):
 
 
 def getpoolinfo(url):
-    # 存储从api获取的poolinfo
     pool_infos = {}
     ret = requests.get(url)
     string = str(ret.content, 'utf-8')
@@ -306,16 +302,10 @@ def getPairProject(str):
 
 
 def add_cross_item(currency, fromChain, toChain, amount, beforeInfo, currencies, crossList):
-    #todo:format poly
-    if fromChain == "poly":
-        fromChain = "polygon"
     if amount > float(currencies[currency]["min"]):
         beforeInfo[currency][fromChain]['amount'] -= amount
         beforeInfo[currency][toChain]['amount'] += amount
 
-        # todo:format poly
-        if fromChain == "polygon":
-            fromChain = "poly"
         crossList.append({
             'from': fromChain,
             'to': toChain,
@@ -327,7 +317,7 @@ def add_cross_item(currency, fromChain, toChain, amount, beforeInfo, currencies,
 # strategies :chain project pair
 def find_strategies_by_chain_and_currency(chain, currency, strategies):
     ret = []
-    # todo:format poly
+
     if chain == "poly":
       chain = "polygon"
 
@@ -671,7 +661,9 @@ def outputReTask():
             for chain in vault['activeAmount']:
                 if name not in beforeInfo:
                     beforeInfo[name] = {}
-
+                # 名字统一
+                if chain.lower() == "polygon":
+                    chain = "poly"
                 beforeInfo[name][chain.lower()] = vault['activeAmount'][chain]
                 beforeInfo[name][chain.lower()]['amount'] = float(beforeInfo[name][chain.lower()]['amount'])
                 # total = total + vault.activeAmount[chain]
