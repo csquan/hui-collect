@@ -749,9 +749,9 @@ def outputReTask():
 
     from re_optimize import computeTarget
     # 三个todo值，这里先做假值，后面需要到config取
-    todo_btc = 10000
-    todo_eth = 20000
-    todo_usdt = 400000
+    todo_btc = 10
+    todo_eth = 100
+    todo_usdt = 10000000
     btc_bsc, eth_bsc, usdt_bsc = computeTarget(todo_btc, todo_eth, todo_usdt, argsr, argstt, argsa)
     print("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
     print("three target: btc_bsc: %f, eth_bsc: %f, usdt_bsc:%f"%(btc_bsc, eth_bsc, usdt_bsc))
@@ -759,19 +759,19 @@ def outputReTask():
 
 
     # Bnb_q  bnb在bsc上的bnb总量，以下变量类似定义，应该re返回获取，但是目前返回数据不全，所以测试数据 其中Btcb_q Eth_q Usdt_q 由配资内部计算可得
-    bnb_q = 3000
-    cake_q = 2000
-    btcb_q = 500000 + btc_bsc
-    eth_q = 600000 + eth_bsc
-    busd_q = 10000
-    usdt_q = 8000 + usdt_bsc
-
+    bnb_q = 0.01
+    cake_q = 0.01
+    btcb_q = 0 + btc_bsc
+    eth_q = 0 + eth_bsc
+    busd_q = 0.01
+    usdt_q = 0 + usdt_bsc
+    exit()
     argsq = (bnb_q, busd_q, btcb_q, eth_q, usdt_q, cake_q)
     print("argsq:", argsq)
 
     # 下面进行配资计算,X为结果矩阵，存储X0-15
     from re_optimize import doCompute
-    X = doCompute(argsq, argsp, argsr, argstt)
+    X = doCompute(argsq, argsp, argsr, argstt, argsa)
     Y = (
     "bnb_amt_biswap_busd",
     "bnb_amt_pancake_busd",

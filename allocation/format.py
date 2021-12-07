@@ -157,7 +157,7 @@ def calc(session, currencies):
 
     # 没超过阈值
     if not needReBalance:
-        exit()
+        return
 
     # 获取apr等信息
 
