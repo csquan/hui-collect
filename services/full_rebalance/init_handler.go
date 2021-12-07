@@ -18,7 +18,7 @@ func (i *initHandler) Do(task *types.FullReBalanceTask) error {
 	return nil
 }
 
-func (i *initHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
+func (i *initHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	return true, types.FullReBalanceMarginIn, nil
 }
 

@@ -6,11 +6,11 @@ import (
 
 //go:generate mockgen -source=$GOFILE -destination=./mock/mock_db.go -package=mock
 type IReader interface {
-	//GetPartReBalanceTasks(state types.PartReBalanceState) ([]*types.PartReBalanceTask, error)
 
+	GetPartReBalanceTaskByFullRebalanceID(fullRebalanceID uint64) (task *PartReBalanceTask, err error)
+	//GetPartReBalanceTasks(state types.PartReBalanceState) ([]*types.PartReBalanceTask, error)
 	GetOpenedPartReBalanceTasks() ([]*PartReBalanceTask, error)
 	GetOpenedFullReBalanceTasks() ([]*FullReBalanceTask, error)
-
 	GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType TransactionType) ([]*TransactionTask, error)
 
 	GetOpenedTransactionTask() ([]*TransactionTask, error)

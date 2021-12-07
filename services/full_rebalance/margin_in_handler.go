@@ -35,7 +35,7 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 	return
 }
 
-func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
+func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	finished, err = checkMarginJobStatus(i.conf.ApiConf.MarginUrl, fmt.Sprintf("%d", task.ID))
 	if err != nil {
 		return

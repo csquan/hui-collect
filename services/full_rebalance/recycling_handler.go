@@ -2,6 +2,7 @@ package full_rebalance
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
@@ -27,19 +28,37 @@ const (
 	chainHeco = "heco"
 )
 
+func (r *recyclingHandler) Name() string{
+	return "recycling_handler"
+}
+
 func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
-	vaultList, err := getVaultList(r.conf.ApiConf.LpUrl)
+	res, err := getLpData(r.conf.ApiConf.LpUrl)
 	if err != nil {
 		return
+	}
+	//根据接口返回的threshold构建(chainId,tokenSymbol)->tokenAddress 的mapping，后面获取tokenAddr读此map
+	m := make(map[string]string)
+	for _, threshold := range res.Thresholds {
+		m[fmt.Sprintf("%d,%s", threshold.ChainId, threshold.TokenSymbol)] = threshold.TokenAddress
 	}
 	var sendToBridgeParams []*types.SendToBridgeParam
 	var receiveFromBridgeParams []*types.ReceiveFromBridgeParam
 	partRebalanceParam := &types.Params{ReceiveFromBridgeParams: receiveFromBridgeParams, SendToBridgeParams: sendToBridgeParams}
-	for _, vault := range vaultList {
+	for _, vault := range res.VaultInfoList {
 		bscSend := r.buildSendToBridgeParam(vault, chainBsc)
 		polySend := r.buildSendToBridgeParam(vault, chainPoly)
-		receiveBsc := r.buildReceiveFromBridgeParam(vault, chainHeco, chainBsc)
-		receivePoly := r.buildReceiveFromBridgeParam(vault, chainHeco, chainPoly)
+		var receiveBsc, receivePoly *types.ReceiveFromBridgeParam
+		receiveBsc, err = r.buildReceiveFromBridgeParam(vault, chainHeco, chainBsc, m, vault.TokenSymbol)
+		if err != nil{
+			logrus.Errorf("buildReceiveFromBridgeParam err:%v", err)
+			return
+		}
+		receivePoly, err = r.buildReceiveFromBridgeParam(vault, chainHeco, chainPoly, m, vault.TokenSymbol)
+		if err != nil{
+			logrus.Errorf("buildReceiveFromBridgeParam err:%v", err)
+			return
+		}
 		sendToBridgeParams = append(sendToBridgeParams, bscSend, polySend)
 		receiveFromBridgeParams = append(receiveFromBridgeParams, receiveBsc, receivePoly)
 	}
@@ -59,12 +78,29 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	return
 }
 
-func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
-
-	return true, types.FullReBalanceParamsCalc, nil
+func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
+	partTask, err := r.db.GetPartReBalanceTaskByFullRebalanceID(task.ID)
+	if err != nil{
+		logrus.Errorf("GetPartReBalanceTaskByFullRebalanceID err:%v", err)
+		return
+	}
+	if partTask == nil{
+		err = fmt.Errorf("GetPartReBalanceTaskByFullRebalanceID err:%v", err)
+		logrus.Error(err)
+		return
+	}
+	switch partTask.State {
+	case types.PartReBalanceSuccess:
+		return true, types.FullReBalanceParamsCalc, nil
+	case types.PartReBalanceFailed:
+		return true, types.FullReBalanceFailed, nil
+	default:
+		finished = false
+		return
+	}
 }
 
-func getVaultList(url string) (lpList []*types.VaultInfo, err error) {
+func getLpData(url string) (lpList *types.Data, err error) {
 	data, err := utils.DoGet(url, nil)
 	if err != nil {
 		logrus.Errorf("request lp err:%v", err)
@@ -79,7 +115,7 @@ func getVaultList(url string) (lpList []*types.VaultInfo, err error) {
 		logrus.Errorf("lpResponse code not 200, msg:%s", lpResponse.Msg)
 		return
 	}
-	lpList = lpResponse.Data.VaultInfoList
+	lpList = lpResponse.Data
 	return
 }
 
@@ -106,7 +142,8 @@ func (r *recyclingHandler) buildSendToBridgeParam(vault *types.VaultInfo, chainN
 	sendParam.TaskID = "1" //TODO
 	return
 }
-func (r *recyclingHandler) buildReceiveFromBridgeParam(vault *types.VaultInfo, chainName string, fromChain string) (sendParam *types.ReceiveFromBridgeParam) {
+func (r *recyclingHandler) buildReceiveFromBridgeParam(vault *types.VaultInfo, chainName string,
+	fromChain string, m map[string]string, tokenSymbol string) (sendParam *types.ReceiveFromBridgeParam, err error) {
 	sendParam = &types.ReceiveFromBridgeParam{}
 	chain, ok := r.conf.Chains[chainName]
 	if !ok {
@@ -116,8 +153,12 @@ func (r *recyclingHandler) buildReceiveFromBridgeParam(vault *types.VaultInfo, c
 	sendParam.ChainName = chainName
 	sendParam.From = chain.BridgeAddress
 	sendParam.To = vault.ActiveAmount.Heco.ControllerAddress
-
-	sendParam.Erc20ContractAddr = common.HexToAddress("TODO") //TODO
+	tokenAddr, ok := m[fmt.Sprintf("%d, %s", chain.ID, tokenSymbol)]
+	if !ok {
+		err = fmt.Errorf("not found tokenAddr chain.ID:%d,tokenSymbol:%s", chain.ID, tokenSymbol)
+		return
+	}
+	sendParam.Erc20ContractAddr = common.HexToAddress(tokenAddr)
 
 	switch fromChain {
 	case chainBsc:
@@ -127,7 +168,6 @@ func (r *recyclingHandler) buildReceiveFromBridgeParam(vault *types.VaultInfo, c
 	default:
 		logrus.Fatalf("buildSendToBridgeParam err chainName:%s", chainName)
 	}
-	sendParam.Amount = vault.ActiveAmount.Polygon.Amount
 	sendParam.TaskID = "1" //TODO
 	return
 }

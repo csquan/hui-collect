@@ -1,6 +1,8 @@
 package full_rebalance
 
 import (
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
@@ -8,10 +10,32 @@ type doPartRebalanceHandler struct {
 	db types.IDB
 }
 
-func (d *doPartRebalanceHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
-	return true, types.FullReBalanceSuccess, nil
+func (d *doPartRebalanceHandler) Name() string {
+	return "doPartRebalanceHandler"
 }
 
-func (d *doPartRebalanceHandler) MoveToNextState(task *types.FullReBalanceTask, nextState types.ReBalanceState) (err error) {
-	return
+func (d *doPartRebalanceHandler) Do(task *types.FullReBalanceTask) (err error) {
+	return nil
+}
+
+func (d *doPartRebalanceHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
+	partTask, err := d.db.GetPartReBalanceTaskByFullRebalanceID(task.ID)
+	if err != nil {
+		logrus.Errorf("GetPartReBalanceTaskByFullRebalanceID err:%v", err)
+		return
+	}
+	if partTask == nil {
+		err = fmt.Errorf("GetPartReBalanceTaskByFullRebalanceID err:%v", err)
+		logrus.Error(err)
+		return
+	}
+	switch partTask.State {
+	case types.PartReBalanceSuccess:
+		return true, types.FullReBalanceParamsCalc, nil
+	case types.PartReBalanceFailed:
+		return true, types.FullReBalanceFailed, nil
+	default:
+		finished = false
+		return
+	}
 }

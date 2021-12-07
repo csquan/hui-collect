@@ -28,7 +28,7 @@ func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 	return
 }
 
-func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.ReBalanceState, err error) {
+func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	finished, err = checkMarginOutJobStatus(i.conf.ApiConf.MarginUrl+"status/query", fmt.Sprintf("%d", task.ID))
 	if err != nil {
 		return
