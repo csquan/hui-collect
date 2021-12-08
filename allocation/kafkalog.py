@@ -4,7 +4,7 @@ import sys
 from kafka import KafkaProducer
 import socket
 
-APP = 'reba-compute'
+APP = 're-alloc'
 APPNAME = 'applog-heco'
 
 class KafkaHandler(logging.Handler):
