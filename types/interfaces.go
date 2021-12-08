@@ -21,6 +21,9 @@ type IReader interface {
 	GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*CrossTask, error)
 	GetCrossSubTasks(crossTaskId uint64) ([]*CrossSubTask, error)
 	GetOpenedCrossSubTasks(parentTaskId uint64) ([]*CrossSubTask, error)
+
+	GetCurrency() ([]*Currency, error)
+	GetTokens() ([]*Token, error)
 }
 
 type IWriter interface {

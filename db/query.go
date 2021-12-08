@@ -6,7 +6,7 @@ import (
 
 func (m *Mysql) GetPartReBalanceTaskByFullRebalanceID(fullRebalanceID uint64) (task *types.PartReBalanceTask, err error) {
 	task = &types.PartReBalanceTask{}
-	ok, err := m.engine.Where("f_full_rebalance_id == ?", fullRebalanceID).Get(task)
+	ok, err := m.engine.Where("f_full_rebalance_id = ?", fullRebalanceID).Get(task)
 	if err != nil {
 		return nil, err
 	}
@@ -88,6 +88,7 @@ func (m *Mysql) GetOpenedCrossSubTasks(parentTaskId uint64) ([]*types.CrossSubTa
 	return tasks, nil
 }
 
+
 func (m *Mysql) GetTransactionTasksWithFullRebalanceId(fullReBalanceId uint64, transactionType types.TransactionType) ([]*types.TransactionTask, error) {
 	tasks := make([]*types.TransactionTask, 0)
 	err := m.engine.Table("t_transaction_task").Where("f_full_rebalance_id = ? and f_type = ?", fullReBalanceId, transactionType).Find(&tasks)
@@ -96,3 +97,23 @@ func (m *Mysql) GetTransactionTasksWithFullRebalanceId(fullReBalanceId uint64, t
 	}
 	return tasks, nil
 }
+
+func (m *Mysql) GetTokens() ([]*types.Token, error) {
+	tokens := make([]*types.Token, 0)
+	err := m.engine.Find(&tokens)
+	if err != nil {
+		return nil, err
+	}
+	return tokens, nil
+}
+func (m *Mysql) GetCurrency() ([]*types.Currency, error) {
+	currency := make([]*types.Currency, 0)
+	err := m.engine.Find(&currency)
+	if err != nil {
+		return nil, err
+	}
+	return currency, nil
+}
+
+
+

@@ -17,7 +17,7 @@ type Threshold struct {
 	TokenSymbol     string  `json:"tokenSymbol"`
 	Chain           string  `json:"chain"`
 	ChainId         int     `json:"chainId"`
-	ThresholdAmount float64 `json:"thresholdAmount"`
+	ThresholdAmount string `json:"thresholdAmount"`
 	Decimal         int     `json:"decimal"`
 }
 type LiquidityProvider struct {
@@ -50,6 +50,12 @@ type VaultInfo struct {
 type ControllerInfo struct {
 	Amount            string `json:"amount"`
 	ControllerAddress string `json:"controllerAddress"`
+
+	//下面几个字段不是从json解析出来的
+	Chain string
+	ChainID int
+	BridgeAddress string
+	Currency string
 }
 
 //平无常接口参数
@@ -71,3 +77,4 @@ type NormalResponse struct {
 	Msg  string                 `json:"msg"`
 	Data map[string]interface{} `json:"data"`
 }
+

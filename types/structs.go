@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"github.com/shopspring/decimal"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -220,4 +221,27 @@ type LP struct {
 	LPTokenAddr string    `json:"lpTokenAddress"`
 	LPPlatform  string    `json:"lpPlatform"`
 	Infos       []*LpInfo `json:"lpInfoList"`
+}
+
+type Token struct {
+	*Base       `xorm:"extends"`
+	Currency    string `xorm:"f_currency"`
+	Chain       string `xorm:"f_chain"`
+	Symbol      string `xorm:"f_symbol"`
+	Address     string `xorm:"f_address"`
+	Decimal     int    `xorm:"f_decimal"`
+	CrossSymbol string `xorm:"f_cross_symbol"`
+}
+
+func (t *Token) TableName() string {
+	return "t_token"
+}
+
+type Currency struct {
+	*Base `xorm:"extends"`
+	Name  string          `xorm:"f_name"`
+	Min   decimal.Decimal `xorm:"f_min"`
+}
+func (t *Currency) TableName() string {
+	return "t_currency"
 }
