@@ -55,7 +55,6 @@ type ControllerInfo struct {
 	Chain string
 	ChainID int
 	BridgeAddress string
-	Currency string
 }
 
 //平无常接口参数

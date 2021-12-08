@@ -18,7 +18,6 @@ type recyclingHandler struct {
 	conf *config.Config
 }
 
-
 func (r *recyclingHandler) Name() string {
 	return "recycling_handler"
 }
@@ -33,16 +32,15 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	if err != nil {
 		return
 	}
-	var sendToBridgeParams []*types.SendToBridgeParam
-	var crossBridgeParams []*types.CrossBalanceItem
-	var receiveFromBridgeParams []*types.ReceiveFromBridgeParam
 	partRebalanceParam := &types.Params{
-		SendToBridgeParams:      sendToBridgeParams,
-		CrossBalances:           crossBridgeParams,
-		ReceiveFromBridgeParams: receiveFromBridgeParams,
+		SendToBridgeParams:      make([]*types.SendToBridgeParam, 0),
+		CrossBalances:           make([]*types.CrossBalanceItem, 0),
+		ReceiveFromBridgeParams: make([]*types.ReceiveFromBridgeParam, 0),
 	}
 	for _, vault := range res.VaultInfoList {
-		r.appendParam(vault, partRebalanceParam, tokensMap, currencyMap)
+		if err = r.appendParam(vault, partRebalanceParam, tokensMap, currencyMap); err != nil{
+			return
+		}
 	}
 	data, _ := json.Marshal(partRebalanceParam)
 	partTask := &types.PartReBalanceTask{
@@ -52,9 +50,10 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	err = utils.CommitWithSession(r.db, func(session *xorm.Session) (execErr error) {
 		execErr = r.db.SaveRebalanceTask(session, partTask)
 		if execErr != nil {
-			task.State = types.FullReBalanceRecycling
-			execErr = r.db.UpdateFullReBalanceTask(session, task)
+			return
 		}
+		task.State = types.FullReBalanceRecycling
+		execErr = r.db.UpdateFullReBalanceTask(session, task)
 		return
 	})
 	return
@@ -123,26 +122,32 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			logrus.Warnf("not found currency from db,currency:%s", vault.Currency)
 			return
 		}
+		if currency.Min.Cmp(decimal.Zero) <= 0 {
+			logrus.Infof("currency.min not config, currency:%v", vault.Currency)
+			return
+		}
 		var amount decimal.Decimal
 		if amount, err = decimal.NewFromString(info.Amount); err != nil {
 			logrus.Errorf("convert amount to decimal err:%v", err)
 			return
 		}
 		if amount.Cmp(currency.Min) == -1 {
-			logrus.Infof("amount less than currency.min amount:%v, min:%v", amount, currency.Min)
+			logrus.Infof("amount less than currency.min amount:%s, min:%s", amount.String(), currency.Min.String())
 			return
 		}
 		var fromToken, hecoToken *types.Token
 		fromToken, ok = getToken(tokensMap, vault.Currency, info.Chain)
-		hecoToken, ok = getToken(tokensMap, heco.Currency, heco.Chain)
+		hecoToken, ok = getToken(tokensMap, vault.Currency, heco.Chain)
+		amountStr := powN(strMustToDecimal(info.Amount), fromToken.Decimal).String()
+		taskID := "1" // TODO
 		sendParam := &types.SendToBridgeParam{
 			ChainId:       fromChain.ID,
 			ChainName:     fromChainName,
 			From:          fromChain.BridgeAddress,
 			To:            info.ControllerAddress,
 			BridgeAddress: common.HexToAddress(fromChain.BridgeAddress),
-			Amount:        info.Amount, //TODO decimal
-			TaskID:        "1",         //TODO
+			Amount:        amountStr,
+			TaskID:        taskID,        
 		}
 		crossParam := &types.CrossBalanceItem{ //USDT
 			FromChain:    fromChainName,
@@ -151,7 +156,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			ToAddr:       heco.BridgeAddress,
 			FromCurrency: fromToken.CrossSymbol,
 			ToCurrency:   hecoToken.CrossSymbol,
-			Amount:       info.Amount, //TODO
+			Amount:       amountStr,
 		}
 		receiveParam := &types.ReceiveFromBridgeParam{ //USDT
 			ChainId:           heco.ChainID,
@@ -159,14 +164,13 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			From:              heco.BridgeAddress,
 			To:                heco.ControllerAddress,
 			Erc20ContractAddr: common.HexToAddress(hecoToken.Address),
-			Amount:            info.Amount,
-			TaskID:            "1",
+			Amount:            amountStr,
+			TaskID:            taskID,
 		}
 		partRebalanceParam.SendToBridgeParams = append(partRebalanceParam.SendToBridgeParams, sendParam)
 		partRebalanceParam.CrossBalances = append(partRebalanceParam.CrossBalances, crossParam)
 		partRebalanceParam.ReceiveFromBridgeParams = append(partRebalanceParam.ReceiveFromBridgeParams, receiveParam)
 	}
-
 	return
 }
 
@@ -221,6 +225,5 @@ func (r *recyclingHandler) hecoController(vault *types.VaultInfo) (controller *t
 	controller.Chain = hecoChainName
 	controller.ChainID = chain.ID
 	controller.BridgeAddress = chain.BridgeAddress
-	controller.Currency = vault.Currency
 	return
 }
