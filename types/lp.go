@@ -38,6 +38,7 @@ type LpInfo struct {
 	QuoteTokenSymbol  string `json:"quoteTokenSymbol"`
 	BaseTokenAmount   string `json:"baseTokenAmount"`
 	QuoteTokenAmount  string `json:"quoteTokenAmount"`
+	StrategyAddress   string `json:"strategyAddress"`
 }
 type VaultInfo struct {
 	TokenSymbol  string                     `json:"tokenSymbol"`
