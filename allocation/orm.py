@@ -60,9 +60,11 @@ def find_strategies_by_chain_and_currency(session, chain, currency):
 
 
 def find_strategies_by_chain_project_and_currencies(session, chain, project, currency0, currency1):
-    return session.query(Strategy).filter(Strategy.chain == chain).filter(Strategy.project == project).filter(
+    q = session.query(Strategy).filter(Strategy.chain == chain).filter(Strategy.project == project).filter(
         or_(and_(Strategy.currency0 == currency0, Strategy.currency1 == currency1),
             and_(Strategy.currency0 == currency1, Strategy.currency1 == currency0)))
+
+    return [s for s in q]
 
 
 def find_currency_by_address(session, address):

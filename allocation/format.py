@@ -362,35 +362,52 @@ def calc(conf, session, currencies):
 
     for chain in targetChain:
         info = calc_invest(session, chain, account_info, price, daily_reward, apr, tvl)
-        strategyAddresses = []
-        baseTokenAmount = []
-        counterTokenAmount = []
-        print("info after  calc_invest : ",info)
-        for strategy, amounts in info.items():
-            subinfo = get_info_by_strategy_str(strategy)
-            print('subinfo:',subinfo)
-            print('strategy_addresses:',strategy_addresses)
-            # 从strategy_addresses里面根据key：strategy查找
-            strategyAddresses.append(strategy_addresses[strategy])
-            # amounts 有两个币种对应的值，需要区分base和counter
-            token_decimal = currencies[currency].tokens[chain].decimal
-            for name, amount in amounts.items():
-                if isCounter(name):
-                    counterTokenAmount.append(amount * (Decimal(10) ** token_decimal))
-                else:
-                    baseTokenAmount.append(amount * (Decimal(10) ** token_decimal))
-            
-        if strategyAddresses:
-            res['invest_params'].append({
-                'chain_name': chain,
-                'chain_id': conf['chain'][chain],
-                'from': conf['bridge_port'][chain],
-                'to': account_info[currency][chain]['controller'],
 
-                "StrategyAddresses": strategyAddresses,
-                'BaseTokenAmount': baseTokenAmount,
-                'CounterTokenAmount': counterTokenAmount,
-            })
+        st_by_base = {}
+        # 根据base token 进行分组
+        for st, st_amounts in info.items():
+
+            base = get_base_currency(session, st)
+            if base not in st_by_base:
+                st_by_base[base] = []
+
+            st_by_base[base].append((st, st_amounts))
+
+        for base, st_info in st_by_base.items():
+
+            invest_addr = []
+            invest_base = []
+            invest_counter = []
+
+            for (st, st_amounts) in st_info:
+                if st not in strategy_addresses:
+                    continue
+
+                invest_addr.append(strategy_addresses[st])
+                base_decimal = currencies[base].tokens[chain].decimal
+
+                base_amount = (st_amounts[base] * (Decimal(10) ** base_decimal)).quantize(Decimal(1), ROUND_DOWN)
+                invest_base.append(base_amount)
+
+                counter = get_counter_currency(session, st)
+                if counter is None:
+                    invest_counter.append(0)
+                else:
+                    counter_decimal = currencies[counter].tokens[chain].decimal
+                    counter_amount = (st_amounts[counter] * (Decimal(10) ** counter_decimal)).quantize(Decimal(1),
+                                                                                                       ROUND_DOWN)
+                    invest_counter.append(counter_amount)
+
+            if len(invest_addr) > 0:
+                res['invest_params'].append({
+                    'chain_name': chain,
+                    'chain_id': conf['chain'][chain],
+                    'from': conf['bridge_port'][chain],
+                    'to': account_info[base][chain]['controller'],
+                    "strategy_addresses": invest_addr,
+                    'base_token_amount': invest_base,
+                    'counter_token_amount': invest_counter,
+                })
 
     return res
 
@@ -405,13 +422,29 @@ def get_info_by_strategy_str(lp):
         return data, data[2], data[3]
 
 
+def get_counter_currency(session, lp):
+    data, token0, token1 = get_info_by_strategy_str(lp)
+    st = find_strategies_by_chain_project_and_currencies(session, data[0], data[1], token0, token1)
+    return st[0].currency1
+
+
+def get_base_currency(session, lp):
+    data, token0, token1 = get_info_by_strategy_str(lp)
+    st = find_strategies_by_chain_project_and_currencies(session, data[0], data[1], token0, token1)
+    return st[0].currency0
+
+
+"""
+此策略对于单稳定币的情况符合预期，对于多稳定币的情况，可能求出的解不是最优
+"""
+
+
 def calc_invest(session, chain, balance_info_dict, price_dict, daily_reward_dict, apr_dict, tvl_dict):
     # 项目列表
 
     def f(key):
         infos = get_info_by_strategy_str(key)
-        strategies = [s for s in
-                      find_strategies_by_chain_project_and_currencies(session, chain, infos[0][1], infos[1], infos[2])]
+        strategies = find_strategies_by_chain_project_and_currencies(session, chain, infos[0][1], infos[1], infos[2])
         return len(strategies) > 0
 
     invest_calc_result = {}
@@ -427,18 +460,21 @@ def calc_invest(session, chain, balance_info_dict, price_dict, daily_reward_dict
         # 找到top1 与top2
         top = []
         apr1 = apr_dict[lpKeys[0]]
-        aprTarget = Decimal(0.01)
+        target_apr_down_limit = Decimal(0.01)
         for key in lpKeys:
 
             if abs(apr_dict[key] - apr1) < detla:
                 top.append(key)
             else:
-                aprTarget = apr_dict[key]
+                target_apr_down_limit = apr_dict[key]
                 break
+
+        """如果只有top只有一个值，那么直接下降到排名第二的apr，如果top有多个，就每次进行小量尝试"""
+        target_apr = max(target_apr_down_limit, apr1 - detla) if len(top) > 1 else target_apr_down_limit
 
         for key in top:
             filled, vol, changes = fill_cap(chain, key, daily_reward_dict, tvl_dict, balance_info_dict, price_dict,
-                                            max(aprTarget, apr1 - detla))
+                                            target_apr)
 
             if key not in invest_calc_result:
                 invest_calc_result[key] = {}
@@ -461,6 +497,11 @@ def calc_invest(session, chain, balance_info_dict, price_dict, daily_reward_dict
     for k in [key for key in invest_calc_result.keys()]:
         if len(invest_calc_result[k].keys()) == 0:
             invest_calc_result.pop(k)
+
+    """
+    这个时候如果有稳定币和非稳定币同时剩下了，我们要考虑进行调整，比如 bnb busd usdt btc，在上述运行完成后，剩下了busd btc，然而我们没有对应的投资标的
+    那么我们这时候可以考虑用busd 替换已经确定的投资组合中的usdt，然后将usdt和btc进行组合，这种情况下，只要新增reward多于 下降的reward就可以
+    """
 
     print('invest info:{}'.format(json.dumps(invest_calc_result, cls=utils.DecimalEncoder)))
 
@@ -549,7 +590,7 @@ if __name__ == '__main__':
             params = calc(conf, session, currencies)
             if params is None:
                 continue
-            print('params:', params)
+            # print('params:', params)
             print('params_json:', json.dumps(params, cls=utils.DecimalEncoder))
 
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
