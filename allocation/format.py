@@ -601,7 +601,7 @@ if __name__ == '__main__':
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
             session.commit()
 
-        except Exceqqqption as e:
+        except Exception as e:
             print("except happens:{}".format(e))
             print(traceback.format_exc())
         finally:
