@@ -55,7 +55,7 @@ create TABLE `t_currency` (
 )
     ENGINE = InnoDB
     DEFAULT CHARSET = utf8mb4
-    COLLATE = utf8mb4_bin COMMENT ='币种表';
+    COLLATE = utf8mb4_bin COMMENT ='资产表';
 
 
 insert into t_currency(f_name, f_min, f_cross_scale)
