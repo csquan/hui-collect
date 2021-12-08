@@ -174,15 +174,16 @@ def calc_cross_params(account_info, daily_reward, apr, tvl):
             if diff < 0:
                 add_cross_item(currency, chain, target_chain[chain], diff * -1)
                 # 先从heco向目标链转移，然后再从其他链向目标链转移
-            elif account_info[currency]['heco']['amount'] > diff:
+            elif account_info[currency]['heco']['amount'] >= diff:
                 add_cross_item(currency, 'heco', chain, diff)
             else:
+                heco_amount = account_info[currency]['heco']['amount']
                 add_cross_item(currency, 'heco', chain, account_info[currency]['heco']['amount'].quantize(
                     Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                     ROUND_DOWN))
 
                 add_cross_item(currency, target_chain[chain], chain,
-                               (diff - account_info[currency]['heco']['amount']).quantize(
+                               (diff - heco_amount).quantize(
                                    Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                                    ROUND_DOWN))
 
