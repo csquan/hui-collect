@@ -53,7 +53,7 @@ class Project:
     def get_info(self):
         res = requests.get(self.url)
         if res.status_code != 200:
-             raise(Exception('connection error : %s'%str(res.content, 'utf-8')))
+            raise (Exception('connection error : %s' % str(res.content, 'utf-8')))
         string = str(res.content, 'utf-8')
         print(string)
         e = json.loads(string)
@@ -93,7 +93,13 @@ def calc(conf, session, currencies):
                 if name not in account_info:
                     account_info[name] = {}
 
-                account_info[name][chain.lower()] = vault['activeAmount'][chain]
+                amt_info = vault['activeAmount'][chain]
+                if 'amount' not in amt_info:
+                    amt_info['amount'] = '0'
+                if 'controllerAddress' not in amt_info:
+                    amt_info['controllerAddress'] = None
+
+                account_info[name][chain.lower()] = amt_info
                 account_info[name][chain.lower()]['amount'] = Decimal(account_info[name][chain.lower()]['amount'])
                 account_info[name][chain.lower()]['controller'] = account_info[name][chain.lower()]['controllerAddress']
 
@@ -346,14 +352,14 @@ def calc(conf, session, currencies):
     print("cross info:{}", json.dumps(res, cls=utils.DecimalEncoder))
 
     res['invest_params'] = []
-    
+
     def isCounter(name):
         counter_tokens = ["usd", "dai"]
         for t in counter_tokens:
             if t in name:
                 return True
         return False
-    
+
     for chain in targetChain:
         info = calc_invest(session, chain, account_info, price, daily_reward, apr, tvl)
         strategyAddresses = []
@@ -543,15 +549,14 @@ if __name__ == '__main__':
             params = calc(conf, session, currencies)
             if params is None:
                 continue
-            print('params:',params)
-            print('params_json:',json.dumps(params, cls=utils.DecimalEncoder))
+            print('params:', params)
+            print('params_json:', json.dumps(params, cls=utils.DecimalEncoder))
 
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
             session.commit()
 
         except Exception as e:
             print("except happens:{}".format(e))
-            # print("{}".format(e.__traceback__))
             print(traceback.format_exc())
         finally:
             session.close()
