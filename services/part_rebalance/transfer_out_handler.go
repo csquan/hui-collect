@@ -16,19 +16,18 @@ func (t *transferOutHandler) CheckFinished(task *types.PartReBalanceTask) (finis
 	if err != nil {
 		return
 	}
-
-	if state != types.StateSuccess && state != types.StateFailed {
-		return
-	}
-
-	finished = true
-
-	if state == types.StateSuccess {
+	switch state {
+	case types.StateSuccess:
+		finished = true
 		nextState = types.PartReBalanceCross
-	} else {
+	case types.StateFailed:
+		finished = true
 		nextState = types.PartReBalanceFailed
+	case types.StateOngoing:
+		finished = false
+	default:
+		logrus.Errorf("transferOut checkFinished unrecognized state %v", state)
 	}
-
 	return
 }
 
