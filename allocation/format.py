@@ -144,7 +144,7 @@ def calc_cross_params(account_info, daily_reward, apr, tvl):
             task_id = '{}'.format(time.time_ns() * 100)
             send_to_bridge.append({
                 'chain_name': from_chain,
-                'chain_id': conf['chain'][from_chain],
+                'chain_id': conf['chain'][from_chain]['id'],
                 'from': conf['bridge_port'][from_chain],
                 'to': account_info[currency][from_chain]['controller'],
                 'bridge_address': conf['bridge_port'][from_chain],
@@ -153,7 +153,7 @@ def calc_cross_params(account_info, daily_reward, apr, tvl):
             })
             receive_from_bridge.append({
                 'chain_name': to_chain,
-                'chain_id': conf['chain'][to_chain],
+                'chain_id': conf['chain'][to_chain]['id'],
                 'from': conf['bridge_port'][to_chain],
                 'to': account_info[currency][to_chain]['controller'],
                 "erc20_contract_addr": currencies[currency].tokens[from_chain].address,
@@ -430,7 +430,7 @@ def generate_invest_params(account_info, chain, strategy_addresses, invest_calc_
         if len(invest_addr) > 0:
             res.append({
                 'chain_name': chain,
-                'chain_id': conf['chain'][chain],
+                'chain_id': conf['chain'][chain]['id'],
                 'from': conf['bridge_port'][chain],
                 'to': account_info[base][chain]['controller'],
                 "strategy_addresses": invest_addr,
@@ -601,7 +601,7 @@ if __name__ == '__main__':
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
             session.commit()
 
-        except Exception as e:
+        except Exceqqqption as e:
             print("except happens:{}".format(e))
             print(traceback.format_exc())
         finally:
