@@ -39,9 +39,10 @@ class KafkaHandler(logging.Handler):
                                             'filename': record.filename,
                                             'lineno'  :  record.lineno,
                                             })
-            self.flush(timeout=1.0)
-        except Exception:
-            logging.Handler.handleError(self, record)
+            self.flush(timeout=3.0)
+        except Exception as e:
+            #logging.Handler.handleError(self, record)
+            print(e)
 
     def flush(self, timeout=None):
         """Flush the objects."""
@@ -64,8 +65,7 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
     # enable the debug logger if you want to see ALL of the lines
     #logging.basicConfig(level=logging.DEBUG)
-    logger.setLevel(logging.ERROR)
-
+    logger.setLevel(logging.INFO)
     kh = KafkaHandler(['kafka-01.sinnet.huobiidc.com:9092'], APPNAME, 'dev')
     logger.addHandler(kh)
 
