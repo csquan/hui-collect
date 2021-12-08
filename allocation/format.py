@@ -66,7 +66,7 @@ def generate_strategy_key(chain, project, currencies):
     return "{}_{}_{}".format(chain, project, '_'.join(currencies))
 
 
-def calc_cross_params(account_info, daily_reward, apr, tvl):
+def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr, tvl):
     cross_balances = []
     send_to_bridge = []
     receive_from_bridge = []
@@ -124,7 +124,7 @@ def calc_cross_params(account_info, daily_reward, apr, tvl):
 
     print("diff map:{}".format(balance_diff_map))
 
-    def add_cross_item(currency, from_chain, to_chain, amount):
+    def add_cross_item(conf, currency, from_chain, to_chain, amount):
         if amount > Decimal(currencies[currency].min):
             token_decimal = currencies[currency].tokens[from_chain].decimal
 
@@ -144,7 +144,7 @@ def calc_cross_params(account_info, daily_reward, apr, tvl):
             task_id = '{}'.format(time.time_ns() * 100)
             send_to_bridge.append({
                 'chain_name': from_chain,
-                'chain_id': conf['chain'][from_chain]['id'],
+                'chain_id': conf['chain'][from_chain],
                 'from': conf['bridge_port'][from_chain],
                 'to': account_info[currency][from_chain]['controller'],
                 'bridge_address': conf['bridge_port'][from_chain],
@@ -153,7 +153,7 @@ def calc_cross_params(account_info, daily_reward, apr, tvl):
             })
             receive_from_bridge.append({
                 'chain_name': to_chain,
-                'chain_id': conf['chain'][to_chain]['id'],
+                'chain_id': conf['chain'][to_chain],
                 'from': conf['bridge_port'][to_chain],
                 'to': account_info[currency][to_chain]['controller'],
                 "erc20_contract_addr": currencies[currency].tokens[from_chain].address,
@@ -172,17 +172,17 @@ def calc_cross_params(account_info, daily_reward, apr, tvl):
 
             # 向其他链进行跨链操作
             if diff < 0:
-                add_cross_item(currency, chain, target_chain[chain], diff * -1)
+                add_cross_item(conf, currency, chain, target_chain[chain], diff * -1)
                 # 先从heco向目标链转移，然后再从其他链向目标链转移
             elif account_info[currency]['heco']['amount'] >= diff:
-                add_cross_item(currency, 'heco', chain, diff)
+                add_cross_item(conf, currency, 'heco', chain, diff)
             else:
                 heco_amount = account_info[currency]['heco']['amount']
-                add_cross_item(currency, 'heco', chain, account_info[currency]['heco']['amount'].quantize(
+                add_cross_item(conf, currency, 'heco', chain, account_info[currency]['heco']['amount'].quantize(
                     Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                     ROUND_DOWN))
 
-                add_cross_item(currency, target_chain[chain], chain,
+                add_cross_item(conf, currency, target_chain[chain], chain,
                                (diff - heco_amount).quantize(
                                    Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                                    ROUND_DOWN))
@@ -353,8 +353,8 @@ def calc_re_balance_params(conf, session, currencies):
     print("daily reward info:{}".format(daily_reward))
     print("tvl info:{}".format(tvl))
 
-    account_info, cross_balances, send_to_bridge, receive_from_bridge = calc_cross_params(account_info, daily_reward,
-                                                                                          apr, tvl)
+    account_info, cross_balances, send_to_bridge, receive_from_bridge = calc_cross_params(conf, session, currencies, account_info, 
+                                                                                          daily_reward, apr, tvl)
     res['send_to_bridge_params'] = send_to_bridge
     res['receive_from_bridge_params'] = receive_from_bridge
     res['cross_balances'] = cross_balances
@@ -362,7 +362,7 @@ def calc_re_balance_params(conf, session, currencies):
     res['invest_params'] = []
     for chain in dest_chains:
         invest_result = calc_invest(session, chain, account_info, price, daily_reward, apr, tvl)
-        invest_param_list = generate_invest_params(account_info, chain, strategy_addresses, invest_result)
+        invest_param_list = generate_invest_params(conf, session, currencies, account_info, chain, strategy_addresses, invest_result)
         res['invest_params'].extend(invest_param_list)
 
     return res
@@ -390,7 +390,7 @@ def get_base_currency(session, lp):
     return st[0].currency0
 
 
-def generate_invest_params(account_info, chain, strategy_addresses, invest_calc_result):
+def generate_invest_params(conf, session, currencies, account_info, chain, strategy_addresses, invest_calc_result):
     res = []
     st_by_base = {}
     # 根据base token 进行分组
@@ -430,7 +430,7 @@ def generate_invest_params(account_info, chain, strategy_addresses, invest_calc_
         if len(invest_addr) > 0:
             res.append({
                 'chain_name': chain,
-                'chain_id': conf['chain'][chain]['id'],
+                'chain_id': conf['chain'][chain],
                 'from': conf['bridge_port'][chain],
                 'to': account_info[base][chain]['controller'],
                 "strategy_addresses": invest_addr,
