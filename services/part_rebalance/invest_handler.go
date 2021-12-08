@@ -16,19 +16,18 @@ func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished b
 	if err != nil {
 		return
 	}
-
-	if state != types.StateFailed && state != types.StateSuccess {
-		return
-	}
-
-	finished = true
-
-	if state == types.StateSuccess {
+	switch state {
+	case types.StateSuccess:
+		finished = true
 		nextState = types.PartReBalanceSuccess
-	} else {
+	case types.StateFailed:
+		finished = true
 		nextState = types.PartReBalanceFailed
+	case types.StateOngoing:
+		finished = false
+	default:
+		logrus.Errorf("invest checkFinished unrecognized state %v", state)
 	}
-
 	return
 }
 

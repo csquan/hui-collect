@@ -40,12 +40,10 @@ type LpInfo struct {
 	QuoteTokenAmount  string `json:"quoteTokenAmount"`
 }
 type VaultInfo struct {
-	TokenSymbol  string `json:"tokenSymbol"`
-	ActiveAmount struct {
-		BSC     *ControllerInfo `json:"BSC"`
-		Heco    *ControllerInfo `json:"Heco"`
-		Polygon *ControllerInfo `json:"Polygon"`
-	} `json:"activeAmount"`
+	TokenSymbol  string                     `json:"tokenSymbol"`
+	Chain        string                     `json:"chain"`
+	Currency     string                     `json:"currency"`
+	ActiveAmount map[string]*ControllerInfo `json:"activeAmount"`
 }
 
 type ControllerInfo struct {

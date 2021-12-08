@@ -20,7 +20,7 @@ func (i *marginOutHandler) Name() string {
 }
 
 func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
-	if err = createMarginOutJob(i.conf.ApiConf.MarginUrl, fmt.Sprintf("%d", task.ID)); err != nil {
+	if err = createMarginOutJob(i.conf.ApiConf.MarginOutUrl, fmt.Sprintf("%d", task.ID)); err != nil {
 		return
 	}
 	task.State = types.FullReBalanceMarginBalanceTransferOut
@@ -37,9 +37,16 @@ func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 }
 
 func createMarginOutJob(url string, bizNo string) (err error) {
-	req := struct {
-		BizNo string `json:"bizNo"`
-	}{BizNo: fmt.Sprintf("%s", bizNo)}
+	lpList, err := getLp(url)
+	if err != nil {
+		return
+	}
+	lpReq, err := lp2Req(lpList)
+	if err != nil{
+		logrus.Errorf("build margin_in params err:%v", err)
+		return
+	}
+	req := &types.ImpermanectLostReq{BizNo: fmt.Sprintf("%s", bizNo), LpList: lpReq}
 	data, err := utils.DoRequest(url, "POST", req)
 	if err != nil {
 		logrus.Errorf("margin job query status err:%v", err)

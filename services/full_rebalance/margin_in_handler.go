@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/shopspring/decimal"
-	"math/big"
-
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -139,10 +137,3 @@ func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {
 	return
 }
 
-func add(x *big.Int, y string) {
-	y1, ok := new(big.Int).SetString(y, 10)
-	if !ok {
-		logrus.Fatalf("lpinfo to request failed, amount:%s", y)
-	}
-	x.Add(x, y1)
-}

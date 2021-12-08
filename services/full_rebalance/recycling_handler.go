@@ -128,14 +128,14 @@ func (r *recyclingHandler) buildSendToBridgeParam(vault *types.VaultInfo, chainN
 	sendParam.ChainId = chain.ID
 	sendParam.ChainName = chainName
 	sendParam.From = chain.BridgeAddress
-	sendParam.To = vault.ActiveAmount.BSC.ControllerAddress
+	// sendParam.To = vault.ActiveAmount.BSC.ControllerAddress TODO
 
 	sendParam.BridgeAddress = common.HexToAddress(chain.BridgeAddress)
 	switch chainName {
 	case chainBsc:
-		sendParam.Amount = vault.ActiveAmount.BSC.Amount
+		//sendParam.Amount = vault.ActiveAmount.BSC.Amount TODO
 	case chainPoly:
-		sendParam.Amount = vault.ActiveAmount.Polygon.Amount
+		//sendParam.Amount = vault.ActiveAmount.Polygon.Amount TODO
 	default:
 		logrus.Fatalf("buildSendToBridgeParam err chainName:%s", chainName)
 	}
@@ -152,7 +152,7 @@ func (r *recyclingHandler) buildReceiveFromBridgeParam(vault *types.VaultInfo, c
 	sendParam.ChainId = chain.ID
 	sendParam.ChainName = chainName
 	sendParam.From = chain.BridgeAddress
-	sendParam.To = vault.ActiveAmount.Heco.ControllerAddress
+	// sendParam.To = vault.ActiveAmount.Heco.ControllerAddress TODO
 	tokenAddr, ok := m[fmt.Sprintf("%d, %s", chain.ID, tokenSymbol)]
 	if !ok {
 		err = fmt.Errorf("not found tokenAddr chain.ID:%d,tokenSymbol:%s", chain.ID, tokenSymbol)
@@ -162,9 +162,9 @@ func (r *recyclingHandler) buildReceiveFromBridgeParam(vault *types.VaultInfo, c
 
 	switch fromChain {
 	case chainBsc:
-		sendParam.Amount = vault.ActiveAmount.BSC.Amount
+		// sendParam.Amount = vault.ActiveAmount.BSC.Amount TODO
 	case chainPoly:
-		sendParam.Amount = vault.ActiveAmount.Polygon.Amount
+		// sendParam.Amount = vault.ActiveAmount.Polygon.Amount TODO
 	default:
 		logrus.Fatalf("buildSendToBridgeParam err chainName:%s", chainName)
 	}
