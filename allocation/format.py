@@ -53,7 +53,7 @@ class Project:
     def get_info(self):
         res = requests.get(self.url)
         if res.status_code != 200:
-            return None
+             raise(Exception('connection error : %s'%str(res.content, 'utf-8')))
         string = str(res.content, 'utf-8')
         print(string)
         e = json.loads(string)
@@ -251,7 +251,7 @@ def calc(conf, session, currencies):
                     k: str(total * v / caps_total)
                 }
 
-    print("calc final state:{}", after_balance_info)
+    print("calc final state: {}".format(after_balance_info))
 
     # 跨链信息
     balance_diff_map = {}
@@ -276,7 +276,7 @@ def calc(conf, session, currencies):
                     Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                     ROUND_DOWN)  # format to min decimal
 
-    print("diff map:{}", balance_diff_map)
+    print("diff map:{}".format(balance_diff_map))
 
     def add_cross_item(currency, from_chain, to_chain, amount):
         if amount > Decimal(currencies[currency].min):
@@ -346,33 +346,45 @@ def calc(conf, session, currencies):
     print("cross info:{}", json.dumps(res, cls=utils.DecimalEncoder))
 
     res['invest_params'] = []
-
-    strategyAddresses = []
-    baseTokenAmount = []
-    counterTokenAmount = []
-
+    
+    def isCounter(name):
+        counter_tokens = ["usd", "dai"]
+        for t in counter_tokens:
+            if t in name:
+                return True
+        return False
+    
     for chain in targetChain:
         info = calc_invest(session, chain, account_info, price, daily_reward, apr, tvl)
+        strategyAddresses = []
+        baseTokenAmount = []
+        counterTokenAmount = []
+        print("info after  calc_invest : ",info)
         for strategy, amounts in info.items():
-            info1 = get_info_by_strategy_str(strategy)
+            subinfo = get_info_by_strategy_str(strategy)
+            print('subinfo:',subinfo)
+            print('strategy_addresses:',strategy_addresses)
             # 从strategy_addresses里面根据key：strategy查找
             strategyAddresses.append(strategy_addresses[strategy])
             # amounts 有两个币种对应的值，需要区分base和counter
-            baseTokenAmount.append(0)
-            counterTokenAmount.append(0)
+            token_decimal = currencies[currency].tokens[chain].decimal
+            for name, amount in amounts.items():
+                if isCounter(name):
+                    counterTokenAmount.append(amount * (Decimal(10) ** token_decimal))
+                else:
+                    baseTokenAmount.append(amount * (Decimal(10) ** token_decimal))
+            
+        if strategyAddresses:
+            res['invest_params'].append({
+                'chain_name': chain,
+                'chain_id': conf['chain'][chain],
+                'from': conf['bridge_port'][chain],
+                'to': account_info[currency][chain]['controller'],
 
-    """
-    res['invest_params'].append({
-        'chain_name': to_chain,
-        'chain_id': conf['chain'][to_chain],
-        'from': conf['bridge_port'][to_chain],
-        'to': account_info[currency][to_chain]['controller'],
-
-        "strategyAddresses": currencies[currency].tokens[from_chain].address,
-        'baseTokenAmount': amount * (Decimal(10) ** token_decimal),
-        'counterTokenAmount': task_id,
-    })
-    """
+                "StrategyAddresses": strategyAddresses,
+                'BaseTokenAmount': baseTokenAmount,
+                'CounterTokenAmount': counterTokenAmount,
+            })
 
     return res
 
@@ -531,6 +543,8 @@ if __name__ == '__main__':
             params = calc(conf, session, currencies)
             if params is None:
                 continue
+            print('params:',params)
+            print('params_json:',json.dumps(params, cls=utils.DecimalEncoder))
 
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
             session.commit()
