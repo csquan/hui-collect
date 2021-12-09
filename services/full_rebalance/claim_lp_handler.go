@@ -140,6 +140,8 @@ func (w *claimLPHandler) getClaimParams(lps []*types.LiquidityProvider, valuts [
 
 				addr, ok := w.getVaultAddr(s.BaseSymbol, lp.Chain, valuts)
 				if !ok {
+					b, _ := json.Marshal(valuts)
+					logrus.Fatalf("vault addr not found chain:%s,valuts:%s", lp.Chain, b)
 					return
 				}
 
