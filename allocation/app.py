@@ -54,7 +54,6 @@ def run(filename):
         time.sleep(3)
         try:
             session = sessionmaker(db)()
-
             # 有大re任务，拆解成小re的任务
             tasks = find_full_re_balance_open_tasks(session)
             session.commit()
@@ -81,6 +80,7 @@ def run(filename):
                 continue
             #print('params:', params)
             print('params_json:', json.dumps(params, cls=utils.DecimalEncoder))
+            
             session.begin()
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
             try:
