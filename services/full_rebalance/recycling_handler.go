@@ -45,8 +45,8 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	}
 	data, _ := json.Marshal(partRebalanceParam)
 	partTask := &types.PartReBalanceTask{
-		Base:   &types.Base{},
 		Params: string(data),
+		FullRebalanceID: task.ID,
 	}
 	err = utils.CommitWithSession(r.db, func(session *xorm.Session) (execErr error) {
 		execErr = r.db.SaveRebalanceTask(session, partTask)
@@ -67,7 +67,7 @@ func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 		return
 	}
 	if partTask == nil {
-		err = fmt.Errorf("not found part rebalance task")
+		err = fmt.Errorf("not found part rebalance task, fullRebalanceID:%d",task.ID)
 		logrus.Error(err)
 		return
 	}

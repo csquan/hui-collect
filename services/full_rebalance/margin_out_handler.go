@@ -20,7 +20,14 @@ func (i *marginOutHandler) Name() string {
 }
 
 func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
-	if err = createMarginOutJob(i.conf.ApiConf.MarginOutUrl, fmt.Sprintf("%d", task.ID)); err != nil {
+	req := &types.ImpermanectLostReq{}
+	if err = json.Unmarshal([]byte(task.Params), req); err != nil {
+		logrus.Errorf("createMarginOutJob unmarshal params err:%v", err)
+		return
+	}
+	_, err = callMarginApi(i.conf.ApiConf.MarginOutUrl +"/submit", i.conf, req)
+	if err != nil {
+		logrus.Errorf("margin job query status err:%v", err)
 		return
 	}
 	task.State = types.FullReBalanceMarginBalanceTransferOut
@@ -29,9 +36,17 @@ func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 }
 
 func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
-	finished, err = checkMarginOutJobStatus(i.conf.ApiConf.MarginOutUrl+"status/query", fmt.Sprintf("%d", task.ID), i.conf)
+	req := struct {
+		BizNo string `json:"bizNo"`
+	}{BizNo: fmt.Sprintf("%d", task.ID)}
+	resp, err := callMarginApi(i.conf.ApiConf.MarginOutUrl+"status/query", i.conf, req)
 	if err != nil {
 		return
+	}
+	if v, ok := resp.Data["status"]; ok {
+		if v.(string) != "SUCCESS" {
+			return
+		}
 	}
 	return true, types.FullReBalanceRecycling, nil
 }
@@ -57,20 +72,3 @@ func createMarginOutJob(url string, params string) (err error) {
 	return
 }
 
-func checkMarginOutJobStatus(url string, bizNo string, conf *config.Config) (finished bool, err error) {
-	req := struct {
-		BizNo string `json:"bizNo"`
-	}{BizNo: bizNo}
-	resp, err := callMarginApi(url, conf, req)
-	if err != nil {
-		logrus.Errorf("margin out query status err:%v", err)
-	}
-	if resp.Code != 200 {
-		logrus.Errorf("callMarginApi code not 200, msg:%s", resp.Msg)
-		return
-	}
-	if v, ok := resp.Data["status"]; ok {
-		return v.(string) == "SUCCESS", nil
-	}
-	return
-}

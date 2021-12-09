@@ -46,7 +46,7 @@ func callMarginApi(url string, conf *config.Config, body interface{})(res *types
 	headers["sign"] = sign
 	resData, err := utils.DoRequestWithHeaders(url, "POST", data, headers)
 	if err != nil {
-		logrus.Errorf("request lp err:%v", err)
+		logrus.Errorf("DoRequestWithHeaders req%s: err:%v", string(data), err)
 		return
 	}
 	lpResponse := &types.NormalResponse{}
