@@ -60,10 +60,13 @@ def run(config):
 
             # 有大re任务，需要拆解成小re的任务
             tasks = find_full_re_balance_open_tasks(session)
+            session.commit()
+
             if tasks is not None:
                 for task in tasks :
                     params = calc_re_balance_params(conf, session, currencies)
-                    create_full_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder), task.id)
+                    session.begin()
+                    create_part_re_balance_task_for_full(session, json.dumps(params, cls=utils.DecimalEncoder), task.id)
                     try:
                         session.commit()
                     except Exception as e:
@@ -76,11 +79,13 @@ def run(config):
             #   continue
 
             params = calc_re_balance_params(config, session, currencies)
+            session.commit()
             if params is None:
                 continue
             #print('params:', params)
             print('params_json:', json.dumps(params, cls=utils.DecimalEncoder))
-
+            
+            session.begin()
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
             try:
                 session.commit()
