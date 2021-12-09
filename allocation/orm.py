@@ -56,6 +56,7 @@ class FullReBalanceTask(Base):
 class PartReBalanceTask(Base):
     __tablename__ = 't_part_rebalance_task'
     id = Column(Integer, primary_key=True, autoincrement=True, name='f_id')
+    full_rebalance_id = Column(Integer, primary_key=True, name='f_full_rebalance_id')
     params = Column(TEXT, name='f_params')
     message = Column(TEXT, name='f_message')
     state = Column(SmallInteger, name='f_state')
@@ -108,3 +109,15 @@ def create_part_re_balance_task(session, params):
     p.state = 0
 
     session.add(p)
+
+def create_full_re_balance_task(session, params, full_id):
+    p = PartReBalanceTask()
+    p.full_rebalance_id = full_id
+    p.params = params
+    p.message = ''
+    p.state = 0
+    session.add(p)
+    q = session.query(FullReBalanceTask).filter(FullReBalanceTask.id.in_([full_id])).\
+        update({FullReBalanceTask.state:6})
+
+    

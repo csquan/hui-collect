@@ -60,8 +60,10 @@ def run(config):
             # 有大re任务，需要拆解成小re的任务
             tasks = find_full_re_balance_open_tasks(session)
             if tasks is not None:
-                calc_full_re_balance_params()
-                update_full_re_balance_tasks()
+                for task in tasks :
+                    params = calc_re_balance_params(conf, session, currencies)
+                    create_full_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder), task.id)
+                    session.commit()
 
             # 已经有小re了
             #tasks = find_part_re_balance_open_tasks(session)
@@ -71,7 +73,7 @@ def run(config):
             params = calc_re_balance_params(config, session, currencies)
             if params is None:
                 continue
-            print('params:', params)
+            #print('params:', params)
             print('params_json:', json.dumps(params, cls=utils.DecimalEncoder))
 
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
@@ -80,6 +82,7 @@ def run(config):
         except Exception as e:
             import traceback
             logging.error("except happens:{}".format(e) + '\n' + traceback.format_exc())
+            session.rollback()
         finally:
             session.close()
 
