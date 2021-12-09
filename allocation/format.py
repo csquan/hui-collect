@@ -318,7 +318,7 @@ def calc_re_balance_params(conf, session, currencies):
 
     # 没超过阈值
     if not need_re_balance:
-        plogging.info("deposit amount not large enough")
+        logging.info("deposit amount not large enough")
         return
 
     # 获取apr等信息
