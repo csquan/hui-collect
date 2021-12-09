@@ -5,7 +5,7 @@ import yaml
 import json
 import utils
 import time
-
+import logging
 from functools import reduce
 from decimal import *
 from sqlalchemy.orm import sessionmaker
@@ -18,7 +18,7 @@ def get_pool_info(url):
     # 存储从api获取的poolinfo
     ret = requests.get(url)
     string = str(ret.content, 'utf-8')
-    print(string)
+    #print(string)
     e = json.loads(string)
 
     return e['data']
@@ -101,7 +101,7 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
                     k: total * v / caps_total
                 }
 
-    print("calc final state: {}".format(after_balance_info))
+    logging.info("calc final state: {}".format(after_balance_info))
 
     # 跨链信息
     balance_diff_map = {}
@@ -122,7 +122,7 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
                 Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                 ROUND_DOWN)  # format to min scale
 
-    print("diff map:{}".format(balance_diff_map))
+    logging.info("diff map:{}".format(balance_diff_map))
 
     def add_cross_item(conf, currency, from_chain, to_chain, amount):
         if amount > Decimal(currencies[currency].min):
@@ -196,7 +196,7 @@ def calc_re_balance_params(conf, session, currencies):
     # 注意usdt与usd的区分，别弄混了
     currency_names = [k for k in sorted(currencies.keys(), key=len, reverse=True)]
 
-    print("currencies:{}".format(currencies))
+    logging.info("currencies:{}".format(currencies))
 
     # 获取rebalance所需业务信息
     re_balance_input_info = get_pool_info(conf['pool']['url'])
@@ -291,15 +291,15 @@ def calc_re_balance_params(conf, session, currencies):
     #         'amount': Decimal(2000),
     #     }
     # }
-    print("init balance info for cross:{}".format(account_info))
-    print("strategy address info:{}".format(strategy_addresses))
+    logging.info("init balance info for cross:{}".format(account_info) + \
+                 "strategy address info:{}".format(strategy_addresses))
 
     # 计算阈值
     for threshold in threshold_org:
         (ok, currency) = format_currency_name(currency_names, threshold['tokenSymbol'])
         if ok:
             threshold_info[currency] = threshold['thresholdAmount']
-    print("threshold info after format:{}".format(threshold_info))
+    logging.info("threshold info after format:{}".format(threshold_info))
 
     # 比较阈值
     need_re_balance = False
@@ -318,7 +318,7 @@ def calc_re_balance_params(conf, session, currencies):
 
     # 没超过阈值
     if not need_re_balance:
-        print("deposit amount not large enough")
+        plogging.info("deposit amount not large enough")
         return
 
     # 获取apr等信息
@@ -347,11 +347,13 @@ def calc_re_balance_params(conf, session, currencies):
                 daily_reward[key] = reduce(lambda x, y: x + y,
                                            map(lambda t: Decimal(t['tokenPrice']) * Decimal(t['dayAmount']),
                                                pool['rewardTokenList']))
+    logging.info(         
+        "apr info:{}"\
+    "    price info:{}"\
+    "    daily reward info:{}"\
+    "    tvl info:{}".format(apr, price, daily_reward, tvl)
+    )
 
-    print("apr info:{}".format(apr))
-    print("price info:{}".format(price))
-    print("daily reward info:{}".format(daily_reward))
-    print("tvl info:{}".format(tvl))
 
     account_info, cross_balances, send_to_bridge, receive_from_bridge = calc_cross_params(conf, session, currencies, account_info, 
                                                                                           daily_reward, apr, tvl)
@@ -508,7 +510,7 @@ def calc_invest(session, chain, balance_info_dict, price_dict, daily_reward_dict
     那么我们这时候可以考虑用busd 替换已经确定的投资组合中的usdt，然后将usdt和btc进行组合，这种情况下，只要新增reward多于 下降的reward就可以
     """
 
-    print('invest info:{}'.format(json.dumps(invest_calc_result, cls=utils.DecimalEncoder)))
+    logging.info('invest info:{}'.format(json.dumps(invest_calc_result, cls=utils.DecimalEncoder)))
 
     return invest_calc_result
 
