@@ -57,6 +57,12 @@ def run(config):
         try:
             session = sessionmaker(db)()
 
+            # 有大re任务，需要拆解成小re的任务
+            tasks = find_full_re_balance_open_tasks(session)
+            if tasks is not None:
+                calc_full_re_balance_params()
+                update_full_re_balance_tasks()
+
             # 已经有小re了
             #tasks = find_part_re_balance_open_tasks(session)
             #if tasks is not None:

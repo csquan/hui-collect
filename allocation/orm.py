@@ -45,6 +45,13 @@ class Token(Base):
                                                                                             self.decimal,
                                                                                             self.crossSymbol)
 
+class FullReBalanceTask(Base):
+    __tablename__ = 't_full_rebalance_task'
+    id = Column(Integer, primary_key=True, autoincrement=True, name='f_id')
+    state = Column(SmallInteger, name='f_state')
+    params = Column(TEXT, name='f_params')
+    message = Column(TEXT, name='f_message')
+
 
 class PartReBalanceTask(Base):
     __tablename__ = 't_part_rebalance_task'
@@ -86,6 +93,13 @@ def find_part_re_balance_open_tasks(session):
 
     return tasks
 
+def find_full_re_balance_open_tasks(session):
+    q = session.query(FullReBalanceTask).filter(FullReBalanceTask.state.in_([5]))
+    tasks = [x for x in q]
+    if len(tasks) == 0:
+        return None
+
+    return tasks
 
 def create_part_re_balance_task(session, params):
     p = PartReBalanceTask()
