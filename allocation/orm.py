@@ -56,7 +56,7 @@ class FullReBalanceTask(Base):
 class PartReBalanceTask(Base):
     __tablename__ = 't_part_rebalance_task'
     id = Column(Integer, primary_key=True, autoincrement=True, name='f_id')
-    full_rebalance_id = Column(Integer, primary_key=True, name='f_full_rebalance_id')
+    full_rebalance_id = Column(Integer, name='f_full_rebalance_id')
     params = Column(TEXT, name='f_params')
     message = Column(TEXT, name='f_message')
     state = Column(SmallInteger, name='f_state')

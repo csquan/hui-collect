@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from orm import *
 from format import calc_re_balance_params
 import utils
+import traceback
 
 def run(config):
     
@@ -63,8 +64,12 @@ def run(config):
                 for task in tasks :
                     params = calc_re_balance_params(conf, session, currencies)
                     create_full_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder), task.id)
-                    session.commit()
-
+                    try:
+                        session.commit()
+                    except Exception as e:
+                        session.rollback()
+                        logging.error("db except :{}".format(e) + '\n' + traceback.format_exc())
+                        
             # 已经有小re了
             #tasks = find_part_re_balance_open_tasks(session)
             #if tasks is not None:
@@ -77,12 +82,14 @@ def run(config):
             print('params_json:', json.dumps(params, cls=utils.DecimalEncoder))
 
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
-            session.commit()
-
+            try:
+                session.commit()
+            except Exception as e:
+                session.rollback()  
+                logging.error("db except :{}".format(e) + '\n' + traceback.format_exc())
+                  
         except Exception as e:
-            import traceback
             logging.error("except happens:{}".format(e) + '\n' + traceback.format_exc())
-            session.rollback()
         finally:
             session.close()
 
