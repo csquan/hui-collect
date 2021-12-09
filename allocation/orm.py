@@ -110,7 +110,7 @@ def create_part_re_balance_task(session, params):
 
     session.add(p)
 
-def create_full_re_balance_task(session, params, full_id):
+def create_part_re_balance_task_for_full(session, params, full_id):
     p = PartReBalanceTask()
     p.full_rebalance_id = full_id
     p.params = params
