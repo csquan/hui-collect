@@ -5,33 +5,30 @@ from orm import *
 from format import calc_re_balance_params
 import utils
 import traceback
+from config import Config
 
-def run(config):
+def run(filename):
     
+    config = Config.get_config(filename)
+    mode = Config.mode
     # to set default log
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
+    
     # to config kafka log
-    mode = 'dev'
-
-    kafka_enable = config.get("kafka.enable")
+    kafka = config.get("kafka", {})
+    kafka_enable = kafka.get("enable", False)
     if isinstance(kafka_enable, str):
         kafka_enable = (kafka_enable.lower() == 'true')
     if kafka_enable:
         print("kafka logs starts...")
         from kafkalog import KafkaHandler
         logger = logging.getLogger()
-        logger.setLevel(int(config.get("kafka.level")))
-        try:
-            hosts = config.get_list("kafka.hosts")
-        except:
-            hosts = config.get("kafka.hosts")
-        #print(hosts)
-        logger.addHandler(KafkaHandler(
-            hosts = hosts,
-            topic = config.get("kafka.topic"),
-            env_name = mode))
+        logger.setLevel(int(kafka.get("level")))
+        logger.addHandler(KafkaHandler(hosts = kafka.get("hosts"),
+                                       topic = kafka.get("topic"),
+                                       env_name = mode))
     
     # to config database
     db = create_engine(config.get('db'),
@@ -97,8 +94,6 @@ def run(config):
         finally:
             session.close()
 
-
-
 if __name__ == '__main__':
 
     p = ArgumentParser(usage='a re-allocation program, for investing', description='need a config file ')   
@@ -106,7 +101,5 @@ if __name__ == '__main__':
     args = p.parse_args() 
 
     filename = args.config
-    conf = yaml.load(open(filename), Loader=yaml.FullLoader)
 
-    run(conf)
-
+    run(filename)

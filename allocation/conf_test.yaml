@@ -32,16 +32,17 @@ project:
 #    url: 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'
 
 
-kafka.enable: True
-kafka.level: 20  #debug->10  info->20  warning->30  error->40  critical->50   
-kafka.hosts: 
+kafka:
+  enable: True
+  level: 20  #debug->10  info->20  warning->30  error->40  critical->50   
+  hosts: 
         - kafka-01.sinnet.huobiidc.com:9092 
         - kafka-02.sinnet.huobiidc.com:9092
         - kafka-03.sinnet.huobiidc.com:9092
         - kafka-04.sinnet.huobiidc.com:9092
         - kafka-05.sinnet.huobiidc.com:9092
         - kafka-06.sinnet.huobiidc.com:9092
-kafka.topic: applog-heco
+  topic: applog-heco
 
 
 
