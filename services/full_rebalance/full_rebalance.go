@@ -6,6 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/tokens"
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
@@ -35,6 +36,10 @@ type FullReBalance struct {
 }
 
 func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, err error) {
+	token, err := tokens.NewTokens(db)
+	if err != nil {
+		return nil, fmt.Errorf("create tokens err:%v", err)
+	}
 	p = &FullReBalance{
 		db:     db,
 		config: conf,
@@ -46,7 +51,7 @@ func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, e
 				conf: conf,
 				db:   db,
 			},
-			types.FullReBalanceClaimLP: newClaimLpHandler(conf, db),
+			types.FullReBalanceClaimLP: newClaimLpHandler(conf, db, token),
 			types.FullReBalanceMarginBalanceTransferOut: &marginOutHandler{
 				conf: conf,
 				db:   db,

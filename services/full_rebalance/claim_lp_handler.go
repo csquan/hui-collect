@@ -68,7 +68,7 @@ type claimLPHandler struct {
 	getter    lpDataGetter
 }
 
-func newClaimLpHandler(conf *config.Config, db types.IDB) *claimLPHandler {
+func newClaimLpHandler(conf *config.Config, db types.IDB, token tokens.Tokener) *claimLPHandler {
 	r := strings.NewReader(vaultClaimAbi)
 	abi, err := abi.JSON(r)
 	if err != nil {
@@ -77,6 +77,7 @@ func newClaimLpHandler(conf *config.Config, db types.IDB) *claimLPHandler {
 	return &claimLPHandler{
 		db:     db,
 		abi:    abi,
+		token:  token,
 		getter: getter(getLpData),
 	}
 }
@@ -193,8 +194,8 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 			addrs = append(addrs, addr)
 
 			//base
-			decimal0 := w.token.GetDecimals(s.BaseSymbol)
-			if decimal0 == 0 {
+			decimal0, ok := w.token.GetDecimals(param.ChainName, s.BaseSymbol)
+			if !ok {
 				logrus.Fatalf("unexpectd decimal bseSymbol:%s", s.BaseSymbol)
 			}
 			baseDecimal := powN(s.BaseAmount, decimal0)
@@ -202,8 +203,8 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 			bases = append(bases, base)
 
 			//quote
-			decimal1 := w.token.GetDecimals(s.QuoteSymbol)
-			if decimal1 == 0 {
+			decimal1, ok := w.token.GetDecimals(param.ChainName, s.QuoteSymbol)
+			if !ok {
 				logrus.Fatalf("unexpectd decimal quoteSymbol:%s", s.QuoteSymbol)
 			}
 			quoteDecimal := powN(s.QuoteAmount, decimal1)
@@ -251,7 +252,7 @@ func (w *claimLPHandler) insertTxTasksAndUpdateState(txTasks []*types.Transactio
 }
 
 func (w *claimLPHandler) getVaultAddr(tokenSymbol, chain string, vaults []*types.VaultInfo) (string, bool) {
-	currency := w.token.GetCurrency(tokenSymbol, chain)
+	currency := w.token.GetCurrency(chain, tokenSymbol)
 	for _, valut := range vaults {
 		if valut.Currency == currency {
 			c, ok := valut.ActiveAmount[chain]

@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/db"
-	"github.com/starslabhq/hermes-rebalance/tokens/mock"
+	"github.com/starslabhq/hermes-rebalance/tokens/mock_tokens"
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
@@ -112,15 +112,15 @@ func TestGetClaimParamsAndCreateTask(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	token := mock.NewMockTokener(ctrl)
-	token.EXPECT().GetCurrency("ETH", gomock.Any()).Return("eth").AnyTimes()
-	token.EXPECT().GetCurrency("BTCB", gomock.Any()).Return("btc")
+	token := mock_tokens.NewMockTokener(ctrl)
+	token.EXPECT().GetCurrency(gomock.Any(), "ETH").Return("eth").AnyTimes()
+	token.EXPECT().GetCurrency(gomock.Any(), "BTCB").Return("btc")
 	h.token = token
 	params := h.getClaimParams(lps, valuts)
 	b, _ := json.Marshal(params)
 	t.Logf("claim params:%s", b)
 
-	token.EXPECT().GetDecimals(gomock.Any()).Return(18).AnyTimes()
+	token.EXPECT().GetDecimals(gomock.Any(), gomock.Any()).Return(18, true).AnyTimes()
 	tasks, err := h.createTxTask(1, params)
 	if err != nil {
 		t.Fatalf("create tx task err:%v", err)
