@@ -55,7 +55,7 @@ func callMarginApi(url string, conf *config.Config, body interface{})(res *types
 		return
 	}
 	if lpResponse.Code != 200 {
-		err =fmt.Errorf("lpResponse code not 200, code:%d, msg:%s", lpResponse.Code, lpResponse.Msg)
+		err =fmt.Errorf("do http request, code:%d, msg:%s, url:%s, requestBody:%+v", lpResponse.Code, lpResponse.Msg, url, body)
 		logrus.Error(err)
 		return
 	}
