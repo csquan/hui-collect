@@ -1,4 +1,4 @@
-db: 'mysql+pymysql://root:12345678@localhost:3306/rebalance'
+db: 'mysql+pymysql://root:csquan253905@localhost:3306/reblance'
 
 bridge_port:
   heco: "111111"
