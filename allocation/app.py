@@ -95,8 +95,21 @@ def run(filename):
             session.close()
 
 if __name__ == '__main__':
+    Tips = '''
+    a re-allocation program, for investing
 
-    p = ArgumentParser(usage='a re-allocation program, for investing', description='need a config file ')   
+    try :
+        python3 app.py -c conf_test.yaml
+
+    for running with a local config file 
+
+    or :
+        python3 app.py -c remote_conf_test.yaml 
+
+    for running with a remote apollo config file  
+
+    '''
+    p = ArgumentParser(usage=Tips, description='need a config file..')   
     p.add_argument('-c', '--config',type=str, required=True, help='the config file')  
     args = p.parse_args() 
 
