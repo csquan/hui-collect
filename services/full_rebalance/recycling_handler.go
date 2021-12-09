@@ -11,6 +11,7 @@ import (
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
 	"strings"
+	"time"
 )
 
 type recyclingHandler struct {
@@ -23,7 +24,7 @@ func (r *recyclingHandler) Name() string {
 }
 
 func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
-	res, err := lpData(r.conf.ApiConf.LpUrl)
+	res, err := getLpData(r.conf.ApiConf.LpUrl)
 	if err != nil {
 		return
 	}
@@ -38,7 +39,7 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		ReceiveFromBridgeParams: make([]*types.ReceiveFromBridgeParam, 0),
 	}
 	for _, vault := range res.VaultInfoList {
-		if err = r.appendParam(vault, partRebalanceParam, tokensMap, currencyMap); err != nil{
+		if err = r.appendParam(vault, partRebalanceParam, tokensMap, currencyMap); err != nil {
 			return
 		}
 	}
@@ -81,25 +82,6 @@ func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 	}
 }
 
-func lpData(url string) (lpList *types.Data, err error) {
-	data, err := utils.DoRequest(url, "GET", nil)
-	if err != nil {
-		logrus.Errorf("request lp err:%v", err)
-		return
-	}
-	lpResponse := &types.LPResponse{}
-	if err = json.Unmarshal(data, lpResponse); err != nil {
-		logrus.Errorf("unmarshar lpResponse err:%v", err)
-		return
-	}
-	if lpResponse.Code != 200 {
-		logrus.Errorf("lpResponse code not 200, msg:%s", lpResponse.Msg)
-		return
-	}
-	lpList = lpResponse.Data
-	return
-}
-
 func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalanceParam *types.Params,
 	tokensMap map[string]*types.Token, currencyMap map[string]*types.Currency) (err error) {
 	heco, err := r.hecoController(vault)
@@ -139,7 +121,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 		fromToken, ok = getToken(tokensMap, vault.Currency, info.Chain)
 		hecoToken, ok = getToken(tokensMap, vault.Currency, heco.Chain)
 		amountStr := powN(strMustToDecimal(info.Amount), fromToken.Decimal).String()
-		taskID := "1" // TODO
+		taskID := fmt.Sprintf("%d", time.Now().UnixMicro())
 		sendParam := &types.SendToBridgeParam{
 			ChainId:       fromChain.ID,
 			ChainName:     fromChainName,
@@ -147,9 +129,9 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			To:            info.ControllerAddress,
 			BridgeAddress: common.HexToAddress(fromChain.BridgeAddress),
 			Amount:        amountStr,
-			TaskID:        taskID,        
+			TaskID:        taskID,
 		}
-		crossParam := &types.CrossBalanceItem{ //USDT
+		crossParam := &types.CrossBalanceItem{
 			FromChain:    fromChainName,
 			ToChain:      heco.Chain,
 			FromAddr:     fromChain.BridgeAddress,
@@ -158,7 +140,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			ToCurrency:   hecoToken.CrossSymbol,
 			Amount:       amountStr,
 		}
-		receiveParam := &types.ReceiveFromBridgeParam{ //USDT
+		receiveParam := &types.ReceiveFromBridgeParam{
 			ChainId:           heco.ChainID,
 			ChainName:         heco.Chain,
 			From:              heco.BridgeAddress,

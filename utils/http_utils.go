@@ -22,9 +22,16 @@ func DoRequest(url string, method string, params interface{}) (data []byte, err 
 	if err != nil {
 		return
 	}
+	return DoRequestWithHeaders(url, method, reqData, nil)
+}
+
+func DoRequestWithHeaders(url string, method string, reqData []byte, headers map[string]string) (data []byte, err error) {
 	body := bytes.NewReader(reqData)
 	req, err := http.NewRequest(method, url, body)
 	req.Header.Set("content-type", "application/json")
+	for k,v :=range headers{
+		req.Header.Set(k, v)
+	}
 	resp, err := httpCli.Do(req)
 	if err != nil {
 		logrus.Errorf("do http request error:%v", err)
@@ -32,7 +39,7 @@ func DoRequest(url string, method string, params interface{}) (data []byte, err 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		err = fmt.Errorf("http response status not 200,url:%s,method:%s,params:%v", url, method, params)
+		err = fmt.Errorf("StatusCode:%d, url:%s,method:%s", resp.StatusCode, url, method)
 		return
 	}
 	data, err = ioutil.ReadAll(resp.Body)
@@ -40,5 +47,8 @@ func DoRequest(url string, method string, params interface{}) (data []byte, err 
 		logrus.Errorf("read response body error:%v", err)
 		return
 	}
+	logrus.Infof("DoRequestWithHeaders url:%s, input:%s, response:%v", url, string(reqData), string(data))
 	return
 }
+
+

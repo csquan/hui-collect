@@ -26,8 +26,8 @@ type AlertConf struct {
 }
 
 type ApiConf struct {
-	MarginUrl    string `mapstructure:"lp_url"`
-	MarginOutUrl string `mapstructure:"lp_url"`
+	MarginUrl    string `mapstructure:"margin_url"`
+	MarginOutUrl string `mapstructure:"margin_out_url"`
 	LpUrl        string `mapstructure:"lp_url"`
 }
 
@@ -53,12 +53,18 @@ type Config struct {
 	BridgeConf       BridgeConf            `mapstructure:"bridge_conf"`
 	Chains           map[string]*ChainInfo `mapstructure:"chains"`
 	ApiConf          ApiConf               `mapstructure:"api"`
+	Margin           *Margin               `mapstructure:"margin"`
+	Env              string                `mapstructure:"env"`
+}
+type Margin struct {
+	AppID     string `mapstructure:"app_id"`
+	SecretKey string `mapstructure:"secret_key"`
 }
 
 type ChainInfo struct {
-	ID      int `mapstructure:"id"`
-	RpcUrl  string `mapstructure:"rpc_url"`
-	Timeout int    `mapstructure:"timeout"`
+	ID            int    `mapstructure:"id"`
+	RpcUrl        string `mapstructure:"rpc_url"`
+	Timeout       int    `mapstructure:"timeout"`
 	BridgeAddress string `mapstructure:"bridge_address"`
 }
 

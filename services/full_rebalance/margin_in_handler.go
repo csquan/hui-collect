@@ -1,13 +1,11 @@
 package full_rebalance
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
-	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
 type impermanenceLostHandler struct {
@@ -16,20 +14,20 @@ type impermanenceLostHandler struct {
 }
 
 func (i *impermanenceLostHandler) Name() string {
-	return "full_rebalance_impermanenceLost"
+	return "full_rebalance_margin_in"
 }
 
 func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) {
-	lpList, err := getLp(i.conf.ApiConf.LpUrl)
+	lpData, err := getLpData(i.conf.ApiConf.LpUrl)
 	if err != nil {
 		return
 	}
-	lpReq, err := lp2Req(lpList)
+	lpReq, err := lp2Req(lpData.LiquidityProviderList)
 	if err != nil{
 		logrus.Errorf("build margin_in params err:%v", err)
 		return
 	}
-	if err = callImpermanentLoss(i.conf.ApiConf.MarginUrl,
+	if _, err = callMarginApi(i.conf.ApiConf.MarginUrl + "submit", i.conf,
 		&types.ImpermanectLostReq{BizNo: fmt.Sprintf("%d", task.ID), LpList: lpReq}); err != nil {
 		return
 	}
@@ -39,71 +37,19 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 }
 
 func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
-	finished, err = checkMarginJobStatus(i.conf.ApiConf.MarginUrl, fmt.Sprintf("%d", task.ID))
+	bizNo := fmt.Sprintf("%d", task.ID)
+	res, err := callMarginApi(i.conf.ApiConf.MarginUrl + "status/query", i.conf, struct {
+		BizNo string `json:"bizNo"`
+	}{bizNo})
 	if err != nil {
 		return
+	}
+	if v, ok := res.Data["status"]; ok {
+		if v.(string) != "SUCCESS" {
+			return
+		}
 	}
 	return true, types.FullReBalanceClaimLP, nil
-}
-
-func checkMarginJobStatus(url string, bizNo string) (finished bool, err error) {
-	req := struct {
-		BizNo string `json:"bizNo"`
-	}{bizNo}
-	data, err := utils.DoRequest(url+"status/query", "POST", req)
-	if err != nil {
-		logrus.Errorf("request ImpermanentLoss api err:%v", err)
-		return
-	}
-	resp := &types.NormalResponse{}
-	if err = json.Unmarshal(data, resp); err != nil {
-		logrus.Errorf("unmarshar lpResponse err:%v", err)
-		return
-	}
-	if resp.Code != 200 {
-		logrus.Errorf("callImpermanentLoss code not 200, msg:%s", resp.Msg)
-		return
-	}
-	if v, ok := resp.Data["status"]; ok {
-		return v.(string) == "SUCCESS", nil
-	}
-	return
-}
-
-func getLp(url string) (lpList []*types.LiquidityProvider, err error) {
-	data, err := utils.DoRequest(url, "GET", nil)
-	if err != nil {
-		logrus.Errorf("request lp err:%v", err)
-		return
-	}
-	lpResponse := &types.LPResponse{}
-	if err = json.Unmarshal(data, lpResponse); err != nil {
-		logrus.Errorf("unmarshar lpResponse err:%v", err)
-		return
-	}
-	if lpResponse.Code != 200 {
-		logrus.Errorf("lpResponse code not 200, msg:%s", lpResponse.Msg)
-		return
-	}
-	lpList = lpResponse.Data.LiquidityProviderList
-	return
-}
-func callImpermanentLoss(url string, req *types.ImpermanectLostReq) (err error) {
-	data, err := utils.DoRequest(url+"submit","POST", req)
-	if err != nil {
-		logrus.Errorf("request ImpermanentLoss api err:%v", err)
-		return
-	}
-	resp := &types.NormalResponse{}
-	if err = json.Unmarshal(data, resp); err != nil {
-		logrus.Errorf("unmarshar lpResponse err:%v", err)
-		return
-	}
-	if resp.Code != 200 {
-		logrus.Errorf("callImpermanentLoss code not 200, msg:%s", resp.Msg)
-		return
-	}
-	return
 }
 
 func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {

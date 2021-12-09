@@ -29,7 +29,7 @@ func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 }
 
 func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
-	finished, err = checkMarginOutJobStatus(i.conf.ApiConf.MarginUrl+"status/query", fmt.Sprintf("%d", task.ID))
+	finished, err = checkMarginOutJobStatus(i.conf.ApiConf.MarginOutUrl+"status/query", fmt.Sprintf("%d", task.ID))
 	if err != nil {
 		return
 	}
@@ -37,11 +37,11 @@ func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 }
 
 func createMarginOutJob(url string, bizNo string) (err error) {
-	lpList, err := getLp(url)
+	lpData, err := getLpData(url)
 	if err != nil {
 		return
 	}
-	lpReq, err := lp2Req(lpList)
+	lpReq, err := lp2Req(lpData.LiquidityProviderList)
 	if err != nil{
 		logrus.Errorf("build margin_in params err:%v", err)
 		return
