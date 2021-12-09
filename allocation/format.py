@@ -588,20 +588,39 @@ if __name__ == '__main__':
         time.sleep(3)
         try:
             session = sessionmaker(db)()
-
+            # 有大re任务，拆解成小re的任务
+            tasks = find_full_re_balance_open_tasks(session)
+            session.commit()
+            
+            if tasks is not None:
+                for task in tasks :
+                    params = calc_re_balance_params(conf, session, currencies)
+                    session.begin()
+                    create_part_re_balance_task_for_full(session, json.dumps(params, cls=utils.DecimalEncoder), task.id)
+                    try:
+                        session.commit()
+                    except Exception as e:
+                        session.rollback()
+                        logging.error("db except :{}".format(e) + '\n' + traceback.format_exc())
             # 已经有小re了
             # tasks = find_part_re_balance_open_tasks(session)
             # if tasks is not None:
             #    continue
-
+  
             params = calc_re_balance_params(conf, session, currencies)
+            session.commit()
             if params is None:
                 continue
             # print('params:', params)
             print('params_json:', json.dumps(params, cls=utils.DecimalEncoder))
 
+            session.begin()
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
-            session.commit()
+            try:
+                session.commit()
+            except Exception as e:
+                session.rollback()
+                print("except happens:{}".format(e))
 
         except Exception as e:
             print("except happens:{}".format(e))

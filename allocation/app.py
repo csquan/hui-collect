@@ -55,7 +55,7 @@ def run(filename):
         try:
             session = sessionmaker(db)()
 
-            # 有大re任务，需要拆解成小re的任务
+            # 有大re任务，拆解成小re的任务
             tasks = find_full_re_balance_open_tasks(session)
             session.commit()
             
