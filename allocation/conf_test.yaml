@@ -32,7 +32,7 @@ project:
 #    url: 'https://api.schoolbuy.top/hg/v1/project/pool/list?projectId=112'
 
 
-kafka.enable: true
+kafka.enable: True
 kafka.level: 20  #debug->10  info->20  warning->30  error->40  critical->50   
 kafka.hosts: 
         - kafka-01.sinnet.huobiidc.com:9092 

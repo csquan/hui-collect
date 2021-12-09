@@ -61,7 +61,7 @@ def run(config):
             # 有大re任务，需要拆解成小re的任务
             tasks = find_full_re_balance_open_tasks(session)
             session.commit()
-
+            
             if tasks is not None:
                 for task in tasks :
                     params = calc_re_balance_params(conf, session, currencies)
@@ -84,7 +84,6 @@ def run(config):
                 continue
             #print('params:', params)
             print('params_json:', json.dumps(params, cls=utils.DecimalEncoder))
-            
             session.begin()
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
             try:
