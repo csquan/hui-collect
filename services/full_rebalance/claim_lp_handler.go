@@ -306,6 +306,7 @@ func (w *claimLPHandler) CheckFinished(task *types.FullReBalanceTask) (finished 
 			sucCnt++
 		}
 		if task.State == int(types.TxFailedState) {
+			logrus.Warnf("call claim fail tx_task_id:%d", task.ID)
 			failCnt++
 		}
 	}
