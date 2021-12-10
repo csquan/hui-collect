@@ -367,10 +367,19 @@ def calc_re_balance_params(conf, session, currencies):
     res['cross_balances'] = cross_balances
 
     res['invest_params'] = []
+
+    logging.info("begin to calc_invest strategy_addresses :{} ".format(strategy_addresses))
+
     for chain in dest_chains:
         invest_result = calc_invest(session, chain, account_info, price, daily_reward, apr, tvl)
+        logging.info("chain :{} invest_result :{} ".format(chain, invest_result))
         invest_param_list = generate_invest_params(conf, session, currencies, account_info, chain, strategy_addresses, invest_result)
+        logging.info("invest_param_list :{} ".format(invest_param_list))
         res['invest_params'].extend(invest_param_list)
+
+    logging.info("remain account_info :{} ".format(account_info))
+
+    logging.info("re res :{} ".format(res))
 
     return res
 
