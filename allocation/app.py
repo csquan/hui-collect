@@ -7,6 +7,12 @@ import utils
 import traceback
 from config import Config
 
+KEEP_ALIVE_FILE = "/tmp/huobi.lock"
+def keep_alive():
+    f = open(KEEP_ALIVE_FILE, 'w')
+    f.write("ok\n")
+    f.close()
+
 def run(filename):
     
     config = Config.get_config(filename)
@@ -48,7 +54,8 @@ def run(filename):
         curr.tokens[t.chain] = t
 
     session.close()
-
+    
+    keep_alive()
     logging.info('start re-allocation program ... ')
     while True:
         time.sleep(3)
