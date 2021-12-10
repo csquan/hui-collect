@@ -116,6 +116,7 @@ create TABLE `t_strategy`
     `f_project`    varchar(255)        NOT NULL COMMENT '项目名称',
     `f_currency0`  varchar(255)        NOT NULL COMMENT '币种0',
     `f_currency1`  varchar(255) COMMENT '币种1',
+    `f_enabled`    bool                         default false comment '是否开启',
     `f_created_at` timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `f_updated_at` timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP,
     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */
@@ -125,31 +126,31 @@ create TABLE `t_strategy`
     COLLATE = utf8mb4_bin COMMENT ='投资策略表';
 
 
-insert into t_strategy(f_chain, f_project, f_currency0, f_currency1)
-values ('bsc', 'biswap', 'bnb', 'usd'),
-       ('bsc', 'pancake', 'bnb', 'usd'),
-       ('bsc', 'biswap', 'bnb', 'usdt'),
-       ('bsc', 'pancake', 'bnb', 'usdt'),
-       ('bsc', 'pancake', 'cake', 'usd'),
-       ('bsc', 'pancake', 'cake', 'usdt'),
-       ('bsc', 'biswap', 'btc', 'usdt'),
-       ('bsc', 'biswap', 'eth', 'usdt'),
-       ('bsc', 'solo.top', 'bnb', null),
-       ('bsc', 'solo.top', 'cake', null),
-       ('bsc', 'solo.top', 'btc', null),
-       ('bsc', 'solo.top', 'eth', null),
-       ('bsc', 'solo.top', 'usdt', null),
-       ('bsc', 'solo.top', 'usd', null),
-       ('polygon', 'quickswap', 'eth', 'usdc'),
-       ('polygon', 'quickswap', 'eth', 'usdt'),
-       ('polygon', 'quickswap', 'btc', 'usdc'),
-       ('polygon', 'quickswap', 'matic', 'usdc'),
-       ('polygon', 'quickswap', 'matic', 'usdt'),
-       ('polygon', 'solo.top', 'btc', null),
-       ('polygon', 'solo.top', 'eth', null),
-       ('polygon', 'solo.top', 'matic', null),
-       ('polygon', 'solo.top', 'usdt', null),
-       ('polygon', 'solo.top', 'usdc', null);
+insert into t_strategy(f_chain, f_project, f_currency0, f_currency1, f_enabled)
+values ('bsc', 'biswap', 'bnb', 'usd', false),
+       ('bsc', 'pancake', 'bnb', 'usd', false),
+       ('bsc', 'biswap', 'bnb', 'usdt', false),
+       ('bsc', 'pancake', 'bnb', 'usdt', false),
+       ('bsc', 'pancake', 'cake', 'usd', false),
+       ('bsc', 'pancake', 'cake', 'usdt', false),
+       ('bsc', 'biswap', 'btc', 'usdt', false),
+       ('bsc', 'biswap', 'eth', 'usdt', false),
+       ('bsc', 'solo.top', 'bnb', null, false),
+       ('bsc', 'solo.top', 'cake', null, false),
+       ('bsc', 'solo.top', 'btc', null, false),
+       ('bsc', 'solo.top', 'eth', null, false),
+       ('bsc', 'solo.top', 'usdt', null, false),
+       ('bsc', 'solo.top', 'usd', null, false),
+       ('polygon', 'quickswap', 'eth', 'usdc', false),
+       ('polygon', 'quickswap', 'eth', 'usdt', false),
+       ('polygon', 'quickswap', 'btc', 'usdc', false),
+       ('polygon', 'quickswap', 'matic', 'usdc', false),
+       ('polygon', 'quickswap', 'matic', 'usdt', false),
+       ('polygon', 'solo.top', 'btc', null, false),
+       ('polygon', 'solo.top', 'eth', null, false),
+       ('polygon', 'solo.top', 'matic', null, false),
+       ('polygon', 'solo.top', 'usdt', null, false),
+       ('polygon', 'solo.top', 'usdc', null, false);
 
 
 drop table IF EXISTS `t_currency`;
