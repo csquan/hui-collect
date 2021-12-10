@@ -1,0 +1,56 @@
+database:
+  #  db: "heco_test:hDyhVaPfwvPzF8ek@tcp(bigdata-tidb-e604534a50b9d35d.elb.ap-northeast-1.amazonaws.com:4000)/chain_test?charset=utf8mb4"
+  db: "root:123456sj@tcp(127.0.0.1:3306)/rebalance?charset=utf8mb4"
+  block_worker: 5
+  tx_worker: 1
+  sql_batch: 500
+  retry_times: 5
+  retry_interval: 300
+
+bridge_conf:
+  url: "http://cex-bridge-api.test-15.huobiapps.com/cex-bridge-api/v1"
+  timeout: "5s"
+  ak: "kB01A8gsMv2CP4Tctd7XnUaG3iDE9rQJ"
+  sk: "ho8XcsfygSKTLEvPYOZ9W12k0i4IFJbC"
+
+#chainname作为map的key，必须使用全小写，因为获取的时候使用了strings.Tolower
+chains:
+  heco:
+    id: 128
+    rpc_url: "https://http-mainnet.hecochain.com"
+    fetch_timeout: 3000
+    bridge_address: ""
+  bsc:
+    id: 56
+    rpc_url: "https://bsc-dataseed.binance.org"
+    fetch_timeout: 3000
+    bridge_address: ""
+
+env: local
+
+api:
+  margin_url: "http://neptune-hermes-mgt-v2.test-15.huobiapps.com/v1/auto-transfer/impermanent-loss-margin-preparing-job/"
+  margin_out_url: "http://neptune-hermes-mgt-v2.test-15.huobiapps.com/v1/auto-transfer/all-margin-balance-transfer-out-job/"
+  lp_url: "http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re"
+
+#for margin api sign
+margin:
+  app_id: "rebalance-test"
+  secret_key: "k0uKyWwYZdaaEIaO"
+
+log:
+  stdout:
+    enable: true
+    level: 5
+  file:
+    enable: true
+    path: "/tmp/hermes-rebalance/app.log"
+    level: 4
+  kafka:
+    enable: false
+    topic: "huobi-test"
+    kafka_servers:
+      - "kafka-1.huobidev.com:9092"
+      - "kafka-2.huobidev.com:9092"
+      - "kafka-3.huobidev.com:9092"
+    level: 3
