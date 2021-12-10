@@ -204,7 +204,7 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 			//quote
 			decimal1, ok := w.token.GetDecimals(param.ChainName, s.QuoteSymbol)
 			if !ok {
-				logrus.Fatalf("unexpectd decimal quoteSymbol:%s", s.QuoteSymbol)
+				logrus.Fatalf("unexpectd decimal quoteSymbol:%s,chain:%s", s.QuoteSymbol, param.ChainName)
 			}
 			quoteDecimal := powN(s.QuoteAmount, decimal1)
 			quote := decimalToBigInt(quoteDecimal)
