@@ -52,9 +52,9 @@ type ControllerInfo struct {
 	ControllerAddress string `json:"controllerAddress"`
 
 	//下面几个字段不是从json解析出来的
-	Chain string
-	ChainID int
-	BridgeAddress string
+	//Chain string
+	//ChainID int
+	//BridgeAddress string
 }
 
 //平无常接口参数

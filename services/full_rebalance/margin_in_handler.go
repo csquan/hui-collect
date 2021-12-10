@@ -1,6 +1,7 @@
 package full_rebalance
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -23,14 +24,21 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 		return
 	}
 	lpReq, err := lp2Req(lpData.LiquidityProviderList)
-	if err != nil{
+	if err != nil {
 		logrus.Errorf("build margin_in params err:%v", err)
 		return
 	}
-	if _, err = callMarginApi(i.conf.ApiConf.MarginUrl + "submit", i.conf,
-		&types.ImpermanectLostReq{BizNo: fmt.Sprintf("%d", task.ID), LpList: lpReq}); err != nil {
+	bizNo := fmt.Sprintf("%d", task.ID)
+	req := &types.ImpermanectLostReq{BizNo: bizNo, LpList: lpReq}
+	if _, err = callMarginApi(i.conf.ApiConf.MarginUrl+"submit", i.conf, req); err != nil {
 		return
 	}
+	var params []byte
+	if params, err = json.Marshal(req); err != nil{
+		logrus.Errorf("marshal margin out params err:%v", err)
+		return
+	}
+	task.Params = string(params) //save params for margin out
 	task.State = types.FullReBalanceMarginIn
 	err = i.db.UpdateFullReBalanceTask(i.db.GetSession(), task)
 	return
@@ -38,7 +46,7 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 
 func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	bizNo := fmt.Sprintf("%d", task.ID)
-	res, err := callMarginApi(i.conf.ApiConf.MarginUrl + "status/query", i.conf, struct {
+	res, err := callMarginApi(i.conf.ApiConf.MarginUrl+"status/query", i.conf, struct {
 		BizNo string `json:"bizNo"`
 	}{bizNo})
 	if err != nil {
@@ -82,4 +90,3 @@ func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {
 	}
 	return
 }
-

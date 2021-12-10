@@ -28,8 +28,8 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	if err != nil {
 		return
 	}
-	tokensMap, err := tokensMap(r.db)
-	currencyMap, err := r.currencyMap()
+	tokens, err := r.db.GetTokens()
+	currencyList, err := r.db.GetCurrency()
 	if err != nil {
 		return
 	}
@@ -39,14 +39,14 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		ReceiveFromBridgeParams: make([]*types.ReceiveFromBridgeParam, 0),
 	}
 	for _, vault := range res.VaultInfoList {
-		if err = r.appendParam(vault, partRebalanceParam, tokensMap, currencyMap); err != nil {
+		if err = r.appendParam(vault, partRebalanceParam, tokens, currencyList); err != nil {
 			return
 		}
 	}
 	data, _ := json.Marshal(partRebalanceParam)
 	partTask := &types.PartReBalanceTask{
-		Base:   &types.Base{},
 		Params: string(data),
+		FullRebalanceID: task.ID,
 	}
 	err = utils.CommitWithSession(r.db, func(session *xorm.Session) (execErr error) {
 		execErr = r.db.SaveRebalanceTask(session, partTask)
@@ -67,7 +67,7 @@ func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 		return
 	}
 	if partTask == nil {
-		err = fmt.Errorf("not found part rebalance task")
+		err = fmt.Errorf("not found part rebalance task, fullRebalanceID:%d",task.ID)
 		logrus.Error(err)
 		return
 	}
@@ -83,31 +83,26 @@ func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 }
 
 func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalanceParam *types.Params,
-	tokensMap map[string]*types.Token, currencyMap map[string]*types.Currency) (err error) {
-	heco, err := r.hecoController(vault)
+	tokens []*types.Token, currencyList []*types.Currency) (err error) {
+	hecoChainName := "heco"
+	hecoChain := mustGetChainInfo(hecoChainName, r.conf)
+	hecoController, err := hecoController(vault, hecoChainName)
 	if err != nil {
 		return
 	}
 	for fromChainName, info := range vault.ActiveAmount {
-		if strings.ToLower(fromChainName) == "heco" {
+		if strings.ToLower(fromChainName) == hecoChainName {
 			continue
 		}
 		//根据chainName，从配置中获取bridgeAddress信息
-		fromChain, ok := r.conf.Chains[strings.ToLower(fromChainName)]
-		if !ok {
-			err = fmt.Errorf("can not find chain config for %s", fromChainName)
-			return
-		}
-		//判断amount是否大于最小值
-		currency, ok := currencyMap[vault.Currency]
-		if !ok {
-			logrus.Warnf("not found currency from db,currency:%s", vault.Currency)
-			return
-		}
+		fromChain := mustGetChainInfo(fromChainName, r.conf)
+		//Currency的f_min为null或者0则不参与跨回
+		currency := mustGetCurrency(currencyList, vault.Currency)
 		if currency.Min.Cmp(decimal.Zero) <= 0 {
 			logrus.Infof("currency.min not config, currency:%v", vault.Currency)
-			return
+			continue
 		}
+		//判断amount是否大于最小值
 		var amount decimal.Decimal
 		if amount, err = decimal.NewFromString(info.Amount); err != nil {
 			logrus.Errorf("convert amount to decimal err:%v", err)
@@ -118,8 +113,8 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			return
 		}
 		var fromToken, hecoToken *types.Token
-		fromToken, ok = getToken(tokensMap, vault.Currency, info.Chain)
-		hecoToken, ok = getToken(tokensMap, vault.Currency, heco.Chain)
+		fromToken = mustGetToken(tokens, vault.Currency, fromChainName)
+		hecoToken = mustGetToken(tokens, vault.Currency, hecoChainName)
 		amountStr := powN(strMustToDecimal(info.Amount), fromToken.Decimal).String()
 		taskID := fmt.Sprintf("%d", time.Now().UnixMicro())
 		sendParam := &types.SendToBridgeParam{
@@ -133,18 +128,18 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 		}
 		crossParam := &types.CrossBalanceItem{
 			FromChain:    fromChainName,
-			ToChain:      heco.Chain,
+			ToChain:      hecoChainName,
 			FromAddr:     fromChain.BridgeAddress,
-			ToAddr:       heco.BridgeAddress,
+			ToAddr:       hecoChain.BridgeAddress,
 			FromCurrency: fromToken.CrossSymbol,
 			ToCurrency:   hecoToken.CrossSymbol,
 			Amount:       amountStr,
 		}
 		receiveParam := &types.ReceiveFromBridgeParam{
-			ChainId:           heco.ChainID,
-			ChainName:         heco.Chain,
-			From:              heco.BridgeAddress,
-			To:                heco.ControllerAddress,
+			ChainId:           hecoChain.ID,
+			ChainName:         hecoChainName,
+			From:              hecoChain.BridgeAddress,
+			To:                hecoController.ControllerAddress,
 			Erc20ContractAddr: common.HexToAddress(hecoToken.Address),
 			Amount:            amountStr,
 			TaskID:            taskID,
@@ -156,41 +151,29 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 	return
 }
 
-func getToken(tokensMap map[string]*types.Token, currency, chain string) (*types.Token, bool) {
-	key := fmt.Sprintf("%s,%s", currency, chain)
-	token, ok := tokensMap[strings.ToLower(key)]
-	return token, ok
+func mustGetToken(tokens []*types.Token, currency, chain string) (token *types.Token) {
+	for _, token = range tokens {
+		if token.Currency == strings.ToLower(currency) && token.Chain == strings.ToLower(chain) {
+			return token
+		}
+	}
+	logrus.Fatalf("can not find token from db, currency:%s, chain:%s", currency, chain)
+	return
 }
 
-func tokensMap(db types.IDB) (map[string]*types.Token, error) {
-	tokens, err := db.GetTokens()
-	if err != nil {
-		return nil, err
+func mustGetCurrency(currencyList []*types.Currency, name string) (currency *types.Currency) {
+	for _, currency = range currencyList {
+		if currency.Name == strings.ToLower(name) {
+			return currency
+		}
 	}
-	m := make(map[string]*types.Token)
-	for _, token := range tokens {
-		key := fmt.Sprintf("%s,%s", token.Currency, token.Chain)
-		m[strings.ToLower(key)] = token
-	}
-	return m, nil
+	logrus.Fatalf("can not find currency from db, name:%s", name)
+	return
 }
 
-func (r *recyclingHandler) currencyMap() (map[string]*types.Currency, error) {
-	list, err := r.db.GetCurrency()
-	if err != nil {
-		return nil, err
-	}
-	m := make(map[string]*types.Currency)
-	for _, currency := range list {
-		m[currency.Name] = currency
-	}
-	return m, nil
-}
-
-func (r *recyclingHandler) hecoController(vault *types.VaultInfo) (controller *types.ControllerInfo, err error) {
-	hecoChainName := "heco"
+func hecoController(vault *types.VaultInfo, hecoChain string) (controller *types.ControllerInfo, err error) {
 	for chainName, info := range vault.ActiveAmount {
-		if strings.ToLower(chainName) == hecoChainName {
+		if strings.ToLower(chainName) == hecoChain {
 			controller = info
 			break
 		}
@@ -199,13 +182,13 @@ func (r *recyclingHandler) hecoController(vault *types.VaultInfo) (controller *t
 		err = fmt.Errorf("heco controller not found, vault:%v", vault)
 		return
 	}
-	chain, ok := r.conf.Chains[hecoChainName]
-	if !ok {
-		err = fmt.Errorf("can not find chain config for %s", hecoChainName)
-		return
-	}
-	controller.Chain = hecoChainName
-	controller.ChainID = chain.ID
-	controller.BridgeAddress = chain.BridgeAddress
 	return
+}
+
+func mustGetChainInfo(chainName string, conf *config.Config) *config.ChainInfo {
+	chain, ok := conf.Chains[strings.ToLower(chainName)]
+	if !ok {
+		logrus.Fatalf("can not find chain from config, chain:%s", chainName)
+	}
+	return chain
 }

@@ -15,10 +15,8 @@ dest_chains = ['bsc', 'polygon']
 
 
 def get_pool_info(url):
-    # 存储从api获取的poolinfo
     ret = requests.get(url)
     string = str(ret.content, 'utf-8')
-    #print(string)
     e = json.loads(string)
 
     return e['data']
@@ -85,10 +83,10 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
                     continue
 
                 key = generate_strategy_key(s.chain, s.project, [s.currency0, s.currency1])
-                if key not in apr or apr[key] < Decimal(0.18):
+                if key not in apr or apr[key] < Decimal("0.18"):
                     continue
 
-                caps[chain] += (daily_reward[key] * Decimal(365) / Decimal(0.18) - tvl[key])
+                caps[chain] += (daily_reward[key] * Decimal(365) / Decimal("0.18") - tvl[key])
 
         total = Decimal(0)
         for item in account_info[currency].values():
@@ -113,7 +111,7 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
                 continue
 
             diff = after_balance_info[currency][chain] - account_info[currency][chain]['amount']
-            if abs(diff) < Decimal(currencies[currency].min):
+            if abs(diff) < Decimal(str(currencies[currency].min)):
                 continue
 
             if currency not in balance_diff_map:
@@ -124,8 +122,8 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
 
     logging.info("diff map:{}".format(balance_diff_map))
 
-    def add_cross_item(conf, currency, from_chain, to_chain, amount):
-        if amount > Decimal(currencies[currency].min):
+    def add_cross_item(currency, from_chain, to_chain, amount):
+        if amount > Decimal(str(currencies[currency].min)):
             token_decimal = currencies[currency].tokens[from_chain].decimal
 
             account_info[currency][from_chain]['amount'] -= amount
@@ -172,17 +170,17 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
 
             # 向其他链进行跨链操作
             if diff < 0:
-                add_cross_item(conf, currency, chain, target_chain[chain], diff * -1)
+                add_cross_item(currency, chain, target_chain[chain], diff * -1)
                 # 先从heco向目标链转移，然后再从其他链向目标链转移
             elif account_info[currency]['heco']['amount'] >= diff:
-                add_cross_item(conf, currency, 'heco', chain, diff)
+                add_cross_item(currency, 'heco', chain, diff)
             else:
                 heco_amount = account_info[currency]['heco']['amount']
-                add_cross_item(conf, currency, 'heco', chain, account_info[currency]['heco']['amount'].quantize(
+                add_cross_item(currency, 'heco', chain, account_info[currency]['heco']['amount'].quantize(
                     Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                     ROUND_DOWN))
 
-                add_cross_item(conf, currency, target_chain[chain], chain,
+                add_cross_item(currency, target_chain[chain], chain,
                                (diff - heco_amount).quantize(
                                    Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                                    ROUND_DOWN))
@@ -196,7 +194,8 @@ def calc_re_balance_params(conf, session, currencies):
     # 注意usdt与usd的区分，别弄混了
     currency_names = [k for k in sorted(currencies.keys(), key=len, reverse=True)]
 
-    logging.info("currencies:{}".format(currencies))
+    for token_name in currencies:
+        logging.info("currencies token_name:{} ".format(currencies[token_name]))
 
     # 获取rebalance所需业务信息
     re_balance_input_info = get_pool_info(conf['pool']['url'])
@@ -224,8 +223,8 @@ def calc_re_balance_params(conf, session, currencies):
                     amt_info['controllerAddress'] = None
 
                 account_info[currency][chain.lower()] = amt_info
-                account_info[currency][chain.lower()]['amount'] = Decimal(
-                    account_info[currency][chain.lower()]['amount'])
+                # 下面这个应该将Decimal里面转字串或直接加"
+                account_info[currency][chain.lower()]['amount'] = Decimal(str(account_info[currency][chain.lower()]['amount']))
                 account_info[currency][chain.lower()]['controller'] = account_info[currency][chain.lower()][
                     'controllerAddress']
 
@@ -238,57 +237,57 @@ def calc_re_balance_params(conf, session, currencies):
 
     account_info['usdt'] = {
         'bsc': {
-            'amount': Decimal(0),
+            'amount': Decimal("0"),
             'controller': ''
         },
         'heco': {
-            'amount': Decimal(10000000),
+            'amount': Decimal("10000"),
             'controller': ''
         },
         'polygon': {
-            'amount': Decimal(0),
+            'amount': Decimal("0"),
             'controller': ''
         }
     }
 
     account_info['eth'] = {
         'bsc': {
-            'amount': Decimal(100),
+            'amount': Decimal("3"),  # Decimal()坑：括号里面必须是整数或字符串，假如我们需要通过Decimal计算的话就需要将数值转换成字符串或者直接加上引号，否则有问题
             "controller": ""
         },
         'heco': {
-            'amount': Decimal(0),
+            'amount': Decimal("12.897986"),
             "controller": ""
         },
         'polygon': {
-            'amount': Decimal(0),
+            'amount': Decimal("13.2863977"),
             "controller": ""
         }
     }
     account_info['btc'] = {
         'bsc': {
-            'amount': Decimal(10),
+            'amount': Decimal("0"),
             "controller": ""
         },
         'heco': {
-            'amount': Decimal(0),
+            'amount': Decimal("0"),
             "controller": ""
         },
         'polygon': {
-            'amount': Decimal(0),
+            'amount': Decimal("0"),
             "controller": ""
         }
     }
     #
     # account_info['cake'] = {
     #     'bsc': {
-    #         'amount': Decimal(0),
+    #         'amount': Decimal("0"),
     #     }
     # }
     #
     # account_info['bnb'] = {
     #     'bsc': {
-    #         'amount': Decimal(2000),
+    #         'amount': Decimal("2000"),
     #     }
     # }
     logging.info("init balance info for cross:{}".format(account_info) + \
@@ -312,13 +311,13 @@ def calc_re_balance_params(conf, session, currencies):
         for item in account_info[currency].values():
             total += item['amount']
 
-        need_re_balance = total > Decimal(threshold_info[currency])
+        need_re_balance = total > Decimal(str(threshold_info[currency]))
         if need_re_balance:
             break
 
     # 没超过阈值
     if not need_re_balance:
-        plogging.info("deposit amount not large enough")
+        logging.info("deposit amount not large enough")
         return
 
     # 获取apr等信息
@@ -337,15 +336,15 @@ def calc_re_balance_params(conf, session, currencies):
             for token in pool['rewardTokenList'] + pool['depositTokenList']:
                 currency = find_currency_by_address(session, format_addr(token['tokenAddress']))
                 if currency is not None and currency not in price:
-                    price[currency] = Decimal(token['tokenPrice'])
+                    price[currency] = Decimal(str(token['tokenPrice']))
 
                 names = [format_currency_name(currency_names, c)[1] for c in pool['poolName'].split("/")]
                 key = generate_strategy_key(p.chain, p.name, names)
 
-                apr[key] = Decimal(pool['apr'])
-                tvl[key] = Decimal(pool['tvl'])
+                apr[key] = Decimal(str(pool['apr']))
+                tvl[key] = Decimal(str(pool['tvl']))
                 daily_reward[key] = reduce(lambda x, y: x + y,
-                                           map(lambda t: Decimal(t['tokenPrice']) * Decimal(t['dayAmount']),
+                                           map(lambda t: Decimal(str(t['tokenPrice'])) * Decimal(str(t['dayAmount'])),
                                                pool['rewardTokenList']))
     logging.info(         
         "apr info:{}"\
@@ -456,7 +455,7 @@ def calc_invest(session, chain, balance_info_dict, price_dict, daily_reward_dict
 
     invest_calc_result = {}
 
-    detla = Decimal(0.005)
+    detla = Decimal("0.005")
 
     while True:
         lpKeys = [k for k in sorted(apr_dict, key=apr_dict.get, reverse=True)]
@@ -467,7 +466,7 @@ def calc_invest(session, chain, balance_info_dict, price_dict, daily_reward_dict
         # 找到top1 与top2
         top = []
         apr1 = apr_dict[lpKeys[0]]
-        target_apr_down_limit = Decimal(0.01)
+        target_apr_down_limit = Decimal("0.01")
         for key in lpKeys:
 
             if abs(apr_dict[key] - apr1) < detla:
@@ -588,20 +587,38 @@ if __name__ == '__main__':
         time.sleep(3)
         try:
             session = sessionmaker(db)()
-
+            # 有大re任务，拆解成小re的任务
+            tasks = find_full_re_balance_open_tasks(session)
+            session.commit()
+            
+            if tasks is not None:
+                for task in tasks :
+                    params = calc_re_balance_params(conf, session, currencies)
+                    session.begin()
+                    create_part_re_balance_task_for_full(session, json.dumps(params, cls=utils.DecimalEncoder), task.id)
+                    try:
+                        session.commit()
+                    except Exception as e:
+                        session.rollback()
+                        logging.error("db except :{}".format(e) + '\n' + traceback.format_exc())
             # 已经有小re了
             # tasks = find_part_re_balance_open_tasks(session)
             # if tasks is not None:
             #    continue
-
+  
             params = calc_re_balance_params(conf, session, currencies)
+            session.commit()
             if params is None:
                 continue
-            # print('params:', params)
-            print('params_json:', json.dumps(params, cls=utils.DecimalEncoder))
+            logging.info("params_json:{} ".format(json.dumps(params, cls=utils.DecimalEncoder)))
 
+            session.begin()
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))
-            session.commit()
+            try:
+                session.commit()
+            except Exception as e:
+                session.rollback()
+                print("except happens:{}".format(e))
 
         except Exception as e:
             print("except happens:{}".format(e))

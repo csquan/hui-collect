@@ -73,11 +73,21 @@ def get_value_from_dict(namespace_cache, key):
             return None
         if 'content' in kv_data:
             kv_data = yaml.load(kv_data['content'], Loader=yaml.FullLoader)
-            #print("kv_data:",kv_data)
+            #print("kv_data key:",kv_data)
         if key in kv_data:
             return kv_data[key]
     return None
 
+def get_all_dict(namespace_cache):
+    if namespace_cache:
+        kv_data = namespace_cache.get(CONFIGURATIONS)
+        if kv_data is None:
+            return None
+        if 'content' in kv_data:
+            kv_data = yaml.load(kv_data['content'], Loader=yaml.FullLoader)
+            #print("kv_data all:",kv_data)
+            return kv_data
+    return None
 
 def init_ip():
     try:
@@ -148,6 +158,39 @@ class ApolloClient(object):
         except Exception as e:
             logging.getLogger(__name__).error(str(e))
             return None
+
+    def get_all(self, namespace='application'):
+        try:
+            # 读取内存配置
+            namespace_cache = self._cache.get(namespace)
+            val = get_all_dict(namespace_cache)
+            if val is not None:
+                return val
+
+            # 读取网络配置
+            namespace_data = self.get_json_from_net(namespace)
+            ### added for bug by gyb
+            if namespace not in self._notification_map:
+                self._notification_map.append(namespace)
+            ### 
+            #print("namespace_data:",namespace_data)
+            val = get_all_dict(namespace_cache)
+            #print("val:",val)
+            if val is not None:
+                self._update_cache_and_file(namespace_data, namespace)
+                return val
+
+            # 读取文件配置
+            namespace_cache = self._get_local_cache(namespace)
+            val = get_all_dict(namespace_cache)
+            if val is not None:
+                self._update_cache_and_file(namespace_cache, namespace)
+                return val
+
+        except Exception as e:
+            logging.getLogger(__name__).error("get_all has error, [namespace is %s], [error is %s], ", namespace, e)
+            return None
+
 
     def get_value(self, key, default_val=None, namespace='application'):
         try:
