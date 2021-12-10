@@ -135,6 +135,8 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
             account_info[currency][to_chain]['amount'] += amount
             logging.info("after add: account_info:{}".format(account_info))
 
+            if from_chain == "polygon":
+                return
 
             cross_balances.append({
                 'from_chain': from_chain,
@@ -149,20 +151,20 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
             task_id = '{}'.format(time.time_ns() * 100)
             send_to_bridge.append({
                 'chain_name': from_chain,
-                'chain_id': conf['chain'][from_chain],
+                'chain_id': conf['chain'][from_chain]["id"],
                 'from': conf['bridge_port'][from_chain],
                 'to': account_info[currency][from_chain]['controller'],
                 'bridge_address': conf['bridge_port'][from_chain],
-                'amount': amount * (Decimal(10) ** token_decimal),
+                'amount': int(Decimal(str(amount)) * (Decimal(10) ** token_decimal)),
                 'task_id': task_id
             })
             receive_from_bridge.append({
                 'chain_name': to_chain,
-                'chain_id': conf['chain'][to_chain],
+                'chain_id': conf['chain'][to_chain]["id"],
                 'from': conf['bridge_port'][to_chain],
                 'to': account_info[currency][to_chain]['controller'],
                 "erc20_contract_addr": currencies[currency].tokens[from_chain].address,
-                'amount': amount * (Decimal(10) ** token_decimal),
+                'amount': int(Decimal(str(amount)) * (Decimal(10) ** token_decimal)),
                 'task_id': task_id,
             })
 
