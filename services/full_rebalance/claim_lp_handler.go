@@ -60,12 +60,11 @@ func (g getter) getLpData(url string) (lpList *types.Data, err error) {
 }
 
 type claimLPHandler struct {
-	token     tokens.Tokener
-	db        types.IDB
-	abi       abi.ABI
-	claimFrom string //TODO
-	conf      *config.Config
-	getter    lpDataGetter
+	token  tokens.Tokener
+	db     types.IDB
+	abi    abi.ABI
+	conf   *config.Config
+	getter lpDataGetter
 }
 
 func newClaimLpHandler(conf *config.Config, db types.IDB, token tokens.Tokener) *claimLPHandler {
@@ -218,13 +217,17 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 			return nil, fmt.Errorf("claim pack err:%v", err)
 		}
 		encoded, _ := json.Marshal(param)
+		fromAddr, ok := w.conf.FromAddrs[strings.ToUpper(param.ChainName)]
+		if !ok {
+			logrus.Fatalf("get from addr empty chainName:%s", param.ChainName)
+		}
 		task := &types.TransactionTask{
 			FullRebalanceId: tid,
 			BaseTask:        &types.BaseTask{State: int(types.TxUnInitState)},
 			TransactionType: int(types.ClaimFromVault),
 			ChainId:         param.ChainId,
 			ChainName:       param.ChainName,
-			From:            w.claimFrom,
+			From:            fromAddr,
 			To:              param.VaultAddr,
 			Params:          string(encoded),
 			InputData:       hexutil.Encode(input),
@@ -306,6 +309,7 @@ func (w *claimLPHandler) CheckFinished(task *types.FullReBalanceTask) (finished 
 			sucCnt++
 		}
 		if task.State == int(types.TxFailedState) {
+			logrus.Warnf("call claim fail tx_task_id:%d", task.ID)
 			failCnt++
 		}
 	}
