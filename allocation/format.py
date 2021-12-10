@@ -15,10 +15,8 @@ dest_chains = ['bsc', 'polygon']
 
 
 def get_pool_info(url):
-    # 存储从api获取的poolinfo
     ret = requests.get(url)
     string = str(ret.content, 'utf-8')
-    #print(string)
     e = json.loads(string)
 
     return e['data']
@@ -172,17 +170,17 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
 
             # 向其他链进行跨链操作
             if diff < 0:
-                add_cross_item(conf, currency, chain, target_chain[chain], diff * -1)
+                add_cross_item(currency, chain, target_chain[chain], diff * -1)
                 # 先从heco向目标链转移，然后再从其他链向目标链转移
             elif account_info[currency]['heco']['amount'] >= diff:
-                add_cross_item(conf, currency, 'heco', chain, diff)
+                add_cross_item(currency, 'heco', chain, diff)
             else:
                 heco_amount = account_info[currency]['heco']['amount']
-                add_cross_item(conf, currency, 'heco', chain, account_info[currency]['heco']['amount'].quantize(
+                add_cross_item(currency, 'heco', chain, account_info[currency]['heco']['amount'].quantize(
                     Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                     ROUND_DOWN))
 
-                add_cross_item(conf, currency, target_chain[chain], chain,
+                add_cross_item(currency, target_chain[chain], chain,
                                (diff - heco_amount).quantize(
                                    Decimal(10) ** (-1 * currencies[currency].crossDecimal),
                                    ROUND_DOWN))
@@ -196,7 +194,8 @@ def calc_re_balance_params(conf, session, currencies):
     # 注意usdt与usd的区分，别弄混了
     currency_names = [k for k in sorted(currencies.keys(), key=len, reverse=True)]
 
-    logging.info("currencies:{}".format(currencies))
+    for token_name in currencies:
+        logging.info("currencies token_name:{} ".format(currencies[token_name]))
 
     # 获取rebalance所需业务信息
     re_balance_input_info = get_pool_info(conf['pool']['url'])
@@ -611,8 +610,7 @@ if __name__ == '__main__':
             session.commit()
             if params is None:
                 continue
-            # print('params:', params)
-            print('params_json:', json.dumps(params, cls=utils.DecimalEncoder))
+            logging.info("params_json:{} ".format(json.dumps(params, cls=utils.DecimalEncoder)))
 
             session.begin()
             create_part_re_balance_task(session, json.dumps(params, cls=utils.DecimalEncoder))

@@ -78,7 +78,6 @@ def run(filename):
             session.commit()
             if params is None:
                 continue
-            #print('params:', params)
             print('params_json:', json.dumps(params, cls=utils.DecimalEncoder))
             
             session.begin()

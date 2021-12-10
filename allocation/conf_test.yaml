@@ -1,8 +1,8 @@
 db: 'mysql+pymysql://root:123456@localhost:3306/rebalance'
 
 bridge_port:
-  heco: "111111"
-  bsc: "22222"
+  heco: "0x9f0583a209fedbc404c4968e2157c2e7d4359803"
+  bsc: "0x74938228ae77e5fcc3504ad46fac4a965d210761"
   polygon: "33333"
 
 
