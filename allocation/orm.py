@@ -63,13 +63,13 @@ class PartReBalanceTask(Base):
     state = Column(SmallInteger, name='f_state')
 
 
-def find_strategies_by_chain_and_currency(session, conf, chain, currency):
-    return session.query(Strategy).filter(Strategy.chain == chain).filter(Strategy.enable == conf["strategy"]["enable"]["state"]).filter(
+def find_strategies_by_chain_and_currency(session, chain, currency):
+    return session.query(Strategy).filter(Strategy.chain == chain).filter(Strategy.enable == true).filter(
         or_(Strategy.currency0 == currency, Strategy.currency1 == currency))
 
 
-def find_strategies_by_chain_project_and_currencies(session, conf, chain, project, currency0, currency1):
-    q = session.query(Strategy).filter(Strategy.chain == chain).filter(Strategy.project == project).filter(Strategy.enable == conf["strategy"]["enable"]["state"]).filter(
+def find_strategies_by_chain_project_and_currencies(session, chain, project, currency0, currency1):
+    q = session.query(Strategy).filter(Strategy.chain == chain).filter(Strategy.project == project).filter(Strategy.enable == true).filter(
         or_(and_(Strategy.currency0 == currency0, Strategy.currency1 == currency1),
             and_(Strategy.currency0 == currency1, Strategy.currency1 == currency0)))
 

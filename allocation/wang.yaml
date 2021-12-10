@@ -13,12 +13,8 @@ chain:
   polygon:
     id: 137
 
-strategy:
-  enable:
-    state: false
-
 pool:
-  url: 'http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re'
+  url: 'http://neptune-hermes-fe-mgt.test-15.huobiapps.com/v2/open/re'
 
 project:
   - chain: 'bsc'

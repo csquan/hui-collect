@@ -75,7 +75,7 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
     for currency in account_info:
         caps = {}
         for chain in dest_chains:
-            strategies = find_strategies_by_chain_and_currency(session, conf, chain, currency)
+            strategies = find_strategies_by_chain_and_currency(session, chain, currency)
             caps[chain] = Decimal(0)
 
             for s in strategies:
@@ -84,7 +84,9 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
                     continue
 
                 key = generate_strategy_key(s.chain, s.project, [s.currency0, s.currency1])
+                logging.info("key".format(key))
                 if key not in apr or apr[key] < Decimal("0.18"):
+                    logging.info("key:{} is not in apr or smaller than 0.18".format(key))
                     continue
 
                 caps[chain] += (daily_reward[key] * Decimal(365) / Decimal("0.18") - tvl[key])
@@ -381,13 +383,13 @@ def get_info_by_strategy_str(lp):
 
 def get_counter_currency(session, conf, lp):
     data, token0, token1 = get_info_by_strategy_str(lp)
-    st = find_strategies_by_chain_project_and_currencies(session, conf, data[0], data[1], token0, token1)
+    st = find_strategies_by_chain_project_and_currencies(session, data[0], data[1], token0, token1)
     return st[0].currency1
 
 
 def get_base_currency(session, conf, lp):
     data, token0, token1 = get_info_by_strategy_str(lp)
-    st = find_strategies_by_chain_project_and_currencies(session, conf, data[0], data[1], token0, token1)
+    st = find_strategies_by_chain_project_and_currencies(session, data[0], data[1], token0, token1)
     return st[0].currency0
 
 
@@ -450,7 +452,7 @@ def generate_invest_params(conf, session, currencies, account_info, chain, strat
 def calc_invest(session, conf, chain, balance_info_dict, price_dict, daily_reward_dict, apr_dict, tvl_dict):
     def f(key):
         infos = get_info_by_strategy_str(key)
-        strategies = find_strategies_by_chain_project_and_currencies(session, conf, chain, infos[0][1], infos[1], infos[2])
+        strategies = find_strategies_by_chain_project_and_currencies(session, chain, infos[0][1], infos[1], infos[2])
         return len(strategies) > 0
 
     invest_calc_result = {}
