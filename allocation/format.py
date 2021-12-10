@@ -84,12 +84,12 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
                     continue
 
                 key = generate_strategy_key(s.chain, s.project, [s.currency0, s.currency1])
-                logging.info("key".format(key))
+
                 if key not in apr or apr[key] < Decimal("0.18"):
-                    logging.info("key:{} is not in apr or smaller than 0.18".format(key))
                     continue
 
                 caps[chain] += (daily_reward[key] * Decimal(365) / Decimal("0.18") - tvl[key])
+                logging.info("chain:{} key:{} caps:{} ".format(chain, key, caps[chain]))
 
         total = Decimal(0)
         for item in account_info[currency].values():
@@ -101,6 +101,7 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
                 after_balance_info[currency] = {
                     k: total * v / caps_total
                 }
+                logging.info("currency:{} k:{} v:{} total:{} caps_total:{}".format(currency, k, v, total, caps_total))
 
     logging.info("calc final state: {}".format(after_balance_info))
 
@@ -129,8 +130,11 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
         if amount > Decimal(str(currencies[currency].min)):
             token_decimal = currencies[currency].tokens[from_chain].decimal
 
+            logging.info("before add : currency:{} from_chain:{} to_chain:{} amount:{} account_info:{}".format(currency, from_chain, to_chain, amount, account_info))
             account_info[currency][from_chain]['amount'] -= amount
             account_info[currency][to_chain]['amount'] += amount
+            logging.info("after add: account_info:{}".format(account_info))
+
 
             cross_balances.append({
                 'from_chain': from_chain,
@@ -364,7 +368,7 @@ def calc_re_balance_params(conf, session, currencies):
 
     res['invest_params'] = []
     for chain in dest_chains:
-        invest_result = calc_invest(session, conf, chain, account_info, price, daily_reward, apr, tvl)
+        invest_result = calc_invest(session, chain, account_info, price, daily_reward, apr, tvl)
         invest_param_list = generate_invest_params(conf, session, currencies, account_info, chain, strategy_addresses, invest_result)
         res['invest_params'].extend(invest_param_list)
 
@@ -449,7 +453,7 @@ def generate_invest_params(conf, session, currencies, account_info, chain, strat
 """
 
 
-def calc_invest(session, conf, chain, balance_info_dict, price_dict, daily_reward_dict, apr_dict, tvl_dict):
+def calc_invest(session, chain, balance_info_dict, price_dict, daily_reward_dict, apr_dict, tvl_dict):
     def f(key):
         infos = get_info_by_strategy_str(key)
         strategies = find_strategies_by_chain_project_and_currencies(session, chain, infos[0][1], infos[1], infos[2])
@@ -464,7 +468,7 @@ def calc_invest(session, conf, chain, balance_info_dict, price_dict, daily_rewar
         lpKeys = list(filter(f, lpKeys))
         if len(lpKeys) <= 0:
             break
-
+        logging.info("lpKeys:{}".format(lpKeys))
         # 找到top1 与top2
         top = []
         apr1 = apr_dict[lpKeys[0]]
@@ -479,11 +483,11 @@ def calc_invest(session, conf, chain, balance_info_dict, price_dict, daily_rewar
 
         """如果只有top只有一个值，那么直接下降到排名第二的apr，如果top有多个，就每次进行小量尝试"""
         target_apr = max(target_apr_down_limit, apr1 - detla) if len(top) > 1 else target_apr_down_limit
-
+        logging.info("apr1:{} len(top):{} target_apr:{}".format(apr1, len(top), target_apr))
         for key in top:
             filled, vol, changes = fill_cap(chain, key, daily_reward_dict, tvl_dict, balance_info_dict, price_dict,
                                             target_apr)
-
+            logging.info("key:{} filled:{} vol:{} changes:{} ".format(key, filled, vol, changes))
             if key not in invest_calc_result:
                 invest_calc_result[key] = {}
 
@@ -535,6 +539,7 @@ def get_price(price_dict, currency):
 def fill_cap(chain, strategy, daily_reward_dict, tvl_dict, balance_dict, price_dict, target_apr):
     cap = (daily_reward_dict[strategy] * Decimal(365) / target_apr - tvl_dict[strategy])
     data, c0, c1 = get_info_by_strategy_str(strategy)
+    logging.info("in fill_cap cap/2:{} c0:{} c1:{}".format(cap/2, c0, c1))
     if c0 is None:
         return False, 0, {}
 
@@ -552,6 +557,8 @@ def fill_cap(chain, strategy, daily_reward_dict, tvl_dict, balance_dict, price_d
     # 双币
     vol = min(get_balance(balance_dict, c0, chain) * get_price(price_dict, c0),
               get_balance(balance_dict, c1, chain) * get_price(price_dict, c1), cap / 2)
+
+    logging.info("vol of c0:{} vol of c1:{}".format(get_balance(balance_dict, c0, chain) * get_price(price_dict, c0), get_balance(balance_dict, c1, chain) * get_price(price_dict, c1)))
 
     if vol <= 0:
         return False, 0, {}
