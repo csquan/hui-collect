@@ -217,7 +217,7 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 			return nil, fmt.Errorf("claim pack err:%v", err)
 		}
 		encoded, _ := json.Marshal(param)
-		fromAddr, ok := w.conf.FromAddrs[strings.ToUpper(param.ChainName)]
+		chain, ok := w.conf.Chains[strings.ToLower(param.ChainName)]
 		if !ok {
 			logrus.Fatalf("get from addr empty chainName:%s", param.ChainName)
 		}
@@ -227,7 +227,7 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 			TransactionType: int(types.ClaimFromVault),
 			ChainId:         param.ChainId,
 			ChainName:       param.ChainName,
-			From:            fromAddr,
+			From:            chain.BridgeAddress,
 			To:              param.VaultAddr,
 			Params:          string(encoded),
 			InputData:       hexutil.Encode(input),

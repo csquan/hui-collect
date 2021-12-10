@@ -55,7 +55,6 @@ type Config struct {
 	ApiConf          ApiConf               `mapstructure:"api"`
 	Margin           *Margin               `mapstructure:"margin"`
 	Env              string                `mapstructure:"env"`
-	FromAddrs        map[string]string     `mapstructure:"from_addrs"` //bridge业务地址，调用vault合约的from地址
 }
 type Margin struct {
 	AppID     string `mapstructure:"app_id"`
