@@ -201,9 +201,6 @@ def calc_re_balance_params(conf, session, currencies):
     # 注意usdt与usd的区分，别弄混了
     currency_names = [k for k in sorted(currencies.keys(), key=len, reverse=True)]
 
-    for token_name in currencies:
-        logging.info("currencies token_name:{} ".format(currencies[token_name]))
-
     # 获取rebalance所需业务信息
     re_balance_input_info = get_pool_info(conf['pool']['url'])
     logging.info("re_balance_input_info :{} ".format(re_balance_input_info))
@@ -306,7 +303,7 @@ def calc_re_balance_params(conf, session, currencies):
         (ok, currency) = format_currency_name(currency_names, threshold['tokenSymbol'])
         if ok:
             threshold_info[currency] = threshold['thresholdAmount']
-    logging.info("threshold info after format:{}".format(threshold_info))
+    logging.info("threshold info after:{}".format(threshold_info))
 
     # 比较阈值
     need_re_balance = False
