@@ -18,14 +18,11 @@ chains:
   heco:
     rpc_url: "https://http-mainnet.hecochain.com"
     fetch_timeout: 3000
+    bridge_address: "0x9f0583a209fedbc404c4968e2157c2e7d4359803"
   bsc:
     rpc_url: "https://bsc-dataseed.binance.org"
     fetch_timeout: 3000
-
-from_addrs:
-  HECO: "0x9f0583a209fedbc404c4968e2157c2e7d4359803"
-  BSC: "0x74938228ae77e5fcc3504ad46fac4a965d210761"
-
+    bridge_address: "0x74938228ae77e5fcc3504ad46fac4a965d210761"
 log:
   stdout:
     enable: true
