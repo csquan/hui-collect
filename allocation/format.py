@@ -15,8 +15,10 @@ dest_chains = ['bsc', 'polygon']
 
 
 def get_pool_info(url):
-    ret = requests.get(url)
-    string = str(ret.content, 'utf-8')
+    res = requests.get(url)
+    if res.status_code != 200:
+        raise (Exception('connection error : %s' % str(res.content, 'utf-8')))
+    string = str(res.content, 'utf-8')
     e = json.loads(string)
 
     return e['data']
@@ -53,7 +55,6 @@ class Project:
         if res.status_code != 200:
             raise (Exception('connection error : %s' % str(res.content, 'utf-8')))
         string = str(res.content, 'utf-8')
-        print(string)
         e = json.loads(string)
         return e['data']
 
@@ -74,7 +75,7 @@ def calc_cross_params(conf, session, currencies, account_info, daily_reward, apr
     for currency in account_info:
         caps = {}
         for chain in dest_chains:
-            strategies = find_strategies_by_chain_and_currency(session, chain, currency)
+            strategies = find_strategies_by_chain_and_currency(session, conf, chain, currency)
             caps[chain] = Decimal(0)
 
             for s in strategies:
@@ -199,6 +200,7 @@ def calc_re_balance_params(conf, session, currencies):
 
     # 获取rebalance所需业务信息
     re_balance_input_info = get_pool_info(conf['pool']['url'])
+    logging.info("re_balance_input_info :{} ".format(re_balance_input_info))
 
     threshold_org = re_balance_input_info['threshold']
     vault_info_list = re_balance_input_info['vaultInfoList']
@@ -346,13 +348,11 @@ def calc_re_balance_params(conf, session, currencies):
                 daily_reward[key] = reduce(lambda x, y: x + y,
                                            map(lambda t: Decimal(str(t['tokenPrice'])) * Decimal(str(t['dayAmount'])),
                                                pool['rewardTokenList']))
-    logging.info(         
-        "apr info:{}"\
-    "    price info:{}"\
-    "    daily reward info:{}"\
-    "    tvl info:{}".format(apr, price, daily_reward, tvl)
-    )
 
+    logging.info("apr :{} ".format(apr))
+    logging.info("price :{} ".format(price))
+    logging.info("daily_reward :{} ".format(daily_reward))
+    logging.info("tvl :{} ".format(tvl))
 
     account_info, cross_balances, send_to_bridge, receive_from_bridge = calc_cross_params(conf, session, currencies, account_info, 
                                                                                           daily_reward, apr, tvl)
@@ -362,7 +362,7 @@ def calc_re_balance_params(conf, session, currencies):
 
     res['invest_params'] = []
     for chain in dest_chains:
-        invest_result = calc_invest(session, chain, account_info, price, daily_reward, apr, tvl)
+        invest_result = calc_invest(session, conf, chain, account_info, price, daily_reward, apr, tvl)
         invest_param_list = generate_invest_params(conf, session, currencies, account_info, chain, strategy_addresses, invest_result)
         res['invest_params'].extend(invest_param_list)
 
@@ -379,15 +379,15 @@ def get_info_by_strategy_str(lp):
         return data, data[2], data[3]
 
 
-def get_counter_currency(session, lp):
+def get_counter_currency(session, conf, lp):
     data, token0, token1 = get_info_by_strategy_str(lp)
-    st = find_strategies_by_chain_project_and_currencies(session, data[0], data[1], token0, token1)
+    st = find_strategies_by_chain_project_and_currencies(session, conf, data[0], data[1], token0, token1)
     return st[0].currency1
 
 
-def get_base_currency(session, lp):
+def get_base_currency(session, conf, lp):
     data, token0, token1 = get_info_by_strategy_str(lp)
-    st = find_strategies_by_chain_project_and_currencies(session, data[0], data[1], token0, token1)
+    st = find_strategies_by_chain_project_and_currencies(session, conf, data[0], data[1], token0, token1)
     return st[0].currency0
 
 
@@ -397,7 +397,7 @@ def generate_invest_params(conf, session, currencies, account_info, chain, strat
     # 根据base token 进行分组
     for st, st_amounts in invest_calc_result.items():
 
-        base = get_base_currency(session, st)
+        base = get_base_currency(session, conf, st)
         if base not in st_by_base:
             st_by_base[base] = []
 
@@ -419,7 +419,7 @@ def generate_invest_params(conf, session, currencies, account_info, chain, strat
             base_amount = (st_amounts[base] * (Decimal(10) ** base_decimal)).quantize(Decimal(1), ROUND_DOWN)
             invest_base.append(base_amount)
 
-            counter = get_counter_currency(session, st)
+            counter = get_counter_currency(session, conf, st)
             if counter is None:
                 invest_counter.append(0)
             else:
@@ -447,10 +447,10 @@ def generate_invest_params(conf, session, currencies, account_info, chain, strat
 """
 
 
-def calc_invest(session, chain, balance_info_dict, price_dict, daily_reward_dict, apr_dict, tvl_dict):
+def calc_invest(session, conf, chain, balance_info_dict, price_dict, daily_reward_dict, apr_dict, tvl_dict):
     def f(key):
         infos = get_info_by_strategy_str(key)
-        strategies = find_strategies_by_chain_project_and_currencies(session, chain, infos[0][1], infos[1], infos[2])
+        strategies = find_strategies_by_chain_project_and_currencies(session, conf, chain, infos[0][1], infos[1], infos[2])
         return len(strategies) > 0
 
     invest_calc_result = {}

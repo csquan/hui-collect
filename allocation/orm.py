@@ -12,6 +12,7 @@ class Strategy(Base):
     project = Column(String, name='f_project')
     currency0 = Column(String, name='f_currency0')
     currency1 = Column(String, name='f_currency1')
+    enable = Column(String, name='f_enabled')
 
     def __str__(self):
         return "chain:{} project:{} currency0:{} currency1:{}".format(self.chain, self.project,
@@ -62,13 +63,13 @@ class PartReBalanceTask(Base):
     state = Column(SmallInteger, name='f_state')
 
 
-def find_strategies_by_chain_and_currency(session, chain, currency):
-    return session.query(Strategy).filter(Strategy.chain == chain).filter(
+def find_strategies_by_chain_and_currency(session, conf, chain, currency):
+    return session.query(Strategy).filter(Strategy.chain == chain).filter(Strategy.enable == conf["strategy"]["enable"]["state"]).filter(
         or_(Strategy.currency0 == currency, Strategy.currency1 == currency))
 
 
-def find_strategies_by_chain_project_and_currencies(session, chain, project, currency0, currency1):
-    q = session.query(Strategy).filter(Strategy.chain == chain).filter(Strategy.project == project).filter(
+def find_strategies_by_chain_project_and_currencies(session, conf, chain, project, currency0, currency1):
+    q = session.query(Strategy).filter(Strategy.chain == chain).filter(Strategy.project == project).filter(Strategy.enable == conf["strategy"]["enable"]["state"]).filter(
         or_(and_(Strategy.currency0 == currency0, Strategy.currency1 == currency1),
             and_(Strategy.currency0 == currency1, Strategy.currency1 == currency0)))
 
