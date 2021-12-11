@@ -42,7 +42,7 @@ type Params struct {
 type InvestParam struct {
 	ChainId   int    `json:"chain_id"`
 	ChainName string `json:"chain_name"`
-	From      string `json:"chain_from"`
+	From      string `json:"from"`
 	To        string `json:"to"` //合约地址
 
 	StrategyAddresses  []common.Address `json:"strategy_addresses"`
