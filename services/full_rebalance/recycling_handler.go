@@ -116,7 +116,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 		fromToken = mustGetToken(tokens, vault.Currency, fromChainName)
 		hecoToken = mustGetToken(tokens, vault.Currency, hecoChainName)
 		amountStr := powN(strMustToDecimal(info.Amount), fromToken.Decimal).String()
-		taskID := fmt.Sprintf("%d", time.Now().UnixMicro())
+		taskID := fmt.Sprintf("%d", time.Now().UnixNano()/1000)
 		sendParam := &types.SendToBridgeParam{
 			ChainId:       fromChain.ID,
 			ChainName:     fromChainName,
