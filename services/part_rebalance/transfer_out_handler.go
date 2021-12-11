@@ -60,10 +60,12 @@ func (t *transferOutHandler) MoveToNextState(task *types.PartReBalanceTask, next
 	}
 
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		execErr = t.db.SaveCrossTasks(session, crossTasks)
-		if execErr != nil {
-			logrus.Errorf("save cross task error:%v task:[%v]", execErr, task)
-			return
+		if nextState == types.PartReBalanceCross {
+			execErr = t.db.SaveCrossTasks(session, crossTasks)
+			if execErr != nil {
+				logrus.Errorf("save cross task error:%v task:[%v]", execErr, task)
+				return
+			}
 		}
 
 		task.State = nextState
@@ -78,5 +80,3 @@ func (t *transferOutHandler) MoveToNextState(task *types.PartReBalanceTask, next
 
 	return
 }
-
-
