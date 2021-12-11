@@ -13,12 +13,12 @@ type Data struct {
 	LiquidityProviderList []*LiquidityProvider `json:"liquidityProviderList"`
 }
 type Threshold struct {
-	TokenAddress    string  `json:"tokenAddress"`
-	TokenSymbol     string  `json:"tokenSymbol"`
-	Chain           string  `json:"chain"`
-	ChainId         int     `json:"chainId"`
+	TokenAddress    string `json:"tokenAddress"`
+	TokenSymbol     string `json:"tokenSymbol"`
+	Chain           string `json:"chain"`
+	ChainId         int    `json:"chainId"`
 	ThresholdAmount string `json:"thresholdAmount"`
-	Decimal         int     `json:"decimal"`
+	Decimal         int    `json:"decimal"`
 }
 type LiquidityProvider struct {
 	Chain          string    `json:"chain"`
@@ -49,7 +49,7 @@ type VaultInfo struct {
 
 type ControllerInfo struct {
 	Amount            string `json:"amount"`
-	ControllerAddress string `json:"controllerAddress"`
+	ControllerAddress string `json:"vaultAddress"`
 
 	//下面几个字段不是从json解析出来的
 	//Chain string
@@ -76,4 +76,3 @@ type NormalResponse struct {
 	Msg  string                 `json:"msg"`
 	Data map[string]interface{} `json:"data"`
 }
-
