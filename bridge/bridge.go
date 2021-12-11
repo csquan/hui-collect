@@ -413,6 +413,7 @@ func (b *Bridge) GetAccountId(addr string, chainId int) (uint64, bool) {
 }
 
 func (b *Bridge) GetCurrencyID(currency string) (int, bool) {
+	currency = strings.ToLower(currency)
 	ok, id := b.currencies[currency]
 	return ok, id
 }
@@ -438,7 +439,8 @@ func (b *Bridge) loadCurrencies() error {
 	}
 	for _, c := range cs {
 		logrus.Infof("currency name:%s,id:%d", c.Currency, c.CurrencyId)
-		b.currencies[c.Currency] = int(c.CurrencyId)
+		currency := strings.ToLower(c.Currency)
+		b.currencies[currency] = int(c.CurrencyId)
 	}
 	return nil
 }
