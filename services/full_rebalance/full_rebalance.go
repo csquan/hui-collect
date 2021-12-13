@@ -118,7 +118,7 @@ func (p *FullReBalance) Run() (err error) {
 	if err := checkState(next); err != nil {
 		return fmt.Errorf("state err:%v,state:%d,tid:%d,handler:%s", err, next, tasks[0].ID, handler.Name())
 	}
-	if next == types.FullReBalanceSuccess || next == types.FullReBalanceFailed {
+	if next == types.FullReBalanceSuccess || next == types.FullReBalanceFailed || next == types.FullReBalanceParamsCalc {
 		//update state
 		tasks[0].State = next
 		return p.db.UpdateFullReBalanceTask(p.db.GetEngine(), tasks[0])
