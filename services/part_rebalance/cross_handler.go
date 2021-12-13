@@ -28,12 +28,6 @@ func (c *crossHandler) CheckFinished(task *types.PartReBalanceTask) (finished bo
 		logrus.Errorf("get cross task for rebalance [%v] failed, err:%v", task, err)
 		return
 	}
-
-	if len(crossTasks) == 0 {
-		err = fmt.Errorf("part rebalance task [%v] has no cross task", task)
-		return
-	}
-
 	success := true
 	for _, crossTask := range crossTasks {
 		if crossTask.State != types.TaskSuc {
