@@ -64,8 +64,9 @@ func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {
 	for _, lp := range lpList {
 		totalBaseAmount := decimal.Zero
 		totalQuoteAmount := decimal.Zero
+		totalLpAmount := decimal.Zero
 		for _, lpinfo := range lp.LpInfoList {
-			var baseAmount, quoteAmount decimal.Decimal
+			var baseAmount, quoteAmount, lpAmount decimal.Decimal
 			baseAmount, err = decimal.NewFromString(lpinfo.BaseTokenAmount)
 			if err != nil {
 				logrus.Errorf("BaseTokenAmount to decimal err:%v", err)
@@ -76,13 +77,19 @@ func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {
 				logrus.Errorf("QuoteTokenAmount to decimal err:%v", err)
 				return nil, err
 			}
+			lpAmount, err = decimal.NewFromString(lpinfo.LpAmount)
+			if err != nil {
+				logrus.Errorf("QuoteTokenAmount to decimal err:%v", err)
+				return nil, err
+			}
 			totalBaseAmount = totalBaseAmount.Add(baseAmount)
 			totalQuoteAmount = totalQuoteAmount.Add(quoteAmount)
+			totalLpAmount = totalLpAmount.Add(lpAmount)
 		}
 		r := &types.LpReq{
 			Chain:              lp.Chain,
 			LpTokenAddress:     lp.LpTokenAddress,
-			LpAmount:           lp.LpAmount,
+			LpAmount:           totalLpAmount.String(),
 			Token0OriginAmount: totalBaseAmount.String(),
 			Token1OriginAmount: totalQuoteAmount.String(),
 		}

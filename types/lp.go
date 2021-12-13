@@ -24,7 +24,7 @@ type LiquidityProvider struct {
 	Chain          string    `json:"chain"`
 	ChainId        int       `json:"chainId"`
 	LpSymbol       string    `json:"lpSymbol"`
-	LpAmount       string    `json:"lpAmount"`
+	//LpAmount       string    `json:"lpAmount"`
 	LpTokenAddress string    `json:"lpTokenAddress"`
 	LpPlatform     string    `json:"lpPlatform"`
 	LpInfoList     []*LpInfo `json:"lpInfoList"`
