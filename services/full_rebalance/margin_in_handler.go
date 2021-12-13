@@ -82,7 +82,7 @@ func joinUrl(urlInput string, pathInput string) (string, error) {
 		return "", err
 	}
 
-	u.Path = path.Join(pathInput, "submit")
+	u.Path = path.Join(u.Path, pathInput)
 	return u.String(), nil
 }
 
