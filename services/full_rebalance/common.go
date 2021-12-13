@@ -5,8 +5,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/config"
 	"time"
+
+	"github.com/starslabhq/hermes-rebalance/config"
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -16,12 +17,12 @@ import (
 func getLpData(url string) (lpList *types.Data, err error) {
 	data, err := utils.DoRequest(url, "GET", nil)
 	if err != nil {
-		logrus.Errorf("request lp err:%v", err)
+		logrus.Errorf("request lp err:%v,body:%s", err, data)
 		return
 	}
 	lpResponse := &types.LPResponse{}
 	if err = json.Unmarshal(data, lpResponse); err != nil {
-		logrus.Errorf("unmarshar lpResponse err:%v", err)
+		logrus.Errorf("unmarshar lpResponse err:%v,body:%s", err, data)
 		return
 	}
 	if lpResponse.Code != 200 {
@@ -33,20 +34,20 @@ func getLpData(url string) (lpList *types.Data, err error) {
 	return
 }
 
-func callMarginApi(url string, conf *config.Config, body interface{})(res *types.NormalResponse, err error){
+func callMarginApi(url string, conf *config.Config, body interface{}) (res *types.NormalResponse, err error) {
 	headers := make(map[string]string)
 	timestamp := fmt.Sprintf("%d", time.Now().Unix())
 	headers["timestamp"] = timestamp
 	headers["appId"] = conf.Margin.AppID
 	data, err := json.Marshal(body)
-	if err != nil{
+	if err != nil {
 		return
 	}
 	sign := sign(timestamp, data, conf.Margin.SecretKey)
 	headers["sign"] = sign
 	resData, err := utils.DoRequestWithHeaders(url, "POST", data, headers)
 	if err != nil {
-		logrus.Errorf("DoRequestWithHeaders req%s: err:%v", string(data), err)
+		logrus.Errorf("DoRequestWithHeaders req:%s,sign:%s err:%v,ret:%s", data, sign, err, resData)
 		return
 	}
 	lpResponse := &types.NormalResponse{}
@@ -55,7 +56,7 @@ func callMarginApi(url string, conf *config.Config, body interface{})(res *types
 		return
 	}
 	if lpResponse.Code != 200 {
-		err =fmt.Errorf("do http request, code:%d, msg:%s, url:%s, requestBody:%+v", lpResponse.Code, lpResponse.Msg, url, body)
+		err = fmt.Errorf("do http request, code:%d, msg:%s, url:%s, requestBody:%+v", lpResponse.Code, lpResponse.Msg, url, body)
 		logrus.Error(err)
 		return
 	}
