@@ -116,7 +116,10 @@ func TestGetClaimParamsAndCreateTask(t *testing.T) {
 	token.EXPECT().GetCurrency(gomock.Any(), "ETH").Return("eth").AnyTimes()
 	token.EXPECT().GetCurrency(gomock.Any(), "BTCB").Return("btc")
 	h.token = token
-	params := h.getClaimParams(lps, valuts)
+	params, err := h.getClaimParams(lps, valuts)
+	if err != nil {
+		t.Fatalf("get claim params err:%v", err)
+	}
 	b, _ := json.Marshal(params)
 	t.Logf("claim params:%s", b)
 
