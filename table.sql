@@ -1,6 +1,5 @@
 DROP TABLE IF EXISTS `t_full_rebalance_task`;
-CREATE TABLE `t_full_rebalance_task`
-(
+CREATE TABLE `t_full_rebalance_task` (
     `f_id`         bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_state`      tinyint(4)          NOT NULL DEFAULT '0' COMMENT '',
     `f_params`     text                NOT NULL COMMENT '任务数据',
@@ -15,25 +14,24 @@ CREATE TABLE `t_full_rebalance_task`
     COLLATE = utf8mb4_bin COMMENT ='大r任务表';
 
 DROP TABLE IF EXISTS `t_part_rebalance_task`;
-CREATE TABLE `t_part_rebalance_task`
-(
+CREATE TABLE `t_part_rebalance_task` (
     `f_id`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_full_rebalance_id` bigint(20) unsigned COMMENT '大r任务id',
     `f_state`             tinyint(4)          NOT NULL DEFAULT '0' COMMENT 'init build ongoing success failed',
     `f_params`            text                NOT NULL COMMENT '任务数据',
     `f_message`           text                NOT NULL COMMENT '',
+    `f_create_unix`       bigint(20)          not null comment '任务创建的unix时间戳',
     `f_created_at`        timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `f_updated_at`        timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
-    KEY `idx_state` (`f_state`)
+    KEY `idx_state` (`f_state`, `f_create_unix`)
 )
     ENGINE = InnoDB
     DEFAULT CHARSET = utf8mb4
     COLLATE = utf8mb4_bin COMMENT ='小r任务表';
 
 DROP TABLE IF EXISTS `t_transaction_task`;
-CREATE TABLE `t_transaction_task`
-(
+CREATE TABLE `t_transaction_task` (
     `f_id`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_full_rebalance_id` bigint(20) unsigned COMMENT '大r任务id',
     `f_rebalance_id`      int(11)             NOT NULL DEFAULT '0' COMMENT '小r任务 id',
@@ -70,8 +68,7 @@ CREATE TABLE `t_transaction_task`
 
 
 DROP TABLE IF EXISTS `t_cross_task`;
-CREATE TABLE `t_cross_task`
-(
+CREATE TABLE `t_cross_task` (
     `f_id`              bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_rebalance_id`    int(11)             NOT NULL DEFAULT '0' COMMENT 'part rebalance task id',
     `f_chain_from`      varchar(10)         NOT NULL DEFAULT '' COMMENT 'from chain',
@@ -91,8 +88,7 @@ CREATE TABLE `t_cross_task`
     DEFAULT CHARSET = utf8mb4;
 
 DROP TABLE IF EXISTS `t_cross_sub_task`;
-CREATE TABLE `t_cross_sub_task`
-(
+CREATE TABLE `t_cross_sub_task` (
     `f_id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_parent_id`      bigint(20) unsigned NOT NULL DEFAULT 0,
     `f_task_no`        int(11)             NOT NULL DEFAULT 0 COMMENT 'task number 相同parent_id下保持唯一递增',
@@ -109,8 +105,7 @@ CREATE TABLE `t_cross_sub_task`
 
 
 drop table IF EXISTS `t_strategy`;
-create TABLE `t_strategy`
-(
+create TABLE `t_strategy` (
     `f_id`         bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_chain`      varchar(255)        NOT NULL COMMENT '链名称',
     `f_project`    varchar(255)        NOT NULL COMMENT '项目名称',
@@ -154,8 +149,7 @@ values ('bsc', 'biswap', 'bnb', 'usd', false),
 
 
 drop table IF EXISTS `t_currency`;
-create TABLE `t_currency`
-(
+create TABLE `t_currency` (
     `f_id`          bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_name`        varchar(255)        NOT NULL COMMENT '名称',
     `f_min`         decimal(20, 8) COMMENT '跨链的最小额度',
@@ -182,8 +176,7 @@ values ('btc', 0.001, 3),
 
 
 drop table IF EXISTS `t_token`;
-create TABLE `t_token`
-(
+create TABLE `t_token` (
     `f_id`           bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_currency`     varchar(255)        NOT NULL COMMENT '币种',
     `f_chain`        varchar(255)        NOT NULL COMMENT '链',
