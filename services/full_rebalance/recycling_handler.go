@@ -3,6 +3,9 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-xorm/xorm"
 	"github.com/shopspring/decimal"
@@ -10,8 +13,6 @@ import (
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"strings"
-	"time"
 )
 
 type recyclingHandler struct {
@@ -45,7 +46,7 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	}
 	data, _ := json.Marshal(partRebalanceParam)
 	partTask := &types.PartReBalanceTask{
-		Params: string(data),
+		Params:          string(data),
 		FullRebalanceID: task.ID,
 	}
 	err = utils.CommitWithSession(r.db, func(session *xorm.Session) (execErr error) {
@@ -67,7 +68,7 @@ func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 		return
 	}
 	if partTask == nil {
-		err = fmt.Errorf("not found part rebalance task, fullRebalanceID:%d",task.ID)
+		err = fmt.Errorf("not found part rebalance task, fullRebalanceID:%d", task.ID)
 		logrus.Error(err)
 		return
 	}
@@ -92,6 +93,9 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 	}
 	for fromChainName, info := range vault.ActiveAmount {
 		if strings.ToLower(fromChainName) == hecoChainName {
+			continue
+		}
+		if info == nil || info.ControllerAddress == "" {
 			continue
 		}
 		//根据chainName，从配置中获取bridgeAddress信息
