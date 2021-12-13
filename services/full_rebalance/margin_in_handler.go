@@ -25,6 +25,12 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 	if err != nil {
 		return
 	}
+	if lpData.LiquidityProviderList == nil || len(lpData.LiquidityProviderList) == 0 {
+		//LiquidityProviderList为空，跳过保证金，直接进入下一状态
+		task.State = types.FullReBalanceClaimLP
+		err = i.db.UpdateFullReBalanceTask(i.db.GetEngine(), task)
+		return
+	}
 	lpReq, err := lp2Req(lpData.LiquidityProviderList)
 	if err != nil {
 		logrus.Errorf("build margin_in params err:%v", err)
@@ -61,7 +67,7 @@ func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (
 		return
 	}
 
-	res, err := callMarginApi(urlStr, i.conf, struct {
+	res, err := GetMarginJobStatus(urlStr, i.conf, struct {
 		BizNo string `json:"bizNo"`
 	}{bizNo})
 	if err != nil {

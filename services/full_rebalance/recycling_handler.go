@@ -29,6 +29,10 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	if err != nil {
 		return
 	}
+	if res.LiquidityProviderList != nil && len(res.LiquidityProviderList) > 0 {
+		logrus.Infof("LiquidityProviderList is not nil, cannot do recycling")
+		return
+	}
 	tokens, err := r.db.GetTokens()
 	currencyList, err := r.db.GetCurrency()
 	if err != nil {
