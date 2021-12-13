@@ -177,7 +177,7 @@ func RemoteSignerConfig(appId string) (conf *Conf) {
 }
 
 const (
-	appID       string = "hermes-rebalance"
+	appID       string = "rebalance"
 	apolloSever string = "http://apollo-config.system-service.huobiapps.com"
 )
 
