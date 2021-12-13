@@ -32,14 +32,13 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 	}
 	bizNo := fmt.Sprintf("%d", task.ID)
 	req := &types.ImpermanectLostReq{BizNo: bizNo, LpList: lpReq}
-	u, err := url.Parse(i.conf.ApiConf.MarginUrl)
+	urlStr, err := joinUrl(i.conf.ApiConf.MarginUrl, "submit")
 	if err != nil {
 		logrus.Errorf("parse url error:%v", err)
 		return
 	}
 
-	u.Path = path.Join(u.Path, "submit")
-	if _, err = callMarginApi(u.String(), i.conf, req); err != nil {
+	if _, err = callMarginApi(urlStr, i.conf, req); err != nil {
 		return
 	}
 	var params []byte
@@ -50,29 +49,41 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 	task.Params = string(params) //save params for margin out
 	task.State = types.FullReBalanceMarginIn
 	err = i.db.UpdateFullReBalanceTask(i.db.GetEngine(), task)
+
 	return
 }
 
 func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	bizNo := fmt.Sprintf("%d", task.ID)
-	u, err := url.Parse(i.conf.ApiConf.MarginUrl)
+	urlStr, err := joinUrl(i.conf.ApiConf.MarginUrl, "status/query")
 	if err != nil {
 		logrus.Errorf("parse url error:%v", err)
 		return
 	}
 
-	u.Path = path.Join(u.Path, "status/query")
-	res, err := callMarginApi(u.Path, i.conf, struct {
+	res, err := callMarginApi(urlStr, i.conf, struct {
 		BizNo string `json:"bizNo"`
 	}{bizNo})
 	if err != nil {
 		return
 	}
+
 	status, ok := res.Data["status"]
 	if !ok || status.(string) != "SUCCESS" {
 		return
 	}
 	return true, types.FullReBalanceClaimLP, nil
+}
+
+func joinUrl(urlInput string, pathInput string) (string, error) {
+	u, err := url.Parse(urlInput)
+	if err != nil {
+		logrus.Errorf("parse url error:%v", err)
+		return "", err
+	}
+
+	u.Path = path.Join(pathInput, "submit")
+	return u.String(), nil
 }
 
 func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {

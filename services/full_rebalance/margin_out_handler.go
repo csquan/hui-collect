@@ -25,7 +25,14 @@ func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 		logrus.Errorf("createMarginOutJob unmarshal params err:%v", err)
 		return
 	}
-	_, err = callMarginApi(i.conf.ApiConf.MarginOutUrl +"/submit", i.conf, req)
+
+	urlStr, err := joinUrl(i.conf.ApiConf.MarginOutUrl, "submit")
+	if err != nil {
+		logrus.Errorf("parse url error:%v", err)
+		return
+	}
+
+	_, err = callMarginApi(urlStr, i.conf, req)
 	if err != nil {
 		logrus.Errorf("margin job query status err:%v", err)
 		return
@@ -36,10 +43,17 @@ func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 }
 
 func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
+
+	urlStr, err := joinUrl(i.conf.ApiConf.MarginOutUrl, "status/query")
+	if err != nil {
+		logrus.Errorf("parse url error:%v", err)
+		return
+	}
+
 	req := struct {
 		BizNo string `json:"bizNo"`
 	}{BizNo: fmt.Sprintf("%d", task.ID)}
-	resp, err := callMarginApi(i.conf.ApiConf.MarginOutUrl+"status/query", i.conf, req)
+	resp, err := callMarginApi(urlStr, i.conf, req)
 	if err != nil {
 		return
 	}
@@ -70,4 +84,3 @@ func createMarginOutJob(url string, params string) (err error) {
 	}
 	return
 }
-

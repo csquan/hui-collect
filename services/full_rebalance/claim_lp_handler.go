@@ -119,7 +119,7 @@ func findParams(params []*claimParam, vaultAddr string) *claimParam {
 	return nil
 }
 
-func (w *claimLPHandler) getClaimParams(lps []*types.LiquidityProvider, valuts []*types.VaultInfo) (params []*claimParam) {
+func (w *claimLPHandler) getClaimParams(lps []*types.LiquidityProvider, vaults []*types.VaultInfo) (params []*claimParam) {
 	params = make([]*claimParam, 0)
 	for _, lp := range lps {
 		strategiesM := make(map[string]*strategy)
@@ -140,10 +140,10 @@ func (w *claimLPHandler) getClaimParams(lps []*types.LiquidityProvider, valuts [
 				}
 				strategiesM[s.StrategyAddr] = s
 
-				addr, ok := w.getVaultAddr(s.BaseSymbol, lp.Chain, valuts)
+				addr, ok := w.getVaultAddr(s.BaseSymbol, lp.Chain, vaults)
 				if !ok {
-					b, _ := json.Marshal(valuts)
-					logrus.Fatalf("vault addr not found,symbol:%s, chain:%s,valuts:%s", s.BaseSymbol, lp.Chain, b)
+					b, _ := json.Marshal(vaults)
+					logrus.Fatalf("vault addr not found,symbol:%s, chain:%s,vaults:%s", s.BaseSymbol, lp.Chain, b)
 					return
 				}
 
@@ -241,7 +241,7 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 
 func (w *claimLPHandler) insertTxTasksAndUpdateState(txTasks []*types.TransactionTask,
 	fullTask *types.FullReBalanceTask, state types.FullReBalanceState) error {
-	utils.CommitWithSession(w.db, func(s *xorm.Session) error {
+	err1 := utils.CommitWithSession(w.db, func(s *xorm.Session) error {
 		err := w.db.SaveTxTasks(s, txTasks)
 		if err != nil {
 			return fmt.Errorf("claim save txtasks err:%v,tid:%d", err, fullTask.ID)
@@ -253,17 +253,17 @@ func (w *claimLPHandler) insertTxTasksAndUpdateState(txTasks []*types.Transactio
 		}
 		return nil
 	})
-	return nil
+	return err1
 }
 
 func (w *claimLPHandler) getVaultAddr(tokenSymbol, chain string, vaults []*types.VaultInfo) (string, bool) {
 	currency := w.token.GetCurrency(chain, tokenSymbol)
-	for _, valut := range vaults {
-		if valut.Currency == currency {
-			c, ok := valut.ActiveAmount[chain]
+	for _, vault := range vaults {
+		if vault.Currency == currency {
+			c, ok := vault.ActiveAmount[chain]
 			if !ok {
-				b, _ := json.Marshal(valut)
-				logrus.Fatalf("valut activeAmount not found chain:%s,valut:%s", chain, b)
+				b, _ := json.Marshal(vault)
+				logrus.Fatalf("vault activeAmount not found chain:%s,vault:%s", chain, b)
 			}
 			return c.ControllerAddress, true
 		}
@@ -281,6 +281,7 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 	var lps = data.LiquidityProviderList
 	params := w.getClaimParams(lps, data.VaultInfoList)
 
+	//TODO 考虑空数组的情况
 	txTasks, err := w.createTxTask(task.ID, params)
 	if err != nil {
 		return err
@@ -303,6 +304,7 @@ func (w *claimLPHandler) CheckFinished(task *types.FullReBalanceTask) (finished 
 		return false, types.FullReBalanceClaimLP, fmt.Errorf("full_r get txTasks err:%v", err)
 	}
 	taskCnt := len(txTasks)
+	//TODO 假设没有需要claim的 这里应该就是0
 	if taskCnt == 0 {
 		logrus.Fatalf("unexpected claim txTasks size tid:%d", task.ID)
 	}

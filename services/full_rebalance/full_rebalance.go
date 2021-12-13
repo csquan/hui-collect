@@ -97,7 +97,7 @@ func (p *FullReBalance) Run() (err error) {
 	}
 
 	if len(tasks) == 0 {
-		logrus.Infof("no available part full_rebalance task.")
+		logrus.Infof("no available full_rebalance task.")
 		return
 	}
 
@@ -127,6 +127,7 @@ func (p *FullReBalance) Run() (err error) {
 		if nextHandler == nil {
 			b, _ := json.Marshal(tasks[0])
 			logrus.Fatalf("unexpectd state:%d,task:%s", next, b)
+			return
 		}
 		if err := nextHandler.Do(tasks[0]); err != nil {
 			logrus.Errorf("handler do err:%v,name:%s", err, nextHandler.Name())
