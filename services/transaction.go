@@ -2,8 +2,10 @@ package services
 
 import (
 	"context"
-	"github.com/starslabhq/hermes-rebalance/clients"
+	"strings"
 	"time"
+
+	"github.com/starslabhq/hermes-rebalance/clients"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -193,7 +195,8 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 }
 
 func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error {
-	client, ok := t.clientMap[task.ChainName]
+	clikey := strings.ToLower(task.ChainName)
+	client, ok := t.clientMap[clikey]
 	if !ok {
 		logrus.Warnf("not find chain client, task:%v", task)
 	}

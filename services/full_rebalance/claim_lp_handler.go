@@ -13,6 +13,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/services/part_rebalance"
 	"github.com/starslabhq/hermes-rebalance/tokens"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
@@ -74,6 +75,7 @@ func newClaimLpHandler(conf *config.Config, db types.IDB, token tokens.Tokener) 
 		logrus.Fatalf("claim abi err:%v", err)
 	}
 	return &claimLPHandler{
+		conf:   conf,
 		db:     db,
 		abi:    abi,
 		token:  token,
@@ -141,7 +143,7 @@ func (w *claimLPHandler) getClaimParams(lps []*types.LiquidityProvider, valuts [
 				addr, ok := w.getVaultAddr(s.BaseSymbol, lp.Chain, valuts)
 				if !ok {
 					b, _ := json.Marshal(valuts)
-					logrus.Fatalf("vault addr not found chain:%s,valuts:%s", lp.Chain, b)
+					logrus.Fatalf("vault addr not found,symbol:%s, chain:%s,valuts:%s", s.BaseSymbol, lp.Chain, b)
 					return
 				}
 
@@ -282,6 +284,10 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 	txTasks, err := w.createTxTask(task.ID, params)
 	if err != nil {
 		return err
+	}
+	txTasks, err = part_rebalance.SetNonceAndGasPrice(txTasks)
+	if err != nil {
+		logrus.Fatalf("set gas_price and fee err:%v,tid:%d", err, task.ID)
 	}
 	return w.insertTxTasksAndUpdateState(txTasks, task, types.FullReBalanceClaimLP)
 }

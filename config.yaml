@@ -1,7 +1,7 @@
 database:
   #  db: "heco_test:hDyhVaPfwvPzF8ek@tcp(bigdata-tidb-e604534a50b9d35d.elb.ap-northeast-1.amazonaws.com:4000)/chain_test?charset=utf8mb4"
-  # db: "test:123@tcp(127.0.0.1:3306)/rebalance?charset=utf8mb4"
-  db : "root:12345678@tcp(huobichain-dev-01.sinnet.huobiidc.com:3306)/rebalance?charset=utf8mb4"
+  db: "test:123@tcp(127.0.0.1:3306)/rebalance?charset=utf8mb4"
+  # db : "root:12345678@tcp(huobichain-dev-01.sinnet.huobiidc.com:3306)/rebalance?charset=utf8mb4"
   block_worker: 5
   tx_worker: 1
   sql_batch: 500
@@ -23,6 +23,15 @@ chains:
     rpc_url: "https://bsc-dataseed.binance.org"
     fetch_timeout: 3000
     bridge_address: "0x74938228ae77e5fcc3504ad46fac4a965d210761"
+api:
+  margin_url: "http://neptune-hermes-mgt-v2.test-15.huobiapps.com/v1/auto-transfer/impermanent-loss-margin-preparing-job/"
+  margin_out_url: "http://neptune-hermes-mgt-v2.test-15.huobiapps.com/v1/auto-transfer/all-margin-balance-transfer-out-job/"
+  # lp_url: "http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re"
+  lp_url: "http://neptune-hermes-fe-mgt.test-15.huobiapps.com/v2/open/re"
+margin:
+  app_id: "rebalance-test"
+  secret_key: "k0uKyWwYZdaaEIaO"
+  
 log:
   stdout:
     enable: true

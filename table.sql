@@ -203,7 +203,7 @@ insert into t_token(f_currency, f_chain, f_symbol, f_address, f_decimal, f_cross
 values ('btc', 'heco', 'HBTC', '0x66a79d23e58475d2738179ca52cd0b41d73f0bea', 18, 'btc'),
        ('btc', 'bsc', 'BTCB', '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c', 18, 'btc'),
        ('btc', 'polygon', 'WBTC', '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6', 8, 'btc'),
-       ('bnb', 'bsc', 'BNB', '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c', 18, 'bnb'),
+       ('bnb', 'bsc', 'WBNB', '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c', 18, 'bnb'),
        ('cake', 'bsc', 'CAKE', '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82', 18, 'cake'),
        ('matic', 'bsc', 'MATIC', '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270', 18, 'matic'),
        ('eth', 'heco', 'ETH', '0x64ff637fb478863b7468bc97d30a5bf3a428a1fd', 18, 'eth'),

@@ -95,6 +95,7 @@ func DecodeTransaction(txRaw string) (transaction *etypes.Transaction, err error
 }
 
 func GetNonce(address string, chainName string) (uint64, error) {
+	chainName = strings.ToLower(chainName)
 	client, ok := clients.ClientMap[chainName]
 	if !ok {
 		return 0, fmt.Errorf("not find chain client, chainName:%v", chainName)
@@ -104,6 +105,7 @@ func GetNonce(address string, chainName string) (uint64, error) {
 }
 
 func GetGasPrice(chainName string) (*big.Int, error) {
+	chainName = strings.ToLower(chainName)
 	client, ok := clients.ClientMap[chainName]
 	if !ok {
 		return nil, fmt.Errorf("not find chain client, chainName:%v", chainName)
