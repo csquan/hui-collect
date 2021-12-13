@@ -7,6 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
+	"net/url"
+	"path"
 )
 
 type impermanenceLostHandler struct {
@@ -30,11 +32,18 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 	}
 	bizNo := fmt.Sprintf("%d", task.ID)
 	req := &types.ImpermanectLostReq{BizNo: bizNo, LpList: lpReq}
-	if _, err = callMarginApi(i.conf.ApiConf.MarginUrl+"submit", i.conf, req); err != nil {
+	u, err := url.Parse(i.conf.ApiConf.MarginUrl)
+	if err != nil {
+		logrus.Errorf("parse url error:%v", err)
+		return
+	}
+
+	u.Path = path.Join(u.Path, "submit")
+	if _, err = callMarginApi(u.String(), i.conf, req); err != nil {
 		return
 	}
 	var params []byte
-	if params, err = json.Marshal(req); err != nil{
+	if params, err = json.Marshal(req); err != nil {
 		logrus.Errorf("marshal margin out params err:%v", err)
 		return
 	}
@@ -46,7 +55,14 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 
 func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	bizNo := fmt.Sprintf("%d", task.ID)
-	res, err := callMarginApi(i.conf.ApiConf.MarginUrl+"status/query", i.conf, struct {
+	u, err := url.Parse(i.conf.ApiConf.MarginUrl)
+	if err != nil {
+		logrus.Errorf("parse url error:%v", err)
+		return
+	}
+
+	u.Path = path.Join(u.Path, "status/query")
+	res, err := callMarginApi(u.Path, i.conf, struct {
 		BizNo string `json:"bizNo"`
 	}{bizNo})
 	if err != nil {

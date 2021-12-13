@@ -9,7 +9,7 @@ database:
   retry_interval: 300
 
 bridge_conf:
-  url: "http://cex-bridge-api.test-15.huobiapps.com/cex-bridge-api/v1"
+  url: "http://cex-bridge-api.tctest-1.tc-jp1.huobiapps.com/cex-bridge-api/v1"
   timeout: "10s"
   ak: "kB01A8gsMv2CP4Tctd7XnUaG3iDE9rQJ"
   sk: "ho8XcsfygSKTLEvPYOZ9W12k0i4IFJbC"
