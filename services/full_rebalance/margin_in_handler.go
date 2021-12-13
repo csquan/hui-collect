@@ -40,7 +40,7 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 	}
 	task.Params = string(params) //save params for margin out
 	task.State = types.FullReBalanceMarginIn
-	err = i.db.UpdateFullReBalanceTask(i.db.GetSession(), task)
+	err = i.db.UpdateFullReBalanceTask(i.db.GetEngine(), task)
 	return
 }
 
@@ -52,10 +52,9 @@ func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (
 	if err != nil {
 		return
 	}
-	if v, ok := res.Data["status"]; ok {
-		if v.(string) != "SUCCESS" {
-			return
-		}
+	status, ok := res.Data["status"]
+	if !ok || status.(string) != "SUCCESS" {
+		return
 	}
 	return true, types.FullReBalanceClaimLP, nil
 }

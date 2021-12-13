@@ -31,7 +31,7 @@ func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 		return
 	}
 	task.State = types.FullReBalanceMarginBalanceTransferOut
-	err = i.db.UpdateFullReBalanceTask(i.db.GetSession(), task)
+	err = i.db.UpdateFullReBalanceTask(i.db.GetEngine(), task)
 	return
 }
 
@@ -43,10 +43,9 @@ func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 	if err != nil {
 		return
 	}
-	if v, ok := resp.Data["status"]; ok {
-		if v.(string) != "SUCCESS" {
-			return
-		}
+	status, ok := resp.Data["status"]
+	if !ok || status.(string) != "SUCCESS" {
+		return
 	}
 	return true, types.FullReBalanceRecycling, nil
 }

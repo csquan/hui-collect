@@ -41,7 +41,7 @@ func (t *transferOutHandler) MoveToNextState(task *types.PartReBalanceTask, next
 	if len(crossBalances) == 0 {
 		//logrus.Errorf("no cross balance is found for rebalance task: [%v]", task)
 		task.State = nextState
-		err = t.db.UpdatePartReBalanceTask(t.db.GetSession(), task)
+		err = t.db.UpdatePartReBalanceTask(t.db.GetEngine(), task)
 		if err != nil {
 			logrus.Errorf("update part rebalance task error:%v task:[%v]", err, task)
 			return

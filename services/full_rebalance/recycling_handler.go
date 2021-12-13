@@ -137,7 +137,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			ToAddr:       hecoChain.BridgeAddress,
 			FromCurrency: fromToken.CrossSymbol,
 			ToCurrency:   hecoToken.CrossSymbol,
-			Amount:       amountStr,
+			Amount:       info.Amount,
 		}
 		receiveParam := &types.ReceiveFromBridgeParam{
 			ChainId:           hecoChain.ID,
