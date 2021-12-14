@@ -2,8 +2,6 @@ package full_rebalance
 
 import (
 	"encoding/json"
-	"fmt"
-
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -48,25 +46,25 @@ func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 }
 
 func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
-	if task.Params == "" {
-		return true, types.FullReBalanceRecycling, nil
-	}
-	urlStr, err := joinUrl(i.conf.ApiConf.MarginOutUrl, "status/query")
-	if err != nil {
-		logrus.Errorf("parse url error:%v", err)
-		return
-	}
-
-	req := struct {
-		BizNo string `json:"bizNo"`
-	}{BizNo: fmt.Sprintf("%d", task.ID)}
-	resp, err := GetMarginJobStatus(urlStr, i.conf, req)
-	if err != nil {
-		return
-	}
-	status, ok := resp.Data["status"]
-	if !ok || status.(string) != "SUCCESS" {
-		return
-	}
+	//if task.Params == "" {
+	//	return true, types.FullReBalanceRecycling, nil
+	//}
+	//urlStr, err := joinUrl(i.conf.ApiConf.MarginOutUrl, "status/query")
+	//if err != nil {
+	//	logrus.Errorf("parse url error:%v", err)
+	//	return
+	//}
+	//
+	//req := struct {
+	//	BizNo string `json:"bizNo"`
+	//}{BizNo: fmt.Sprintf("%d", task.ID)}
+	//resp, err := GetMarginJobStatus(urlStr, i.conf, req)
+	//if err != nil {
+	//	return
+	//}
+	//status, ok := resp.Data["status"]
+	//if !ok || status.(string) != "SUCCESS" {
+	//	return
+	//}
 	return true, types.FullReBalanceRecycling, nil
 }

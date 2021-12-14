@@ -76,10 +76,16 @@ func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (
 	}
 
 	status, ok := res.Data["status"]
-	if !ok || status.(string) != "SUCCESS" {
+	if !ok{
 		return
 	}
-	return true, types.FullReBalanceClaimLP, nil
+	if  status.(string) == "SUCCESS" {
+		return true, types.FullReBalanceClaimLP, nil
+	}
+	if  status.(string) == "FAILED" {
+		return true, types.FullReBalanceFailed, nil
+	}
+	return
 }
 
 func joinUrl(urlInput string, pathInput string) (string, error) {
