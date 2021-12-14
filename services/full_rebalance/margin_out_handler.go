@@ -7,7 +7,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
-	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
 type marginOutHandler struct {
@@ -21,6 +20,12 @@ func (i *marginOutHandler) Name() string {
 
 func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 	req := &types.ImpermanectLostReq{}
+	if task.Params == "" {
+		//params==""说明之前没有调用margin in，直接跳转到下一状态。
+		task.State = types.FullReBalanceRecycling
+		err = i.db.UpdateFullReBalanceTask(i.db.GetEngine(), task)
+		return
+	}
 	if err = json.Unmarshal([]byte(task.Params), req); err != nil {
 		logrus.Errorf("createMarginOutJob unmarshal params err:%v", err)
 		return
@@ -53,7 +58,7 @@ func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 	req := struct {
 		BizNo string `json:"bizNo"`
 	}{BizNo: fmt.Sprintf("%d", task.ID)}
-	resp, err := callMarginApi(urlStr, i.conf, req)
+	resp, err := GetMarginJobStatus(urlStr, i.conf, req)
 	if err != nil {
 		return
 	}
@@ -62,25 +67,4 @@ func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 		return
 	}
 	return true, types.FullReBalanceRecycling, nil
-}
-
-func createMarginOutJob(url string, params string) (err error) {
-	req := &types.ImpermanectLostReq{}
-	if err = json.Unmarshal([]byte(params), req); err != nil {
-		logrus.Errorf("createMarginOutJob unmarshal params err:%v", err)
-		return
-	}
-	data, err := utils.DoRequest(url, "POST", req)
-	if err != nil {
-		logrus.Errorf("margin job query status err:%v", err)
-	}
-	resp := &types.NormalResponse{}
-	if err = json.Unmarshal(data, resp); err != nil {
-		logrus.Errorf("unmarshar lpResponse err:%v", err)
-		return
-	}
-	if resp.Code != 200 {
-		logrus.Errorf("callImpermanentLoss code not 200, msg:%s", resp.Msg)
-	}
-	return
 }
