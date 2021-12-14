@@ -26,8 +26,7 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 		return
 	}
 	if lpData.LiquidityProviderList == nil || len(lpData.LiquidityProviderList) == 0 {
-		//LiquidityProviderList为空，跳过保证金，直接进入下一状态
-		task.State = types.FullReBalanceClaimLP
+		task.State = types.FullReBalanceMarginIn
 		err = i.db.UpdateFullReBalanceTask(i.db.GetEngine(), task)
 		return
 	}
@@ -60,13 +59,15 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 }
 
 func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
+	if task.Params == "" {
+		return true, types.FullReBalanceClaimLP, nil
+	}
 	bizNo := fmt.Sprintf("%d", task.ID)
 	urlStr, err := joinUrl(i.conf.ApiConf.MarginUrl, "status/query")
 	if err != nil {
 		logrus.Errorf("parse url error:%v", err)
 		return
 	}
-
 	res, err := GetMarginJobStatus(urlStr, i.conf, struct {
 		BizNo string `json:"bizNo"`
 	}{bizNo})
