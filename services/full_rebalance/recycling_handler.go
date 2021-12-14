@@ -38,6 +38,7 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		SendToBridgeParams:      make([]*types.SendToBridgeParam, 0),
 		CrossBalances:           make([]*types.CrossBalanceItem, 0),
 		ReceiveFromBridgeParams: make([]*types.ReceiveFromBridgeParam, 0),
+		InvestParams:            make([]*types.InvestParam, 0),
 	}
 	for _, vault := range res.VaultInfoList {
 		if err = r.appendParam(vault, partRebalanceParam, tokens, currencyList); err != nil {
@@ -54,8 +55,11 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		if execErr != nil {
 			return
 		}
-		task.State = types.FullReBalanceRecycling
 		execErr = r.db.UpdateFullReBalanceTask(session, task)
+		if execErr != nil {
+			return
+		}
+		task.State = types.FullReBalanceRecycling
 		return
 	})
 	return
