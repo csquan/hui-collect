@@ -29,6 +29,7 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	if err != nil {
 		return
 	}
+	//确保拆LP已完成
 	if res.LiquidityProviderList != nil && len(res.LiquidityProviderList) > 0 {
 		logrus.Infof("LiquidityProviderList is not nil, cannot do recycling")
 		return
@@ -59,11 +60,11 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		if execErr != nil {
 			return
 		}
+		task.State = types.FullReBalanceRecycling
 		execErr = r.db.UpdateFullReBalanceTask(session, task)
 		if execErr != nil {
 			return
 		}
-		task.State = types.FullReBalanceRecycling
 		return
 	})
 	return
@@ -76,9 +77,7 @@ func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 		return
 	}
 	if partTask == nil {
-		err = fmt.Errorf("not found part rebalance task, fullRebalanceID:%d", task.ID)
-		logrus.Error(err)
-		return
+		return true, types.FullReBalanceParamsCalc, nil
 	}
 	switch partTask.State {
 	case types.PartReBalanceSuccess:

@@ -22,7 +22,7 @@ func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 	req := &types.ImpermanectLostReq{}
 	if task.Params == "" {
 		//params==""说明之前没有调用margin in，直接跳转到下一状态。
-		task.State = types.FullReBalanceRecycling
+		task.State = types.FullReBalanceMarginBalanceTransferOut
 		err = i.db.UpdateFullReBalanceTask(i.db.GetEngine(), task)
 		return
 	}
@@ -48,7 +48,9 @@ func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 }
 
 func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
-
+	if task.Params == "" {
+		return true, types.FullReBalanceRecycling, nil
+	}
 	urlStr, err := joinUrl(i.conf.ApiConf.MarginOutUrl, "status/query")
 	if err != nil {
 		logrus.Errorf("parse url error:%v", err)
