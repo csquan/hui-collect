@@ -78,19 +78,19 @@ func (t *ServiceScheduler) Start() {
 
 			wg := sync.WaitGroup{}
 
-			for _, service := range t.services {
+			for _, s := range t.services {
 				wg.Add(1)
 				go func(asyncService types.IAsyncService) {
 					defer wg.Done()
 					defer func(start time.Time) {
-						logrus.Infof("%v task process cost %v", service.Name(), time.Now().Sub(start))
+						logrus.Infof("%v task process cost %v", asyncService.Name(), time.Now().Sub(start))
 					}(time.Now())
 
 					err := asyncService.Run()
 					if err != nil {
-						logrus.Errorf("run service [%v] failed. err:%v", asyncService.Name(), err)
+						logrus.Errorf("run s [%v] failed. err:%v", asyncService.Name(), err)
 					}
-				}(service)
+				}(s)
 			}
 
 			wg.Wait()
