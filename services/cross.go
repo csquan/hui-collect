@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/go-xorm/xorm"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/bridge"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
+	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
 var zeroD = decimal.NewFromFloat(0)
@@ -25,6 +27,26 @@ func NewCrossService(db types.IDB, bCli bridge.IBridge, c *config.Config) *Cross
 		bridgeCli: bCli,
 		config:    c,
 	}
+}
+
+func (c *CrossService) estimateCrossTaskV2(fromAccountId, toAccountId uint64,
+	fromCurrencyId, toCurrencyId int,
+	amount string) (remain, max, min decimal.Decimal, err error) {
+	btask := &bridge.Task{
+		FromAccountId:  fromAccountId,
+		ToAccountId:    toAccountId,
+		FromCurrencyId: fromCurrencyId,
+		ToCurrencyId:   toCurrencyId,
+		Amount:         amount,
+	}
+	estimateResult, err := c.bridgeCli.EstimateTask(btask)
+	if err != nil {
+		return zeroD, zeroD, zeroD, err
+	}
+	remain = mustStrToDecimal(estimateResult.RemainAmount)
+	max = mustStrToDecimal(estimateResult.MaxAmount)
+	min = mustStrToDecimal(estimateResult.MinAmount)
+	return
 }
 
 func (c *CrossService) estimateCrossTask(fromAccountId, toAccountId uint64,
@@ -94,6 +116,86 @@ func getBridgeID(bridgeCli bridge.IBridge, task *types.CrossTask) (*bridgeId, er
 		fromCurrencyId: fromCurrencyId,
 		toCurrencyId:   toCurrencyId,
 	}, nil
+}
+
+func getAmounts(min, max, remain, amount decimal.Decimal) (amounts []decimal.Decimal, err error) {
+	if amount.GreaterThan(remain) { // > remain
+		return nil, fmt.Errorf("amount greater than remain amount:%s,remain:%s", amount.String(), remain.String())
+	}
+	if amount.LessThan(min) { // < min
+		return nil, fmt.Errorf("amount less than min")
+	}
+	if amount.LessThanOrEqual(max) { // min<=amount<=max
+		amounts = append(amounts, amount)
+		return
+	}
+	twiceMin := min.Add(min)
+	if amount.LessThan(twiceMin) {
+		return nil, fmt.Errorf("amount less than 2*minAmount")
+	}
+	for amount.GreaterThan(zeroD) {
+		amountCur := amount
+		for amountCur.GreaterThan(max) {
+			amountCur = amountCur.Sub(min)
+		}
+		amounts = append(amounts, amountCur)
+		amount = amount.Sub(amountCur)
+	}
+	return
+}
+
+func (c *CrossService) addCrossSubTasksV2(parent *types.CrossTask) (finished bool, err error) {
+	if parent.State != types.ToCreateSubTask {
+		return false, fmt.Errorf("task state is not to create sub")
+	}
+	if parent.Amount == "" {
+		return true, nil
+	}
+	if parent.Amount == "0" { //create sub task finish
+		return true, nil
+	}
+	amount, err := decimal.NewFromString(parent.Amount)
+	if err != nil {
+		return false, err
+	}
+	bridgeId, err := getBridgeID(c.bridgeCli, parent)
+	if err != nil {
+		return false, err
+	}
+	remain, max, min, err := c.estimateCrossTaskV2(bridgeId.fromAccountId, bridgeId.toAccountId,
+		bridgeId.fromCurrencyId, bridgeId.toCurrencyId, amount.String())
+	if err != nil {
+		return false, err
+	}
+	amounts, err := getAmounts(min, max, remain, amount)
+	if err != nil {
+		return false, fmt.Errorf("get amounts err:%v", err)
+	}
+	var subTasks []*types.CrossSubTask
+	taskNo := parent.ID << 10
+	for _, v := range amounts {
+		subTasks = append(subTasks, &types.CrossSubTask{
+			ParentTaskId: parent.ID,
+			TaskNo:       taskNo,
+			Amount:       v.String(),
+		})
+		taskNo++
+	}
+	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
+		err1 := c.db.SaveCrossSubTasks(s, subTasks)
+		if err1 != nil {
+			return err1
+		}
+		err1 = c.db.UpdateCrossTaskState(s, parent.ID, types.SubTaskCreated)
+		if err1 != nil {
+			return err1
+		}
+		return nil
+	})
+	if err != nil {
+		return false, fmt.Errorf("add cross sub tasks err:%v", err)
+	}
+	return true, nil
 }
 
 func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool, err error) {
@@ -215,7 +317,7 @@ func (c *CrossService) addCrossSubTasks(parent *types.CrossTask) (finished bool,
 }
 
 func (c *CrossService) transferTaskState(taskId uint64, nextState types.CrossState) error {
-	return c.db.UpdateCrossTaskState(taskId, nextState)
+	return c.db.UpdateCrossTaskState(c.db.GetEngine(), taskId, nextState)
 }
 
 func (c *CrossService) Run() error {
@@ -232,17 +334,21 @@ func (c *CrossService) Run() error {
 	for _, task := range tasks {
 		switch task.State {
 		case types.ToCreateSubTask:
-			ok, err := c.addCrossSubTasks(task)
-			if err != nil {
-				logrus.Errorf("add subtasks err:%v,task:%v", err, task)
-				continue
-			}
+			// ok, err := c.addCrossSubTasks(task)
+			// if err != nil {
+			// 	logrus.Errorf("add subtasks err:%v,task:%v", err, task)
+			// 	continue
+			// }
 
-			if ok {
-				err := c.transferTaskState(task.ID, types.SubTaskCreated)
-				if err != nil {
-					logrus.Errorf("update cross task state err:%v,task:%v", err, task)
-				}
+			// if ok {
+			// 	err := c.transferTaskState(task.ID, types.SubTaskCreated)
+			// 	if err != nil {
+			// 		logrus.Errorf("update cross task state err:%v,task:%v", err, task)
+			// 	}
+			// }
+			ok, err := c.addCrossSubTasksV2(task)
+			if !ok || err != nil {
+				logrus.Errorf("add cross subtasks err:%v,task:%v", err, task)
 			}
 		case types.SubTaskCreated:
 			subTasks, err := c.db.GetCrossSubTasks(task.ID)
@@ -276,25 +382,25 @@ func (c CrossService) Name() string {
 	return "cross"
 }
 
-func getAmountCur(minAmount, single, total, amount decimal.Decimal) (decimal.Decimal, error) {
+func getAmountCur(minAmount, maxAmount, remain, amount decimal.Decimal) (decimal.Decimal, error) {
 	if minAmount.GreaterThan(zeroD) && amount.LessThan(minAmount) { //amount < min
 		return zeroD, fmt.Errorf("amount less than minAmount")
 	}
-	if amount.GreaterThan(total) { //amount > total
-		return zeroD, fmt.Errorf("amount greater than total")
+	if amount.GreaterThan(remain) { //amount > remain
+		return zeroD, fmt.Errorf("amount greater than remain")
 	}
-	if amount.LessThanOrEqual(single) { // min<= amount <= single
+	if amount.LessThanOrEqual(maxAmount) { // min<= amount <= max
 		return amount, nil
 	}
 	if minAmount.Equal(zeroD) { //无min限制
-		return decimal.Min(single, amount), nil
+		return decimal.Min(maxAmount, amount), nil
 	}
 	twiceMin := minAmount.Add(minAmount)
-	if amount.LessThan(twiceMin) { // single < amount < 2*minAmount
+	if amount.LessThan(twiceMin) { // max < amount < 2*minAmount
 		return zeroD, fmt.Errorf("amount less than 2*minAmount")
 	} else { // single < 2*minAmount< amount
 		amountCur := amount
-		for amountCur.GreaterThan(single) {
+		for amountCur.GreaterThan(maxAmount) {
 			amountCur = amountCur.Sub(minAmount)
 		}
 		return amountCur, nil

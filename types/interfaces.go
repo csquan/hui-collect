@@ -37,11 +37,12 @@ type IWriter interface {
 
 	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
 	//update cross task state
-	UpdateCrossTaskState(id uint64, state int) error
+	UpdateCrossTaskState(itf xorm.Interface, id uint64, state int) error
 	//add bridge task id to sub task
 	UpdateCrossSubTaskBridgeIDAndState(id, bridgeTaskId uint64, state int) error
 	//save cross sub task
 	SaveCrossSubTask(subTask *CrossSubTask) error
+	SaveCrossSubTasks(itf xorm.Interface, subTask []*CrossSubTask) error
 	//update cross sub task state
 	UpdateCrossSubTaskState(id uint64, state int) error
 }

@@ -88,10 +88,12 @@ type TaskAddRet struct {
 }
 
 type EstimateTaskResult struct {
-	MinAmount   string `json:"minAmount"`
-	TotalQuota  string `json:"totalQuota"`
-	SingleQuota string `json:"singleQuota"`
-	FeeEnough   int    `json:"feeEnough"`
+	MinAmount    string `json:"minAmount"`
+	MaxAmount    string `json:"maxAmount"`
+	RemainAmount string `json:"remainAmount"`
+	TotalQuota   string `json:"totalQuota"`
+	SingleQuota  string `json:"singleQuota"`
+	FeeEnough    int    `json:"feeEnough"`
 	// Routes      []map[string]int `json:"routes"` TODO estimate ret 变更
 }
 

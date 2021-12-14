@@ -303,7 +303,7 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 	txTasks, err := w.createTxTask(task.ID, params)
 	if err != nil {
 		b, _ := json.Marshal(params)
-		logrus.Errorf("create tx task err:%v,params:%s,tid:%d", err, task.ID, b)
+		logrus.Errorf("create tx task err:%v,params:%s,tid:%d", err, b, task.ID)
 		return err
 	}
 	if len(txTasks) == 0 {

@@ -7,3 +7,4 @@ hermes-rebalance
 *.test
 .agollo
 *.pyc
+.vscode
