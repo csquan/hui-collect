@@ -6,7 +6,7 @@ import (
 
 func (m *Mysql) GetPartReBalanceTaskByFullRebalanceID(fullRebalanceID uint64) (task *types.PartReBalanceTask, err error) {
 	task = &types.PartReBalanceTask{}
-	ok, err := m.engine.Where("f_full_rebalance_id = ?", fullRebalanceID).Get(task)
+	ok, err := m.engine.Where("f_full_rebalance_id = ?", fullRebalanceID).Desc("f_id").Limit(1).Get(task)
 	if err != nil {
 		return nil, err
 	}
