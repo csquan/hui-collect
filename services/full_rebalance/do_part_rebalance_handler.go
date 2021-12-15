@@ -31,7 +31,7 @@ func (d *doPartRebalanceHandler) CheckFinished(task *types.FullReBalanceTask) (f
 	}
 	switch partTask.State {
 	case types.PartReBalanceSuccess:
-		return true, types.FullReBalanceParamsCalc, nil
+		return true, types.FullReBalanceSuccess, nil
 	case types.PartReBalanceFailed:
 		return true, types.FullReBalanceFailed, nil
 	default:
