@@ -21,9 +21,9 @@ type Threshold struct {
 	Decimal         int    `json:"decimal"`
 }
 type LiquidityProvider struct {
-	Chain          string    `json:"chain"`
-	ChainId        int       `json:"chainId"`
-	LpSymbol       string    `json:"lpSymbol"`
+	Chain    string `json:"chain"`
+	ChainId  int    `json:"chainId"`
+	LpSymbol string `json:"lpSymbol"`
 	//LpAmount       string    `json:"lpAmount"`
 	LpTokenAddress string    `json:"lpTokenAddress"`
 	LpPlatform     string    `json:"lpPlatform"`
@@ -58,22 +58,28 @@ type ControllerInfo struct {
 }
 
 //平无常接口参数
+
 type ImpermanectLostReq struct {
 	BizNo  string   `json:"bizNo"`
 	LpList []*LpReq `json:"lpList"`
 }
 
 type LpReq struct {
-	Chain              string `json:"chain"`
-	LpTokenAddress     string `json:"lpTokenAddress"`
-	LpAmount           string `json:"lpAmount"`
-	Token0OriginAmount string `json:"token0OriginAmount"`
-	Token1OriginAmount string `json:"token1OriginAmount"`
+	Chain          string       `json:"chain"`
+	LpTokenAddress string       `json:"lpTokenAddress"`
+	LpAmount       string       `json:"lpAmount"`
+	TokenList      []*TokenInfo `json:"tokenList"`
+	//Token0OriginAmount string `json:"token0OriginAmount"`
+	//Token1OriginAmount string `json:"token1OriginAmount"`
+}
+type TokenInfo struct {
+	TokenAddress      string `json:"tokenAddress"`
+	TokenOriginAmount string `json:"tokenOriginAmount"`
 }
 
 type NormalResponse struct {
-	Code int                    `json:"code"`
-	Msg  string                 `json:"msg"`
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
 	//Data map[string]interface{} `json:"data"`
 }
 

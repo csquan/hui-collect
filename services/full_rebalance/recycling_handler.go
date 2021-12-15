@@ -119,6 +119,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			logrus.Errorf("convert amount to decimal err:%v", err)
 			return
 		}
+		amount = amount.Truncate(currency.CrossScale)
 		if amount.Cmp(currency.Min) == -1 {
 			logrus.Infof("amount less than currency.min amount:%s, min:%s", amount.String(), currency.Min.String())
 			return
@@ -126,7 +127,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 		var fromToken, hecoToken *types.Token
 		fromToken = mustGetToken(tokens, vault.Currency, fromChainName)
 		hecoToken = mustGetToken(tokens, vault.Currency, hecoChainName)
-		amountStr := powN(strMustToDecimal(info.Amount), fromToken.Decimal).String()
+		amountStr := powN(amount, fromToken.Decimal).String()
 		taskID := fmt.Sprintf("%d", time.Now().UnixNano()/1000)
 		sendParam := &types.SendToBridgeParam{
 			ChainId:       fromChain.ID,
@@ -144,7 +145,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			ToAddr:       hecoChain.BridgeAddress,
 			FromCurrency: fromToken.CrossSymbol,
 			ToCurrency:   hecoToken.CrossSymbol,
-			Amount:       info.Amount,
+			Amount:       amount.String(),
 		}
 		receiveParam := &types.ReceiveFromBridgeParam{
 			ChainId:           hecoChain.ID,

@@ -22,13 +22,13 @@ type BaseTask struct {
 type FullReBalanceState = int
 
 const (
-	FullReBalanceInit     FullReBalanceState = iota
-	FullReBalanceMarginIn                    //平无常 http请求
-	FullReBalanceClaimLP                     //拆LP 合约调用
-	FullReBalanceMarginBalanceTransferOut    //保证金转出至对冲账户
-	FullReBalanceRecycling                   //资金跨回
-	FullReBalanceParamsCalc                  // python 计算并创建partRebalanceTask
-	FullReBalanceOndoing                     // 检查partRebalanceTask状态
+	FullReBalanceInit                     FullReBalanceState = iota
+	FullReBalanceMarginIn                                    //平无常 http请求
+	FullReBalanceClaimLP                                     //拆LP 合约调用
+	FullReBalanceMarginBalanceTransferOut                    //保证金转出至对冲账户
+	FullReBalanceRecycling                                   //资金跨回
+	FullReBalanceParamsCalc                                  // python 计算并创建partRebalanceTask
+	FullReBalanceOndoing                                     // 检查partRebalanceTask状态
 	FullReBalanceSuccess
 	FullReBalanceFailed
 )
@@ -238,10 +238,12 @@ func (t *Token) TableName() string {
 }
 
 type Currency struct {
-	*Base `xorm:"extends"`
-	Name  string          `xorm:"f_name"`
-	Min   decimal.Decimal `xorm:"f_min"`
+	*Base      `xorm:"extends"`
+	Name       string          `xorm:"f_name"`
+	Min        decimal.Decimal `xorm:"f_min"`
+	CrossScale int32             `xorm:"f_cross_scale"`
 }
+
 func (t *Currency) TableName() string {
 	return "t_currency"
 }
