@@ -76,13 +76,13 @@ func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (
 	}
 
 	status, ok := res.Data["status"]
-	if !ok{
+	if !ok {
 		return
 	}
-	if  status.(string) == "SUCCESS" {
+	if status.(string) == "SUCCESS" {
 		return true, types.FullReBalanceClaimLP, nil
 	}
-	if  status.(string) == "FAILED" {
+	if status.(string) == "FAILED" {
 		return true, types.FullReBalanceFailed, nil
 	}
 	return
@@ -104,6 +104,8 @@ func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {
 		totalBaseAmount := decimal.Zero
 		totalQuoteAmount := decimal.Zero
 		totalLpAmount := decimal.Zero
+		baseTokenAdress := ""
+		quoteTokenAddress := ""
 		for _, lpinfo := range lp.LpInfoList {
 			var baseAmount, quoteAmount, lpAmount decimal.Decimal
 			baseAmount, err = decimal.NewFromString(lpinfo.BaseTokenAmount)
@@ -124,13 +126,18 @@ func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {
 			totalBaseAmount = totalBaseAmount.Add(baseAmount)
 			totalQuoteAmount = totalQuoteAmount.Add(quoteAmount)
 			totalLpAmount = totalLpAmount.Add(lpAmount)
+			baseTokenAdress = lpinfo.BaseTokenAddress
+			quoteTokenAddress = lpinfo.QuoteTokenAddress
 		}
+		var tokenList []*types.TokenInfo
+		tokenList = append(tokenList,
+			&types.TokenInfo{TokenAddress: baseTokenAdress, TokenOriginAmount: totalBaseAmount.String()},
+			&types.TokenInfo{TokenAddress: quoteTokenAddress, TokenOriginAmount: totalQuoteAmount.String()})
 		r := &types.LpReq{
-			Chain:              lp.Chain,
-			LpTokenAddress:     lp.LpTokenAddress,
-			LpAmount:           totalLpAmount.String(),
-			Token0OriginAmount: totalBaseAmount.String(),
-			Token1OriginAmount: totalQuoteAmount.String(),
+			Chain:          lp.Chain,
+			LpTokenAddress: lp.LpTokenAddress,
+			LpAmount:       totalLpAmount.String(),
+			TokenList: tokenList,
 		}
 		req = append(req, r)
 	}
