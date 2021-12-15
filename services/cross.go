@@ -43,6 +43,9 @@ func (c *CrossService) estimateCrossTaskV2(fromAccountId, toAccountId uint64,
 	if err != nil {
 		return zeroD, zeroD, zeroD, err
 	}
+	if estimateResult.FeeEnough == 0 {
+		return zeroD, zeroD, zeroD, fmt.Errorf("fee not enough")
+	}
 	remain = mustStrToDecimal(estimateResult.RemainAmount)
 	max = mustStrToDecimal(estimateResult.MaxAmount)
 	min = mustStrToDecimal(estimateResult.MinAmount)
