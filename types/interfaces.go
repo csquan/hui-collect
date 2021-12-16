@@ -37,6 +37,8 @@ type IWriter interface {
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
 	UpdateTransactionTaskMessage(taskID uint64, message string) error
+	SaveFullRebalanceTask(itf xorm.Interface, task *FullReBalanceTask) error
+
 	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
 	//update cross task state
 	UpdateCrossTaskState(itf xorm.Interface, id uint64, state int) error

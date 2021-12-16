@@ -1,6 +1,8 @@
 package db
 
 import (
+	"fmt"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
@@ -149,4 +151,15 @@ func (m *Mysql) UpdateCrossSubTaskBridgeIDAndState(id, bridgeTaskId uint64, stat
 			State:        state,
 		})
 	return err
+}
+
+func (m *Mysql) SaveFullRebalanceTask(itf xorm.Interface, task *types.FullReBalanceTask) error {
+	affected, err := itf.Insert(task)
+	if err != nil {
+		return err
+	}
+	if affected < 0 {
+		return fmt.Errorf("affected 0")
+	}
+	return nil
 }

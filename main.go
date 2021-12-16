@@ -3,11 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/clients"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/starslabhq/hermes-rebalance/api"
+	"github.com/starslabhq/hermes-rebalance/clients"
+
+	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/alert"
@@ -15,8 +20,6 @@ import (
 	"github.com/starslabhq/hermes-rebalance/db"
 	"github.com/starslabhq/hermes-rebalance/log"
 	"github.com/starslabhq/hermes-rebalance/services"
-	"net/http"
-	_ "net/http/pprof"
 )
 
 var (
@@ -79,6 +82,7 @@ func main() {
 	if err != nil {
 		return
 	}
+	go api.Run(8080, dbConnection)
 
 	scheduler.Start()
 }
