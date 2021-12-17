@@ -42,7 +42,7 @@ func (d *Ding) SendMessage(title string, content string) error {
 	url := d.config.URL
 
 	if d.config.Secret != "" {
-		timestamp := time.Now().UnixMilli()
+		timestamp := time.Now().UnixNano() / 1e6
 		sign := d.calcSignature(timestamp, d.config.Secret)
 		url += fmt.Sprintf("&timestamp=%v&sign=%v", timestamp, sign)
 	}
@@ -83,7 +83,7 @@ func (d *Ding) SendAlert(title string, content string, atMobiles []string) error
 	url := d.config.URL
 
 	if d.config.Secret != "" {
-		timestamp := time.Now().UnixMilli()
+		timestamp := time.Now().UnixNano() / 1e6
 		sign := d.calcSignature(timestamp, d.config.Secret)
 		url += fmt.Sprintf("&timestamp=%v&sign=%v", timestamp, sign)
 	}
