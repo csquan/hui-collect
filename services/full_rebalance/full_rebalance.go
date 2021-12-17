@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/tokens"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -115,11 +116,13 @@ func (p *FullReBalance) Run() (err error) {
 	if !finished {
 		return
 	}
-	tasks[0].Message = utils.GenFullRebalanceMessage(next, "")
+	var status string
+	tasks[0].Message, status = utils.GenFullRebalanceMessage(next, "")
 	if err := checkState(next); err != nil {
 		return fmt.Errorf("state err:%v,state:%d,tid:%d,handler:%s", err, next, tasks[0].ID, handler.Name())
 	}
 	if next == types.FullReBalanceSuccess || next == types.FullReBalanceFailed || next == types.FullReBalanceParamsCalc {
+		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status))
 		//update state
 		tasks[0].State = next
 		return p.db.UpdateFullReBalanceTask(p.db.GetEngine(), tasks[0])
@@ -131,10 +134,12 @@ func (p *FullReBalance) Run() (err error) {
 			return
 		}
 		if err := nextHandler.Do(tasks[0]); err != nil {
-			p.db.UpdateFullReBalanceTaskMessage(tasks[0].ID, utils.GenFullRebalanceMessage(next, fmt.Sprintf("%v", err)))
+			message, _ := utils.GenFullRebalanceMessage(next, fmt.Sprintf("%v", err))
+			p.db.UpdateFullReBalanceTaskMessage(tasks[0].ID, message)
 			logrus.Errorf("handler do err:%v,name:%s", err, nextHandler.Name())
 			return err
 		}
+		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status))
 	}
 	return
 }

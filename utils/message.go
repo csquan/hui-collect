@@ -11,7 +11,7 @@ type message struct {
 	Content string
 }
 
-func GenFullRebalanceMessage(state int, content string) string {
+func GenFullRebalanceMessage(state int, content string) (string, string) {
 	var status string
 	switch state {
 	case types.FullReBalanceInit:
@@ -35,10 +35,10 @@ func GenFullRebalanceMessage(state int, content string) string {
 	default:
 		status = ""
 	}
-	return genMessage(status, content)
+	return genMessage(status, content), status
 }
 
-func GenPartRebalanceMessage(state int, content string) string {
+func GenPartRebalanceMessage(state int, content string) (string, string) {
 	var status string
 	switch state {
 	case types.PartReBalanceInit:
@@ -58,7 +58,7 @@ func GenPartRebalanceMessage(state int, content string) string {
 	default:
 		status = ""
 	}
-	return genMessage(status, content)
+	return genMessage(status, content), status
 }
 
 func GenTxMessage(state int, content string) string {

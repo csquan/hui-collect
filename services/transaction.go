@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/starslabhq/hermes-rebalance/alert"
 	"strings"
 	"time"
 
@@ -223,6 +224,8 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 	if receipt.Status == 1 {
 		task.State = int(types.TxSuccessState)
 	} else if receipt.Status == 0 {
+		alert.Dingding.SendAlert("transaction failed",
+			alert.TaskFailedContent("transaction", task.ID, "CheckReceipt", fmt.Errorf("hash:%s", task.Hash)), nil)
 		task.State = int(types.TxFailedState)
 	}
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {

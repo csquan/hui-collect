@@ -1,7 +1,9 @@
 package part_rebalance
 
 import (
+	"errors"
 	"fmt"
+	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/clients"
 	"github.com/starslabhq/hermes-rebalance/utils"
 
@@ -82,14 +84,20 @@ func (p *PartReBalance) Run() (err error) {
 	if !finished {
 		return
 	}
-	tasks[0].Message = utils.GenPartRebalanceMessage(next, "")
+	var status string
+	tasks[0].Message, status = utils.GenPartRebalanceMessage(next, "")
 	logrus.Infof("part rebalance task move state, from:[%v], to:[%v]", tasks[0].State, next)
 	err = handler.MoveToNextState(tasks[0], next)
 	if err != nil {
-		p.db.UpdatePartReBalanceTaskMessage(tasks[0].ID, utils.GenPartRebalanceMessage(next, fmt.Sprintf("%v", err)))
+		message, _ := utils.GenPartRebalanceMessage(next, fmt.Sprintf("%v", err))
+		p.db.UpdatePartReBalanceTaskMessage(tasks[0].ID, message)
 		return err
 	}
-
+	if next == types.PartReBalanceFailed {
+		alert.Dingding.SendAlert("Part Rebalance State Change", alert.TaskFailedContent("小Re", tasks[0].ID, status, errors.New(tasks[0].Message)), nil)
+	} else {
+		alert.Dingding.SendMessage("Part Rebalance State Change", alert.TaskStateChangeContent("小Re", tasks[0].ID, status))
+	}
 	return
 }
 

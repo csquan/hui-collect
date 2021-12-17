@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"net/url"
@@ -83,6 +84,7 @@ func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (
 		return true, types.FullReBalanceClaimLP, nil
 	}
 	if status.(string) == "FAILED" {
+		alert.Dingding.SendAlert("Full Rebalance Failed", alert.TaskFailedContent("大Re", task.ID, "marginIn", fmt.Errorf("magin in failed")), nil)
 		return true, types.FullReBalanceFailed, nil
 	}
 	return
@@ -137,7 +139,7 @@ func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {
 			Chain:          lp.Chain,
 			LpTokenAddress: lp.LpTokenAddress,
 			LpAmount:       totalLpAmount.String(),
-			TokenList: tokenList,
+			TokenList:      tokenList,
 		}
 		req = append(req, r)
 	}
