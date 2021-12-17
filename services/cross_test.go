@@ -157,3 +157,60 @@ func TestAddCrossSubTask(t *testing.T) {
 		t.Errorf("add cross sub tasks err:%v,ok:%v", err, ok)
 	}
 }
+
+func TestCrossMsg(t *testing.T) {
+	c, err := createCrossMesg("created", &types.CrossTask{
+		ChainFrom:     "heco",
+		ChainTo:       "bsc",
+		ChainFromAddr: "addr_from",
+		ChainToAddr:   "addr_to",
+		CurrencyFrom:  "c_from",
+		CurrencyTo:    "c_to",
+		Amount:        "10",
+	}, []*types.CrossSubTask{
+		&types.CrossSubTask{
+			BridgeTaskId: 1,
+			TaskNo:       1024,
+			Amount:       "5",
+			State:        0,
+		},
+		&types.CrossSubTask{
+			BridgeTaskId: 2,
+			TaskNo:       1024,
+			Amount:       "5",
+			State:        0,
+		},
+	})
+	if err != nil {
+		t.Fatalf("cross msg err:%v", err)
+	}
+	t.Logf("cross msg:%s", c)
+}
+
+func TestCrossSubMsg(t *testing.T) {
+	c, err := createCrossSubMsg("crosing", &CrossSubInfo{
+		Parent: &types.CrossTask{
+			ChainFrom:     "heco",
+			ChainTo:       "bsc",
+			ChainFromAddr: "addr_from",
+			ChainToAddr:   "addr_to",
+			CurrencyFrom:  "c_from",
+			CurrencyTo:    "c_to",
+			Amount:        "10",
+		},
+		Sub: &types.CrossSubTask{
+			BridgeTaskId: 0,
+			TaskNo:       1024,
+			Amount:       "5",
+			State:        0,
+		},
+		FromAccountId:  1,
+		ToAccountId:    2,
+		FromCurrencyId: 11,
+		ToCurrencyId:   22,
+	})
+	if err != nil {
+		t.Fatalf("create cross sub msg err:%v", err)
+	}
+	t.Logf("cross sub msg:%s", c)
+}

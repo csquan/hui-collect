@@ -1,8 +1,10 @@
 package full_rebalance
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"math/big"
 	"strings"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/services/part_rebalance"
 	"github.com/starslabhq/hermes-rebalance/tokens"
@@ -66,6 +69,7 @@ type claimLPHandler struct {
 	abi    abi.ABI
 	conf   *config.Config
 	getter lpDataGetter
+	alert  *alert.Ding
 }
 
 func newClaimLpHandler(conf *config.Config, db types.IDB, token tokens.Tokener) *claimLPHandler {
@@ -317,7 +321,11 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 		logrus.Errorf("set gas_price and fee err:%v,tid:%d", err, task.ID)
 		return err
 	}
-	return w.insertTxTasksAndUpdateState(txTasks, task, types.FullReBalanceClaimLP)
+	err = w.insertTxTasksAndUpdateState(txTasks, task, types.FullReBalanceClaimLP)
+	if err == nil {
+		w.stateChanged(types.FullReBalanceClaimLP, txTasks, task)
+	}
+	return err
 }
 
 func (w *claimLPHandler) getTxTasks(fullRebalanceId uint64) ([]*types.TransactionTask, error) {
@@ -340,21 +348,112 @@ func (w *claimLPHandler) CheckFinished(task *types.FullReBalanceTask) (finished 
 		sucCnt  int
 		failCnt int
 	)
+	failed := make([]*types.TransactionTask, 0)
 	for _, task := range txTasks {
 		if task.State == int(types.TxSuccessState) {
 			sucCnt++
 		}
 		if task.State == int(types.TxFailedState) {
 			logrus.Warnf("call claim fail tx_task_id:%d", task.ID)
+			failed = append(failed, task)
 			failCnt++
 		}
 	}
 	if sucCnt == taskCnt {
+		w.stateChanged(types.FullReBalanceMarginBalanceTransferOut, txTasks, task)
 		return true, types.FullReBalanceMarginBalanceTransferOut, nil
 	}
 	if failCnt != 0 {
 		logrus.Warnf("claim lp handler failed tid:%d", task.ID)
+
+		w.stateChanged(types.FullReBalanceFailed, failed, task)
+
 		return false, types.FullReBalanceFailed, nil
 	}
 	return false, types.FullReBalanceClaimLP, nil
+}
+
+const claimTemp = `
+stage: {{.Stage}}
+full_id: {{.FullID}}
+full_params: {{.FullParam}}
+{{with .Txs }}
+{{ range . }}
+type: {{.TransactionType}}
+nonce: {{.Nonce}}
+gas_price: {{.GasPrice}}
+gas_limit: {{.GasLimit}}
+amount: {{.Amount}}
+chain_id: {{.ChainId}}
+chain_name: {{.ChainName}}
+from: {{.From}}
+to: {{.To}}
+---------------------
+{{- end }}
+{{end}}
+`
+
+type ClaimMsg struct {
+	Stage     string
+	FullParam string
+	FullID    uint64
+	Txs       []*types.TransactionTask
+}
+
+func createClaimMsg(stage string, txTasks []*types.TransactionTask, fullTask *types.FullReBalanceTask) (string, error) {
+	msg := &ClaimMsg{
+		FullParam: fullTask.Params,
+		FullID:    fullTask.ID,
+		Stage:     stage,
+		Txs:       txTasks,
+	}
+	t := template.New("claimlp")
+	temp := template.Must(t.Parse(claimTemp))
+	buf := &bytes.Buffer{}
+	err := temp.Execute(buf, msg)
+	if err != nil {
+		return "", fmt.Errorf("excute temp err:%v", err)
+	}
+	return buf.String(), nil
+}
+
+func (w *claimLPHandler) stateChanged(next types.FullReBalanceState, txTasks []*types.TransactionTask, fullTask *types.FullReBalanceTask) {
+	var (
+		msg   string
+		stage string
+		err   error
+	)
+	switch next {
+	case types.FullReBalanceClaimLP:
+		stage = "claimlp_tx_created"
+		msg, err = createClaimMsg(stage, txTasks, fullTask)
+		if err != nil {
+			logrus.Errorf("create claim msg err:%v,stage:%s", err, stage)
+		}
+		err = w.alert.SendMessage("claimlp", msg)
+		if err != nil {
+			logrus.Errorf("send claimlp tx_created err:%v", err)
+		}
+	case types.FullReBalanceFailed:
+		stage = "claimlp_failed"
+		msg, err = createClaimMsg(stage, txTasks, fullTask)
+		if err != nil {
+			logrus.Errorf("create claim msg err:%v,stage:%s", err, stage)
+		}
+		err = w.alert.SendAlert("claimlp", msg, []string{})
+		if err != nil {
+			logrus.Errorf("send calimlp failed err:%v", err)
+		}
+	case types.FullReBalanceMarginBalanceTransferOut:
+		stage = "claimlp_suc"
+		msg, err = createClaimMsg(stage, txTasks, fullTask)
+		if err != nil {
+			logrus.Errorf("create claim msg err:%v,stage:%s", err, stage)
+		}
+		err = w.alert.SendMessage("claimlp", msg)
+		if err != nil {
+			logrus.Errorf("send calimlp failed err:%v", err)
+		}
+	}
+
 }

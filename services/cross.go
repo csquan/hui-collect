@@ -1,12 +1,15 @@
 package services
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"sort"
 
 	"github.com/go-xorm/xorm"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/bridge"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -15,10 +18,39 @@ import (
 
 var zeroD = decimal.NewFromFloat(0)
 
+const crossTemp = `
+# stage: {{.Stage}}
+
+## parent
+
+{{with .Task}}
+chain: {{.ChainFrom}}->{{.ChainTo}}
+addr: {{.ChainFromAddr}}->{{.ChainToAddr}}
+currency: {{.CurrencyFrom}}->{{.CurrencyTo}}
+amount: {{.Amount}}
+{{end}}
+## sub
+
+{{ with .SubTasks }}
+{{ range . }}
+task_no: {{.TaskNo}}
+amount: {{.Amount}}
+state: {{.State}}
+-------------------
+{{- end }}
+{{end}}`
+
+type CrossMsg struct {
+	Stage    string
+	Task     *types.CrossTask
+	SubTasks []*types.CrossSubTask
+}
+
 type CrossService struct {
 	db        types.IDB
 	bridgeCli bridge.IBridge
 	config    *config.Config
+	alert     *alert.Ding
 }
 
 func NewCrossService(db types.IDB, bCli bridge.IBridge, c *config.Config) *CrossService {
@@ -193,6 +225,9 @@ func (c *CrossService) addCrossSubTasksV2(parent *types.CrossTask) (finished boo
 		if err1 != nil {
 			return err1
 		}
+
+		c.stateChanged(types.SubTaskCreated, parent, subTasks)
+
 		return nil
 	})
 	if err != nil {
@@ -323,6 +358,47 @@ func (c *CrossService) transferTaskState(taskId uint64, nextState types.CrossSta
 	return c.db.UpdateCrossTaskState(c.db.GetEngine(), taskId, nextState)
 }
 
+func createCrossMesg(stage string, task *types.CrossTask, subTasks []*types.CrossSubTask) (string, error) {
+	msg := &CrossMsg{
+		Stage:    stage,
+		Task:     task,
+		SubTasks: subTasks,
+	}
+	t := template.New("cross_msg")
+	temp := template.Must(t.Parse(crossTemp))
+	buf := &bytes.Buffer{}
+	err := temp.Execute(buf, msg)
+	if err != nil {
+		return "", fmt.Errorf("excute temp err:%v", err)
+	}
+	return buf.String(), nil
+}
+
+func (c *CrossService) stateChanged(next types.CrossState, task *types.CrossTask, subTasks []*types.CrossSubTask) {
+	var (
+		msg string
+		err error
+	)
+	switch next {
+	case types.SubTaskCreated:
+		msg, err = createCrossMesg("cross_subtask_created", task, subTasks)
+		if err != nil {
+			logrus.Errorf("create subtask_created msg err:%v,state:%d,tid:%d", err, next, task.ID)
+		}
+	case types.TaskSuc:
+		msg, err = createCrossMesg("cross_finished", task, subTasks)
+		if err != nil {
+			logrus.Errorf("create subtask_finished msg err:%v,state:%d,tid:%d", err, next, task.ID)
+		}
+
+	}
+	err = c.alert.SendMessage("cross", msg)
+	if err != nil {
+		logrus.Errorf("send message err:%v,msg:%s", err, msg)
+	}
+
+}
+
 func (c *CrossService) Run() error {
 	tasks, err := c.db.GetOpenedCrossTasks()
 	if err != nil {
@@ -373,6 +449,7 @@ func (c *CrossService) Run() error {
 				if err != nil {
 					continue
 				}
+				c.stateChanged(types.TaskSuc, task, subTasks)
 			}
 		default:
 			return fmt.Errorf("state:[%v] not defined taskId:%d", task.State, task.ID)

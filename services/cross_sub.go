@@ -1,7 +1,12 @@
 package services
 
 import (
+	"bytes"
+	"fmt"
+	"html/template"
+
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/bridge"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -11,6 +16,7 @@ type CrossSubTaskService struct {
 	db        types.IDB
 	bridgeCli bridge.IBridge
 	config    *config.Config
+	alert     *alert.Ding
 }
 
 func NewCrossSubTaskService(db types.IDB, bCli bridge.IBridge, c *config.Config) *CrossSubTaskService {
@@ -61,6 +67,18 @@ func (c *CrossSubTaskService) Run() error {
 					if err1 != nil {
 						logrus.Fatalf("sub task state:%d,id:%d,err1:%v", subTask.State, subTask.ID, err1)
 					}
+
+					subTask.BridgeTaskId = taskId
+					c.stateChanged(types.Crossing, &CrossSubInfo{
+						Parent:         pt,
+						Sub:            subTask,
+						FromAccountId:  t.FromAccountId,
+						ToAccountId:    t.ToAccountId,
+						FromCurrencyId: t.FromCurrencyId,
+						ToCurrencyId:   t.ToCurrencyId,
+						Amount:         t.Amount,
+					})
+
 				} else {
 					logrus.Warnf("add task fail err:%v,taskNo:%d,subTaskId:%d,parent:%d", err, t.TaskNo, subTask.ID, pt.ID)
 				}
@@ -82,6 +100,14 @@ func (c *CrossSubTaskService) Run() error {
 					if err != nil {
 						continue
 					}
+					c.stateChanged(types.Crossing, &CrossSubInfo{
+						Parent:         pt,
+						Sub:            subTask,
+						FromAccountId:  bridgeTask.FromAccountId,
+						ToAccountId:    bridgeTask.ToAccountId,
+						FromCurrencyId: bridgeId.fromCurrencyId,
+						ToCurrencyId:   bridgeId.toCurrencyId,
+					})
 				default:
 					logrus.Fatalf("unexpected bridge task state subtaskId:%d,bridge:%d,state:%d,parent:%d",
 						subTask.ID, subTask.BridgeTaskId, subTask.State, pt.ID)
@@ -96,4 +122,70 @@ func (c *CrossSubTaskService) Run() error {
 
 func (c *CrossSubTaskService) Name() string {
 	return "cross_sub"
+}
+
+type CrossSubInfo struct {
+	Stage          string
+	Parent         *types.CrossTask
+	Sub            *types.CrossSubTask
+	FromAccountId  uint64
+	ToAccountId    uint64
+	FromCurrencyId int
+	ToCurrencyId   int
+	Amount         string
+}
+
+const crossSubTemp = `# stage: {{.Stage}}
+## parent
+{{with .Parent}}
+chain: {{.ChainFrom}} -> {{.ChainTo}}
+addr: {{.ChainFromAddr}}->{{.ChainToAddr}}
+currency: {{.CurrencyFrom}}->{{.CurrencyTo}}
+amount: {{.Amount}}
+{{end}}
+## sub
+{{with .Sub}}
+bridge_task_id: {{.BridgeTaskId}}
+task_no: {{.TaskNo}}
+amount: {{.Amount}}
+state: {{.State}}
+{{end}}
+## bridge
+from_account: {{.FromAccountId}}
+to_account: {{.ToAccountId}}
+from_currency: {{.FromCurrencyId}}
+to_currency: {{.ToCurrencyId}}
+`
+
+func createCrossSubMsg(stage string, info *CrossSubInfo) (string, error) {
+	info.Stage = stage
+	t := template.New("cross_sub_msg")
+	temp := template.Must(t.Parse(crossSubTemp))
+	buf := &bytes.Buffer{}
+	err := temp.Execute(buf, info)
+	if err != nil {
+		return "", fmt.Errorf("excute temp err:%v", err)
+	}
+	return buf.String(), nil
+}
+
+func (c *CrossSubTaskService) stateChanged(next types.CrossSubState, info *CrossSubInfo) {
+	var (
+		msg string
+		err error
+	)
+	switch next {
+	case types.Crossing:
+		msg, err = createCrossSubMsg("sub_crossing", info)
+	case types.Crossed:
+		msg, err = createCrossSubMsg("sub_crossed", info)
+	}
+	if err != nil {
+		logrus.Errorf("create cross sub msg err:%v,msg:%s", err, msg)
+		return
+	}
+	err = c.alert.SendMessage("cross_sub", msg)
+	if err != nil {
+		logrus.Errorf("send cross_sub msg err:%v,msg:%s", err, msg)
+	}
 }

@@ -152,3 +152,29 @@ func TestGetTasks(t *testing.T) {
 	b, _ := json.Marshal(tasks)
 	t.Logf("tasks:%s", b)
 }
+
+func TestCreateClaimMsg(t *testing.T) {
+	msg, err := createClaimMsg("calim_ok", []*types.TransactionTask{
+		&types.TransactionTask{
+			FullRebalanceId: 1,
+			TransactionType: 4,
+			Nonce:           2,
+			GasPrice:        "10",
+			GasLimit:        "20",
+			Amount:          "amount",
+			ChainId:         128,
+			From:            "addr_from",
+			To:              "addr_to",
+			ChainName:       "heco",
+		},
+	}, &types.FullReBalanceTask{
+		Base: &types.Base{
+			ID: 1,
+		},
+		Params: "{full_params}",
+	})
+	if err != nil {
+		t.Fatalf("claim err:%v", err)
+	}
+	t.Logf("claim msg:%s", msg)
+}
