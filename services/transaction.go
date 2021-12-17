@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -46,6 +47,7 @@ func (t *Transaction) Run() (err error) {
 	}
 
 	for _, task := range tasks {
+		task.Message = utils.GenTxMessage(task.State, "")
 		err = func(task *types.TransactionTask) error {
 			switch types.TransactionState(task.State) {
 			case types.TxUnInitState:
@@ -63,6 +65,7 @@ func (t *Transaction) Run() (err error) {
 		}(task)
 
 		if err != nil {
+			t.db.UpdateTransactionTaskMessage(task.ID, utils.GenTxMessage(task.State, fmt.Sprintf("%v", err)))
 			return
 		}
 	}

@@ -3,11 +3,11 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/tokens"
 	"github.com/starslabhq/hermes-rebalance/types"
+	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
 var states []types.FullReBalanceState = []types.FullReBalanceState{
@@ -115,6 +115,7 @@ func (p *FullReBalance) Run() (err error) {
 	if !finished {
 		return
 	}
+	tasks[0].Message = utils.GenFullRebalanceMessage(next, "")
 	if err := checkState(next); err != nil {
 		return fmt.Errorf("state err:%v,state:%d,tid:%d,handler:%s", err, next, tasks[0].ID, handler.Name())
 	}
@@ -130,6 +131,7 @@ func (p *FullReBalance) Run() (err error) {
 			return
 		}
 		if err := nextHandler.Do(tasks[0]); err != nil {
+			p.db.UpdateFullReBalanceTaskMessage(tasks[0].ID, utils.GenFullRebalanceMessage(next, fmt.Sprintf("%v", err)))
 			logrus.Errorf("handler do err:%v,name:%s", err, nextHandler.Name())
 			return err
 		}
