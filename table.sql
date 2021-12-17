@@ -152,7 +152,7 @@ drop table IF EXISTS `t_currency`;
 create TABLE `t_currency` (
     `f_id`          bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_name`        varchar(255)        NOT NULL COMMENT '名称',
-    `f_min`         decimal(20, 8) COMMENT '跨链的最小额度',
+    `f_cross_min`   decimal(20, 8) COMMENT '跨链的最小额度',
     `f_invest_min`  decimal(20, 8) COMMENT '投资的最小额度',
     `f_cross_scale` integer COMMENT '跨链的最小精度',
     `f_created_at`  timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -164,16 +164,16 @@ create TABLE `t_currency` (
     COLLATE = utf8mb4_bin COMMENT ='资产表';
 
 
-insert into t_currency(f_name, f_min, f_invest_min, f_cross_scale)
-values ('btc', 0.001, 0.1, 3),
-       ('bnb', null, null, null),
-       ('cake', null, null, null),
-       ('matic', null, null, null),
-       ('eth', 0.01, 0.1, 2),
-       ('usdt', 10, 0.1, 0),
-       ('usdc', 2, 0.1, 0),
-       ('dai', 1, 0.1, 0),
-       ('usd', 10, 0.1, 0);
+insert into t_currency(f_name, f_cross_min, f_invest_min, f_cross_scale)
+values ('btc', 0.001, 0.1, 0.0001),
+       ('bnb', null, null, 0.01),
+       ('cake', null, null, 0.1),
+       ('matic', null, null, 0.1),
+       ('eth', 0.01, 0.1, 0.01),
+       ('usdt', 10, 0.1, 1),
+       ('usdc', 2, 0.1, 1),
+       ('dai', 1, 0.1, 1),
+       ('usd', 10, 0.1, 1);
 
 
 drop table IF EXISTS `t_token`;
