@@ -165,15 +165,15 @@ create TABLE `t_currency` (
 
 
 insert into t_currency(f_name, f_cross_min, f_invest_min, f_cross_scale)
-values ('btc', 0.001, 0.1, 0.0001),
-       ('bnb', null, null, 0.01),
-       ('cake', null, null, 0.1),
-       ('matic', null, null, 0.1),
-       ('eth', 0.01, 0.1, 0.01),
-       ('usdt', 10, 0.1, 1),
-       ('usdc', 2, 0.1, 1),
-       ('dai', 1, 0.1, 1),
-       ('usd', 10, 0.1, 1);
+values ('btc', 0.001,0.0001, 3),
+       ('bnb', null, 0.01, null),
+       ('cake', null, 0.1, null),
+       ('matic', null, 0.1, null),
+       ('eth', 0.01, 0.01, 2),
+       ('usdt', 10, 1, 0),
+       ('usdc', 10, 1, 0),
+       ('dai', 10, 1, 0),
+       ('usd', 10, 1, 0);
 
 
 drop table IF EXISTS `t_token`;

@@ -240,8 +240,8 @@ func (t *Token) TableName() string {
 type Currency struct {
 	*Base      `xorm:"extends"`
 	Name       string          `xorm:"f_name"`
-	Min        decimal.Decimal `xorm:"f_min"`
-	CrossScale int32             `xorm:"f_cross_scale"`
+	Min        decimal.Decimal `xorm:"f_cross_min"`
+	CrossScale int32           `xorm:"f_cross_scale"`
 }
 
 func (t *Currency) TableName() string {
