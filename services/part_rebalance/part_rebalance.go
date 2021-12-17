@@ -3,6 +3,7 @@ package part_rebalance
 import (
 	"fmt"
 	"github.com/starslabhq/hermes-rebalance/clients"
+	"github.com/starslabhq/hermes-rebalance/utils"
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
@@ -81,10 +82,11 @@ func (p *PartReBalance) Run() (err error) {
 	if !finished {
 		return
 	}
-
+	tasks[0].Message = utils.GenPartRebalanceMessage(next, "")
 	logrus.Infof("part rebalance task move state, from:[%v], to:[%v]", tasks[0].State, next)
 	err = handler.MoveToNextState(tasks[0], next)
 	if err != nil {
+		p.db.UpdatePartReBalanceTaskMessage(tasks[0].ID, utils.GenPartRebalanceMessage(next, fmt.Sprintf("%v", err)))
 		return err
 	}
 

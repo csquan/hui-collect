@@ -45,8 +45,17 @@ func (*Mysql) UpdatePartReBalanceTask(itf xorm.Interface, task *types.PartReBala
 	return err
 }
 
+func (m *Mysql) UpdatePartReBalanceTaskMessage(taskID uint64, message string) error {
+	_, err := m.engine.Exec("update t_part_rebalance_task set f_message = ? where f_id = ?", message, taskID)
+	return err
+}
+
 func (*Mysql) UpdateFullReBalanceTask(itf xorm.Interface, task *types.FullReBalanceTask) error {
 	_, err := itf.Where("f_id = ?", task.ID).Update(task)
+	return err
+}
+func (m *Mysql) UpdateFullReBalanceTaskMessage(taskID uint64, message string) error {
+	_, err := m.engine.Exec("update t_full_rebalance_task set f_message = ? where f_id = ?", message, taskID)
 	return err
 }
 
@@ -80,7 +89,11 @@ func (m *Mysql) SaveRebalanceTask(itf xorm.Interface, tasks *types.PartReBalance
 }
 
 func (m *Mysql) UpdateTransactionTask(itf xorm.Interface, task *types.TransactionTask) error {
-	_, err := m.engine.Table("t_transaction_task").Where("f_id = ?", task.ID).Update(task)
+	_, err := itf.Table("t_transaction_task").Where("f_id = ?", task.ID).Update(task)
+	return err
+}
+func (m *Mysql) UpdateTransactionTaskMessage(taskID uint64, message string) error {
+	_, err := m.engine.Exec("update t_transaction_task set f_message = ? where f_id = ?", message, taskID)
 	return err
 }
 

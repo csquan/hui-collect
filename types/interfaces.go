@@ -31,10 +31,12 @@ type IWriter interface {
 	GetEngine() *xorm.Engine
 	SaveRebalanceTask(itf xorm.Interface, tasks *PartReBalanceTask) (err error)
 	UpdatePartReBalanceTask(itf xorm.Interface, t *PartReBalanceTask) error
+	UpdatePartReBalanceTaskMessage(taskID uint64, message string) error
 	UpdateFullReBalanceTask(itf xorm.Interface, task *FullReBalanceTask) error
+	UpdateFullReBalanceTaskMessage(taskID uint64, message string) error
 	SaveTxTasks(xorm.Interface, []*TransactionTask) error
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
-
+	UpdateTransactionTaskMessage(taskID uint64, message string) error
 	SaveCrossTasks(itf xorm.Interface, tasks []*CrossTask) error
 	//update cross task state
 	UpdateCrossTaskState(itf xorm.Interface, id uint64, state int) error
