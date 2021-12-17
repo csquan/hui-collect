@@ -22,7 +22,9 @@ type DataBaseConf struct {
 }
 
 type AlertConf struct {
-	url string `mapstructure:"url"`
+	URL     string   `mapstructure:"url"`
+	Mobiles []string `mapstructure:"mobiles"`
+	Secret  string   `mapstructure:"secret"`
 }
 
 type ApiConf struct {
