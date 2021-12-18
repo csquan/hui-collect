@@ -50,7 +50,6 @@ type CrossService struct {
 	db        types.IDB
 	bridgeCli bridge.IBridge
 	config    *config.Config
-	alert     *alert.Ding
 }
 
 func NewCrossService(db types.IDB, bCli bridge.IBridge, c *config.Config) *CrossService {
@@ -392,7 +391,7 @@ func (c *CrossService) stateChanged(next types.CrossState, task *types.CrossTask
 		}
 
 	}
-	err = c.alert.SendMessage("cross", msg)
+	err = alert.Dingding.SendMessage("cross", msg)
 	if err != nil {
 		logrus.Errorf("send message err:%v,msg:%s", err, msg)
 	}

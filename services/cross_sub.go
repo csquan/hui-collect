@@ -16,7 +16,6 @@ type CrossSubTaskService struct {
 	db        types.IDB
 	bridgeCli bridge.IBridge
 	config    *config.Config
-	alert     *alert.Ding
 }
 
 func NewCrossSubTaskService(db types.IDB, bCli bridge.IBridge, c *config.Config) *CrossSubTaskService {
@@ -184,7 +183,7 @@ func (c *CrossSubTaskService) stateChanged(next types.CrossSubState, info *Cross
 		logrus.Errorf("create cross sub msg err:%v,msg:%s", err, msg)
 		return
 	}
-	err = c.alert.SendMessage("cross_sub", msg)
+	err = alert.Dingding.SendMessage("cross_sub", msg)
 	if err != nil {
 		logrus.Errorf("send cross_sub msg err:%v,msg:%s", err, msg)
 	}

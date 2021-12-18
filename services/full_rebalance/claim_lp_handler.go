@@ -69,7 +69,6 @@ type claimLPHandler struct {
 	abi    abi.ABI
 	conf   *config.Config
 	getter lpDataGetter
-	alert  *alert.Ding
 }
 
 func newClaimLpHandler(conf *config.Config, db types.IDB, token tokens.Tokener) *claimLPHandler {
@@ -430,7 +429,7 @@ func (w *claimLPHandler) stateChanged(next types.FullReBalanceState, txTasks []*
 		if err != nil {
 			logrus.Errorf("create claim msg err:%v,stage:%s", err, stage)
 		}
-		err = w.alert.SendMessage("claimlp", msg)
+		err = alert.Dingding.SendMessage("claimlp", msg)
 		if err != nil {
 			logrus.Errorf("send claimlp tx_created err:%v", err)
 		}
@@ -440,7 +439,7 @@ func (w *claimLPHandler) stateChanged(next types.FullReBalanceState, txTasks []*
 		if err != nil {
 			logrus.Errorf("create claim msg err:%v,stage:%s", err, stage)
 		}
-		err = w.alert.SendAlert("claimlp", msg, []string{})
+		err = alert.Dingding.SendAlert("claimlp", msg, []string{})
 		if err != nil {
 			logrus.Errorf("send calimlp failed err:%v", err)
 		}
@@ -450,7 +449,7 @@ func (w *claimLPHandler) stateChanged(next types.FullReBalanceState, txTasks []*
 		if err != nil {
 			logrus.Errorf("create claim msg err:%v,stage:%s", err, stage)
 		}
-		err = w.alert.SendMessage("claimlp", msg)
+		err = alert.Dingding.SendMessage("claimlp", msg)
 		if err != nil {
 			logrus.Errorf("send calimlp failed err:%v", err)
 		}
