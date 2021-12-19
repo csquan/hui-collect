@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
+	"time"
 	"xorm.io/core"
 )
 
@@ -23,6 +24,12 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 	}
 	engine.ShowSQL(false)
 	engine.Logger().SetLevel(core.LOG_DEBUG)
+	location, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		return nil, err
+	}
+	engine.SetTZLocation(location)
+	engine.SetTZDatabase(location)
 
 	m = &Mysql{
 		conf:   conf,
