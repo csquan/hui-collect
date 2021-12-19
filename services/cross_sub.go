@@ -137,23 +137,24 @@ type CrossSubInfo struct {
 const crossSubTemp = `# stage: {{.Stage}}
 ## parent
 {{with .Parent}}
-chain: {{.ChainFrom}} -> {{.ChainTo}}
-addr: {{.ChainFromAddr}}->{{.ChainToAddr}}
-currency: {{.CurrencyFrom}}->{{.CurrencyTo}}
-amount: {{.Amount}}
+- chain: {{.ChainFrom}} -> {{.ChainTo}}
+- addr: {{.ChainFromAddr}}->{{.ChainToAddr}}
+- currency: {{.CurrencyFrom}}->{{.CurrencyTo}}
+- amount: {{.Amount}}
 {{end}}
 ## sub
 {{with .Sub}}
-bridge_task_id: {{.BridgeTaskId}}
-task_no: {{.TaskNo}}
-amount: {{.Amount}}
-state: {{.State}}
+- bridge_task_id: {{.BridgeTaskId}}
+- task_no: {{.TaskNo}}
+- amount: {{.Amount}}
+- state: {{.State}}
 {{end}}
 ## bridge
-from_account: {{.FromAccountId}}
-to_account: {{.ToAccountId}}
-from_currency: {{.FromCurrencyId}}
-to_currency: {{.ToCurrencyId}}
+
+- from_account: {{.FromAccountId}}
+- to_account: {{.ToAccountId}}
+- from_currency: {{.FromCurrencyId}}
+- to_currency: {{.ToCurrencyId}}
 `
 
 func createCrossSubMsg(stage string, info *CrossSubInfo) (string, error) {
