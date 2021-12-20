@@ -23,6 +23,9 @@ func init() {
 func TestAPIRun(t *testing.T) {
 	go Run(config.APIConf{
 		Port: 8080,
+		Users: map[string]string{
+			"user0": "123",
+		},
 	}, dbtest)
 	t.Logf("http server start")
 	time.Sleep(600 * time.Second)
