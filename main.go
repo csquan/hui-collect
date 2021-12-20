@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/api"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/starslabhq/hermes-rebalance/api"
 
 	"github.com/starslabhq/hermes-rebalance/clients"
 

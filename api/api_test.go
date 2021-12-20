@@ -21,7 +21,9 @@ func init() {
 	}
 }
 func TestAPIRun(t *testing.T) {
-	go Run(8080, dbtest)
+	go Run(config.APIConf{
+		Port: 8080,
+	}, dbtest)
 	t.Logf("http server start")
 	time.Sleep(600 * time.Second)
 }

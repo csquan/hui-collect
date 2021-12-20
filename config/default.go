@@ -7,4 +7,8 @@ var (
 			Level:  4,
 		},
 	}
+	DefaultAPIConf = APIConf{
+		Port:  8080,
+		Users: map[string]string{},
+	}
 )

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
@@ -58,7 +59,7 @@ func (h *FullRebalanceHandler) AddTask(c *gin.Context) {
 	})
 }
 
-func Run(port int, db types.IDB) {
+func Run(conf config.APIConf, db types.IDB) {
 	h := &FullRebalanceHandler{
 		db: db,
 	}
@@ -67,7 +68,7 @@ func Run(port int, db types.IDB) {
 		"user0": "123",
 	}))
 	authorized.POST("fullRebalance/create", h.AddTask)
-	err := r.Run(fmt.Sprintf(":%d", port))
+	err := r.Run(fmt.Sprintf(":%d", conf.Port))
 	if err != nil {
 		logrus.Fatalf("start http server err:%v", err)
 	}
