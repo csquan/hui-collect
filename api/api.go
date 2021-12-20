@@ -92,7 +92,7 @@ func (h *FullRebalanceHandler) GetTask(c *gin.Context) {
 	c.JSON(http.StatusOK, taskView)
 }
 
-func Run(conf config.APIConf, db types.IDB) {
+func Run(conf config.ServerConf, db types.IDB) {
 	h := &FullRebalanceHandler{
 		db: db,
 	}

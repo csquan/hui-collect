@@ -21,7 +21,7 @@ func init() {
 	}
 }
 func TestAPIRun(t *testing.T) {
-	go Run(config.APIConf{
+	go Run(config.ServerConf{
 		Port: 8080,
 		Users: map[string]string{
 			"user0": "123",

@@ -75,7 +75,7 @@ func main() {
 		logrus.Fatalf("connect to dbConnection error:%v", err)
 	}
 
-	go api.Run(conf.APIConf, dbConnection)
+	go api.Run(conf.ServerConf, dbConnection)
 
 	//setup rpc clients
 	clients.Init(conf)

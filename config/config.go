@@ -44,7 +44,7 @@ type BridgeConf struct {
 //	o.RetryInterval = time.Duration(o.RetryIntervalInt) * time.Millisecond
 //}
 
-type APIConf struct {
+type ServerConf struct {
 	Port  int               `mapstructure:"port"`
 	Users map[string]string `mapstructure:"users"`
 }
@@ -61,7 +61,7 @@ type Config struct {
 	ApiConf          ApiConf               `mapstructure:"api"`
 	Margin           *Margin               `mapstructure:"margin"`
 	Env              string                `mapstructure:"env"`
-	APIConf          APIConf               `mapstructure:"api_conf"`
+	ServerConf       ServerConf            `mapstructure:"server_conf"`
 }
 type Margin struct {
 	AppID     string `mapstructure:"app_id"`
@@ -116,6 +116,7 @@ func LoadConf(fpath string) (*Config, error) {
 	conf := &Config{
 		LogConf:          DefaultLogConfig,
 		QueryIntervalInt: 3000,
+		ServerConf:       DefaultServerConf,
 	}
 
 	vip := viper.New()
