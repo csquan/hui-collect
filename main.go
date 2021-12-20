@@ -82,7 +82,7 @@ func main() {
 	if err != nil {
 		return
 	}
-	go api.Run(8080, dbConnection)
+	go api.Run(conf.Port, dbConnection)
 
 	scheduler.Start()
 }

@@ -57,6 +57,7 @@ type Config struct {
 	ApiConf          ApiConf               `mapstructure:"api"`
 	Margin           *Margin               `mapstructure:"margin"`
 	Env              string                `mapstructure:"env"`
+	Port             int                   `mapstructure:"port"`
 }
 type Margin struct {
 	AppID     string `mapstructure:"app_id"`
@@ -111,6 +112,7 @@ func LoadConf(fpath string) (*Config, error) {
 	conf := &Config{
 		LogConf:          DefaultLogConfig,
 		QueryIntervalInt: 3000,
+		Port:             8080,
 	}
 
 	vip := viper.New()
