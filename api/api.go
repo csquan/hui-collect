@@ -76,6 +76,12 @@ func (h *FullRebalanceHandler) GetTask(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, "server err")
 		return
 	}
+
+	if task == nil {
+		c.JSON(http.StatusNotFound, "task not found")
+		return
+	}
+
 	taskView := &FullRebalanceTask{
 		ID:      task.ID,
 		Message: task.Message,
@@ -91,9 +97,11 @@ func Run(conf config.APIConf, db types.IDB) {
 		db: db,
 	}
 	r := gin.Default()
-	authorized := r.Group("/", gin.BasicAuth(gin.Accounts(conf.Users)))
+	authorized := r.Group("/", gin.BasicAuth(conf.Users))
+
 	authorized.POST("fullRebalance/create", h.AddTask)
 	authorized.GET("fullRebalance/get", h.GetTask)
+
 	err := r.Run(fmt.Sprintf(":%d", conf.Port))
 	if err != nil {
 		logrus.Fatalf("start http server err:%v", err)

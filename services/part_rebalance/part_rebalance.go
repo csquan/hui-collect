@@ -86,7 +86,7 @@ func (p *PartReBalance) Run() (err error) {
 	}
 	var status string
 	tasks[0].Message, status = utils.GenPartRebalanceMessage(next, "")
-	logrus.Infof("part rebalance task move state, from:[%v], to:[%v]", tasks[0].State, next)
+	logrus.Infof("part rebalance task move state, from:[%v], to:[%v]", types.PartReBalanceStateName[tasks[0].State], types.PartReBalanceStateName[next])
 	err = handler.MoveToNextState(tasks[0], next)
 	if err != nil {
 		message, _ := utils.GenPartRebalanceMessage(next, fmt.Sprintf("%v", err))
