@@ -100,6 +100,7 @@ func (p *FullReBalanceTask) TableName() string {
 type PartReBalanceTask struct {
 	*Base           `xorm:"extends"`
 	*BaseTask       `xorm:"extends"`
+	TaskID          string `xorm:"f_task_id"`
 	FullRebalanceID uint64 `xorm:"f_full_rebalance_id"`
 	Params          string `xorm:"f_params"`
 }

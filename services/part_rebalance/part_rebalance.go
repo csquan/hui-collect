@@ -84,6 +84,14 @@ func (p *PartReBalance) Run() (err error) {
 	if !finished {
 		return
 	}
+	if next == types.FullReBalanceFailed || next == types.PartReBalanceSuccess {
+		var resp *types.TaskManagerResponse
+		resp, err = utils.CallTaskManager(p.config, fmt.Sprintf("/v1/open/task/end/%s?taskType=rebalance", tasks[0].TaskID), "POST")
+		if err != nil || !resp.Data {
+			logrus.Info("call task manager end resp:%v, err：%v, taskID:%s", resp, err, tasks[0].TaskID)
+			return
+		}
+	}
 	var status string
 	tasks[0].Message, status = utils.GenPartRebalanceMessage(next, "")
 	logrus.Infof("part rebalance task move state, from:[%v], to:[%v]", tasks[0].State, next)

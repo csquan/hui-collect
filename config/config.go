@@ -31,6 +31,7 @@ type ApiConf struct {
 	MarginUrl    string `mapstructure:"margin_url"`
 	MarginOutUrl string `mapstructure:"margin_out_url"`
 	LpUrl        string `mapstructure:"lp_url"`
+	TaskManager  string `mapstructure:"task_manager"`
 }
 
 type BridgeConf struct {

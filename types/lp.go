@@ -88,3 +88,9 @@ type MarginStatusResponse struct {
 	Msg  string                 `json:"msg"`
 	Data map[string]interface{} `json:"data"`
 }
+
+type TaskManagerResponse struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+	Data bool   `json:"data"`
+}

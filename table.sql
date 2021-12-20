@@ -16,6 +16,7 @@ CREATE TABLE `t_full_rebalance_task` (
 DROP TABLE IF EXISTS `t_part_rebalance_task`;
 CREATE TABLE `t_part_rebalance_task` (
     `f_id`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `f_task_id`           varchar(20) NOT NULL DEFAULT '' COMMENT '全局任务id',
     `f_full_rebalance_id` bigint(20) unsigned COMMENT '大r任务id',
     `f_state`             tinyint(4)          NOT NULL DEFAULT '0' COMMENT 'init build ongoing success failed',
     `f_params`            text                NOT NULL COMMENT '任务数据',
