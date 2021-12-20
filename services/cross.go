@@ -37,7 +37,9 @@ const crossTemp = `
 - task_no: {{.TaskNo}}
 - amount: {{.Amount}}
 - state: {{.State}}
+
 -------------------
+
 {{- end }}
 {{end}}`
 
