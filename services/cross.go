@@ -24,18 +24,19 @@ const crossTemp = `
 ## parent
 
 {{with .Task}}
-chain: {{.ChainFrom}}->{{.ChainTo}}
-addr: {{.ChainFromAddr}}->{{.ChainToAddr}}
-currency: {{.CurrencyFrom}}->{{.CurrencyTo}}
-amount: {{.Amount}}
+- chain: {{.ChainFrom}}->{{.ChainTo}}
+- addr: {{.ChainFromAddr}}->{{.ChainToAddr}}
+- currency: {{.CurrencyFrom}}->{{.CurrencyTo}}
+- amount: {{.Amount}}
 {{end}}
+
 ## sub
 
 {{ with .SubTasks }}
 {{ range . }}
-task_no: {{.TaskNo}}
-amount: {{.Amount}}
-state: {{.State}}
+- task_no: {{.TaskNo}}
+- amount: {{.Amount}}
+- state: {{.State}}
 -------------------
 {{- end }}
 {{end}}`
