@@ -3,12 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/starslabhq/hermes-rebalance/api"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/starslabhq/hermes-rebalance/api"
 	"github.com/starslabhq/hermes-rebalance/clients"
 
 	"net/http"
@@ -74,6 +74,8 @@ func main() {
 		logrus.Fatalf("connect to dbConnection error:%v", err)
 	}
 
+	go api.Run(conf.Port, dbConnection)
+
 	//setup rpc clients
 	clients.Init(conf)
 
@@ -82,8 +84,6 @@ func main() {
 	if err != nil {
 		return
 	}
-	go api.Run(conf.Port, dbConnection)
-
 	scheduler.Start()
 }
 
