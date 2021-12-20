@@ -2,14 +2,15 @@ package types
 
 import (
 	"encoding/json"
-	"github.com/shopspring/decimal"
 	"time"
+
+	"github.com/shopspring/decimal"
 
 	"github.com/sirupsen/logrus"
 )
 
 type Base struct {
-	ID        uint64    `xorm:"f_id" gorm:"primary_key"`
+	ID        uint64    `xorm:"f_id not null pk autoincr bigint(20)" gorm:"primary_key"`
 	CreatedAt time.Time `xorm:"created f_created_at"`
 	UpdatedAt time.Time `xorm:"updated f_updated_at"`
 }

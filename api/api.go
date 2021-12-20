@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,32 +14,19 @@ type Ret struct {
 	Data    interface{}
 }
 
-type FullRebalanceReq struct {
-	Message string `json:"message"`
-	Params  string `json:"params"`
-}
 type FullRebalanceHandler struct {
 	db types.IDB
 }
 
 func (h *FullRebalanceHandler) AddTask(c *gin.Context) {
-	var (
-		req FullRebalanceReq
-	)
-	err := c.BindJSON(&req)
-	if err != nil && err != io.EOF {
-		logrus.Errorf("read req err:%v", err)
-		c.JSON(http.StatusBadRequest, err.Error())
-		return
-	}
 	tasks, err := h.db.GetOpenedFullReBalanceTasks()
 	if err != nil {
 		logrus.Errorf("get opened full task err:%v", err)
-		c.JSON(http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusInternalServerError, "server err")
 		return
 	}
 	if len(tasks) != 0 {
-		c.JSON(http.StatusForbidden, "full rebalance exist")
+		c.JSON(http.StatusConflict, "full rebalance exist")
 		return
 	}
 
@@ -51,21 +37,25 @@ func (h *FullRebalanceHandler) AddTask(c *gin.Context) {
 		return
 	}
 	if len(partTasks) != 0 {
-		c.JSON(http.StatusForbidden, "part rebalance exist")
+		c.JSON(http.StatusConflict, "part rebalance exist")
 		return
 	}
 	task := &types.FullReBalanceTask{
-		BaseTask: &types.BaseTask{
-			Message: req.Message,
-		},
-		Params: req.Params,
+		BaseTask: &types.BaseTask{},
 	}
 	err = h.db.SaveFullRebalanceTask(h.db.GetEngine(), task)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
-	c.JSON(http.StatusOK, "suc")
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"msg": "suc",
+		"data": struct {
+			TaskID uint64 `json:"task_id"`
+		}{
+			TaskID: task.ID,
+		},
+	})
 }
 
 func Run(port int, db types.IDB) {
@@ -73,7 +63,10 @@ func Run(port int, db types.IDB) {
 		db: db,
 	}
 	r := gin.Default()
-	r.POST("/fullRebalance", h.AddTask)
+	authorized := r.Group("/", gin.BasicAuth(gin.Accounts{
+		"user0": "123",
+	}))
+	authorized.POST("fullRebalance/create", h.AddTask)
 	err := r.Run(fmt.Sprintf(":%d", port))
 	if err != nil {
 		logrus.Fatalf("start http server err:%v", err)
