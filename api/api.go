@@ -37,7 +37,7 @@ func (h *FullRebalanceHandler) AddTask(c *gin.Context) {
 	partTasks, err := h.db.GetOpenedPartReBalanceTasks()
 	if err != nil {
 		logrus.Errorf("get opened part task err:%v", err)
-		c.JSON(http.StatusInternalServerError, "get partRebalanceTasks err")
+		c.JSON(http.StatusInternalServerError, "server err")
 		return
 	}
 	if len(partTasks) != 0 {
@@ -54,12 +54,7 @@ func (h *FullRebalanceHandler) AddTask(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, map[string]interface{}{
-		"msg": "suc",
-		"data": struct {
-			TaskID uint64 `json:"task_id"`
-		}{
-			TaskID: task.ID,
-		},
+		"task_id": task.ID,
 	})
 }
 
@@ -77,7 +72,7 @@ func (h *FullRebalanceHandler) GetTask(c *gin.Context) {
 	}
 	task, err := h.db.GetFullRelalanceTask(taskId)
 	if err != nil {
-		logrus.Errorf("get task err:%v", err)
+		logrus.Errorf("get task err:%v,task_id:%d", err, taskId)
 		c.JSON(http.StatusInternalServerError, "server err")
 		return
 	}
