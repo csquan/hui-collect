@@ -216,7 +216,7 @@ func AuditTx(input string, to string, quantity string, orderID int64, chainName 
 	switch chainName {
 	case "bsc":
 		AuditInput.AuReq.BusType = busTypeNotHecoEth
-	case "poly":
+	case "poly", "polygon":
 		AuditInput.AuReq.BusType = busTypeNotHecoEth
 	case "heco":
 		AuditInput.AuReq.BusType = bustype
