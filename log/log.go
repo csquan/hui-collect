@@ -67,7 +67,7 @@ func getHookLevel(level int) []logrus.Level {
 	return logrus.AllLevels[:level+1]
 }
 
-func Init(name string, config config.Log) error {
+func Init(name string, config config.Log, env string) error {
 	if config.Stdout.Enable {
 		AddConsoleOut(config.Stdout.Level)
 	}
@@ -88,7 +88,7 @@ func Init(name string, config config.Log) error {
 	}
 
 	AddField("app", name)
-	AddField("env_name", "prod")
+	AddField("env_name", env)
 
 	return nil
 }
