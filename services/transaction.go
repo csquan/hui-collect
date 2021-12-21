@@ -3,9 +3,10 @@ package services
 import (
 	"context"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/alert"
 	"strings"
 	"time"
+
+	"github.com/starslabhq/hermes-rebalance/alert"
 
 	"github.com/starslabhq/hermes-rebalance/clients"
 
@@ -198,6 +199,11 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 	return err
 }
 
+var txErrFormat = `
+chain:%s
+hash:%s
+`
+
 func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error {
 	clikey := strings.ToLower(task.ChainName)
 	client, ok := t.clientMap[clikey]
@@ -225,7 +231,7 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 		task.State = int(types.TxSuccessState)
 	} else if receipt.Status == 0 {
 		alert.Dingding.SendAlert("transaction failed",
-			alert.TaskFailedContent("transaction", task.ID, "CheckReceipt", fmt.Errorf("hash:%s", task.Hash)), nil)
+			alert.TaskFailedContent("transaction", task.ID, "CheckReceipt", fmt.Errorf(txErrFormat, task.ChainName, task.Hash)), nil)
 		task.State = int(types.TxFailedState)
 	}
 	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
