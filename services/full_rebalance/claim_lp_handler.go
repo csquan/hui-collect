@@ -290,7 +290,7 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 
 	var lps = data.LiquidityProviderList
 	if len(lps) == 0 {
-		err = w.updateState(task, types.FullReBalanceMarginBalanceTransferOut)
+		err = w.updateState(task, types.FullReBalanceClaimLP)
 		if err != nil {
 			return fmt.Errorf("update claim state err:%v,tid:%d", err, task.ID)
 		}
@@ -314,7 +314,7 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 		return err
 	}
 	if len(txTasks) == 0 {
-		err = w.updateState(task, types.FullReBalanceMarginBalanceTransferOut)
+		err = w.updateState(task, types.FullReBalanceClaimLP)
 		if err != nil {
 			return fmt.Errorf("update claim state err:%v,tid:%d", err, task.ID)
 		}

@@ -14,6 +14,10 @@ bridge_conf:
   ak: "kB01A8gsMv2CP4Tctd7XnUaG3iDE9rQJ"
   sk: "ho8XcsfygSKTLEvPYOZ9W12k0i4IFJbC"
 
+server_conf:
+  users:
+    admin: "10244201"
+
 chains:
   heco:
     id: 128
