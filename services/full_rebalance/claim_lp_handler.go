@@ -310,7 +310,7 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 		return err
 	}
 	if len(txTasks) == 0 {
-		err = w.updateState(task, types.FullReBalanceClaimLP)
+		err = w.updateState(task, types.FullReBalanceMarginBalanceTransferOut)
 		if err != nil {
 			return fmt.Errorf("update claim state err:%v,tid:%d", err, task.ID)
 		}
