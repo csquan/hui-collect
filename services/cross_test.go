@@ -30,7 +30,7 @@ func init() {
 func NoTestCrossRun(t *testing.T) {
 	log.Init("cross_test", config.Log{
 		Stdout: config.DefaultLogConfig.Stdout,
-	})
+	}, "dev")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 

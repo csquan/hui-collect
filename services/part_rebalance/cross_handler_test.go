@@ -38,7 +38,7 @@ func TestCreateTreansfer(t *testing.T) {
 	}
 
 	//setup log print
-	err = log.Init(conf.AppName, conf.LogConf)
+	err = log.Init(conf.AppName, conf.LogConf, "dev")
 	if err != nil {
 		log.Fatal(err)
 	}
