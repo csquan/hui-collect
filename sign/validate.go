@@ -254,7 +254,7 @@ func ValidatorTx(task *types.TransactionTask) (vaResp *VaResp, err error) {
 	case "eth":
 		vreq.Chain = "eth"
 		vreq.Platform = platform
-	case "poly":
+	case "poly", "polygon":
 		vreq.Chain = "matic1"
 		vreq.Platform = platformNotHecoEth
 	default:

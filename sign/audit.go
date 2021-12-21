@@ -132,7 +132,7 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 		request.BusData.Chain = "ht2"
 	case "eth":
 		request.BusData.Chain = "eth"
-	case "poly":
+	case "poly", "polygon":
 		request.BusData.Chain = "matic1"
 	}
 
