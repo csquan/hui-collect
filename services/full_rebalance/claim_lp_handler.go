@@ -290,7 +290,11 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 
 	var lps = data.LiquidityProviderList
 	if len(lps) == 0 {
-		return nil
+		err = w.updateState(task, types.FullReBalanceMarginBalanceTransferOut)
+		if err != nil {
+			return fmt.Errorf("update claim state err:%v,tid:%d", err, task.ID)
+		}
+		return err
 	}
 	if len(data.VaultInfoList) == 0 {
 		return fmt.Errorf("lp data valutlist empty")
