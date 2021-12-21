@@ -10,6 +10,7 @@ type IReader interface {
 	//GetPartReBalanceTasks(state types.PartReBalanceState) ([]*types.PartReBalanceTask, error)
 	GetOpenedPartReBalanceTasks() ([]*PartReBalanceTask, error)
 	GetOpenedFullReBalanceTasks() ([]*FullReBalanceTask, error)
+	GetFullRelalanceTask(taskId uint64) (*FullReBalanceTask, error)
 	GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType TransactionType) ([]*TransactionTask, error)
 
 	GetOpenedTransactionTask() ([]*TransactionTask, error)

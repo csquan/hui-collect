@@ -165,7 +165,7 @@ func SignGatewayEvmChain(signReq SignReq, appId string) (encResp Response, err e
 		chain = "ht2"
 	case "eth":
 		chain = "eth"
-	case "poly":
+	case "poly", "polygon":
 		chain = "matic1"
 	}
 	conf := config.RemoteSignerConfig(appId)

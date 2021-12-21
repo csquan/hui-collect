@@ -2,14 +2,15 @@ package types
 
 import (
 	"encoding/json"
-	"github.com/shopspring/decimal"
 	"time"
+
+	"github.com/shopspring/decimal"
 
 	"github.com/sirupsen/logrus"
 )
 
 type Base struct {
-	ID        uint64    `xorm:"f_id" gorm:"primary_key"`
+	ID        uint64    `xorm:"f_id not null pk autoincr bigint(20)" gorm:"primary_key"`
 	CreatedAt time.Time `xorm:"created f_created_at"`
 	UpdatedAt time.Time `xorm:"updated f_updated_at"`
 }
@@ -18,74 +19,6 @@ type BaseTask struct {
 	State   int    `xorm:"f_state"`
 	Message string `xorm:"f_message"`
 }
-
-type FullReBalanceState = int
-
-const (
-	FullReBalanceInit                     FullReBalanceState = iota
-	FullReBalanceMarginIn                                    //平无常 http请求
-	FullReBalanceClaimLP                                     //拆LP 合约调用
-	FullReBalanceMarginBalanceTransferOut                    //保证金转出至对冲账户
-	FullReBalanceRecycling                                   //资金跨回
-	FullReBalanceParamsCalc                                  // python 计算并创建partRebalanceTask
-	FullReBalanceOndoing                                     // 检查partRebalanceTask状态
-	FullReBalanceSuccess
-	FullReBalanceFailed
-)
-
-type PartReBalanceState = int
-
-type CrossState = int
-type CrossSubState int
-
-const (
-	PartReBalanceInit PartReBalanceState = iota
-	PartReBalanceTransferOut
-	PartReBalanceCross
-	PartReBalanceTransferIn
-	PartReBalanceInvest
-	PartReBalanceSuccess
-	PartReBalanceFailed
-)
-const (
-	ToCreateSubTask CrossState = iota
-	SubTaskCreated
-	TaskSuc //all sub task suc
-)
-const (
-	ToCross CrossSubState = iota
-	Crossing
-	Crossed
-)
-
-type TransactionType int
-
-const (
-	SendToBridge TransactionType = iota
-	ReceiveFromBridge
-	Invest
-	Approve
-	ClaimFromVault
-)
-
-type TaskState int
-
-const (
-	StateSuccess TaskState = iota
-	StateOngoing
-	StateFailed
-)
-
-type TransactionState int
-
-const (
-	TxUnInitState TransactionState = iota
-	TxAuditState
-	TxValidatorState
-	TxCheckReceiptState
-	TxSuccessState
-	TxFailedState
-)
 
 type FullReBalanceTask struct {
 	*Base     `xorm:"extends"`

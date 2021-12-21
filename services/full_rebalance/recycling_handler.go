@@ -2,6 +2,7 @@ package full_rebalance
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -32,7 +33,7 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	//确保拆LP已完成
 	if res.LiquidityProviderList != nil && len(res.LiquidityProviderList) > 0 {
 		logrus.Infof("LiquidityProviderList is not nil, cannot do recycling")
-		return
+		return errors.New("LiquidityProviderList is not nil, cannot do recycling") //返回err，避免重复发送钉钉通知
 	}
 	tokens, err := r.db.GetTokens()
 	currencyList, err := r.db.GetCurrency()

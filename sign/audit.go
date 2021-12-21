@@ -132,7 +132,7 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 		request.BusData.Chain = "ht2"
 	case "eth":
 		request.BusData.Chain = "eth"
-	case "poly":
+	case "poly", "polygon":
 		request.BusData.Chain = "matic1"
 	}
 
@@ -216,7 +216,7 @@ func AuditTx(input string, to string, quantity string, orderID int64, chainName 
 	switch chainName {
 	case "bsc":
 		AuditInput.AuReq.BusType = busTypeNotHecoEth
-	case "poly":
+	case "poly", "polygon":
 		AuditInput.AuReq.BusType = busTypeNotHecoEth
 	case "heco":
 		AuditInput.AuReq.BusType = bustype
