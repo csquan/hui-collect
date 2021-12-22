@@ -122,10 +122,10 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 		}
 		//判断amount是否大于最小值
 		var amount, reward decimal.Decimal
-		if info.Amount == "" {
+		if info.ActiveAmount == "" {
 			return fmt.Errorf("amount empty valut addr:%s", info.ControllerAddress)
 		}
-		if amount, err = decimal.NewFromString(info.Amount); err != nil {
+		if amount, err = decimal.NewFromString(info.ActiveAmount); err != nil {
 			logrus.Errorf("convert amount to decimal err:%v", err)
 			return
 		}

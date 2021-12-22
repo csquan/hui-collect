@@ -48,7 +48,7 @@ type VaultInfo struct {
 }
 
 type ControllerInfo struct {
-	Amount            string `json:"amount"`
+	ActiveAmount      string `json:"activeAmount"`
 	ControllerAddress string `json:"vaultAddress"`
 	ClaimedReward     string `json:"claimedReward"`
 
