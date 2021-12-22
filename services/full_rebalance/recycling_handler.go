@@ -35,10 +35,13 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		logrus.Infof("LiquidityProviderList is not nil, cannot do recycling")
 		return errors.New("LiquidityProviderList is not nil, cannot do recycling") //返回err，避免重复发送钉钉通知
 	}
-	tokens, err := r.db.GetTokens()
-	currencyList, err := r.db.GetCurrency()
-	if err != nil {
-		return
+	tokens, err1 := r.db.GetTokens()
+	if err1 != nil {
+		return fmt.Errorf("get tokens err:%v", err1)
+	}
+	currencyList, err2 := r.db.GetCurrency()
+	if err2 != nil {
+		return fmt.Errorf("get currency err:%v", err2)
 	}
 	partRebalanceParam := &types.Params{
 		SendToBridgeParams:      make([]*types.SendToBridgeParam, 0),
@@ -52,6 +55,9 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		}
 	}
 	data, _ := json.Marshal(partRebalanceParam)
+	if len(data) > 65535 {
+		return fmt.Errorf("part rebalance size is over 65535")
+	}
 	partTask := &types.PartReBalanceTask{
 		Params:          string(data),
 		FullRebalanceID: task.ID,
@@ -115,14 +121,26 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			continue
 		}
 		//判断amount是否大于最小值
-		var amount decimal.Decimal
+		var amount, reward decimal.Decimal
+		if info.Amount == "" {
+			return fmt.Errorf("amount empty valut addr:%s", info.ControllerAddress)
+		}
 		if amount, err = decimal.NewFromString(info.Amount); err != nil {
 			logrus.Errorf("convert amount to decimal err:%v", err)
 			return
 		}
+		if info.ClaimedReward == "" {
+			return fmt.Errorf("claim reward empty valut addr:%s", info.ControllerAddress)
+		}
+		if reward, err = decimal.NewFromString(info.ClaimedReward); err != nil {
+			logrus.Errorf("convert rewart to dceimal err:%v,reward:%s", err, info.ClaimedReward)
+			return
+		}
+		amount = amount.Add(reward)
 		amount = amount.Truncate(currency.CrossScale)
+
 		if amount.Cmp(currency.Min) == -1 {
-			logrus.Infof("amount less than currency.min amount:%s, min:%s", amount.String(), currency.Min.String())
+			logrus.Infof("amount less than currency.min amount:%s, min:%s,vaultAddr:%s", amount.String(), currency.Min.String(), info.ControllerAddress)
 			return
 		}
 		var fromToken, hecoToken *types.Token

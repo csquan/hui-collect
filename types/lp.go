@@ -50,6 +50,7 @@ type VaultInfo struct {
 type ControllerInfo struct {
 	Amount            string `json:"amount"`
 	ControllerAddress string `json:"vaultAddress"`
+	ClaimedReward     string `json:"claimedReward"`
 
 	//下面几个字段不是从json解析出来的
 	//Chain string
