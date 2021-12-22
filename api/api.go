@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -92,11 +93,36 @@ func (h *FullRebalanceHandler) GetTask(c *gin.Context) {
 	c.JSON(http.StatusOK, taskView)
 }
 
+type CustomResponseWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (w CustomResponseWriter) Write(b []byte) (int, error) {
+	w.body.Write(b)
+	return w.ResponseWriter.Write(b)
+}
+
+func (w CustomResponseWriter) WriteString(s string) (int, error) {
+	w.body.WriteString(s)
+	return w.ResponseWriter.WriteString(s)
+}
+
+func AccessLogHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		blw := &CustomResponseWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
+		c.Writer = blw
+		c.Next()
+		logrus.Infof("url:%s, status:%d, res:%s", c.Request.URL, c.Writer.Status(), blw.body.String())
+	}
+}
+
 func Run(conf config.ServerConf, db types.IDB) {
 	h := &FullRebalanceHandler{
 		db: db,
 	}
 	r := gin.Default()
+	r.Use(AccessLogHandler())
 	authorized := r.Group("/", gin.BasicAuth(conf.Users))
 
 	authorized.POST("fullRebalance/create", h.AddTask)
