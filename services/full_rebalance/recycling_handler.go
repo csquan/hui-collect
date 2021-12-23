@@ -121,22 +121,22 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			continue
 		}
 		//判断amount是否大于最小值
-		var amount, reward decimal.Decimal
-		if info.ActiveAmount == "" {
-			return fmt.Errorf("amount empty valut addr:%s", info.ControllerAddress)
+		var amount, soloAmount decimal.Decimal
+		if info.VaultAmount == "" {
+			return fmt.Errorf("vaultAmount empty valut addr:%s", info.ControllerAddress)
 		}
-		if amount, err = decimal.NewFromString(info.ActiveAmount); err != nil {
-			logrus.Errorf("convert amount to decimal err:%v", err)
+		if amount, err = decimal.NewFromString(info.VaultAmount); err != nil {
+			logrus.Errorf("convert vaultAmount to decimal err:%v", err)
 			return
 		}
-		if info.ClaimedReward == "" {
-			return fmt.Errorf("claim reward empty valut addr:%s", info.ControllerAddress)
+		if info.SoloAmount == "" {
+			return fmt.Errorf("soloAmount empty valut addr:%s", info.ControllerAddress)
 		}
-		if reward, err = decimal.NewFromString(info.ClaimedReward); err != nil {
-			logrus.Errorf("convert rewart to dceimal err:%v,reward:%s", err, info.ClaimedReward)
+		if soloAmount, err = decimal.NewFromString(info.SoloAmount); err != nil {
+			logrus.Errorf("convert rewart to dceimal err:%v,reward:%s", err, info.SoloAmount)
 			return
 		}
-		amount = amount.Add(reward)
+		amount = amount.Add(soloAmount)
 		amount = amount.Truncate(currency.CrossScale)
 
 		if amount.Cmp(currency.Min) == -1 {

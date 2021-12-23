@@ -51,7 +51,8 @@ type ControllerInfo struct {
 	ActiveAmount      string `json:"activeAmount"`
 	ControllerAddress string `json:"vaultAddress"`
 	ClaimedReward     string `json:"claimedReward"`
-
+	VaultAmount       string `json:"vaultAmount"`
+	SoloAmount        string `json:"soloAmount"`
 	//下面几个字段不是从json解析出来的
 	//Chain string
 	//ChainID int

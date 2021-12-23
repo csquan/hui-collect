@@ -52,13 +52,13 @@ func TestAppendParams(t *testing.T) {
 		ActiveAmount: map[string]*types.ControllerInfo{
 			"BSC": &types.ControllerInfo{
 				ControllerAddress: "0x8bf20bff6dde40a03a561ec90ae82183ee7fe22f",
-				ActiveAmount:      "1.00000",
-				ClaimedReward:     "2.000000",
+				VaultAmount:       "3.00000",
+				SoloAmount:        "2.000000",
 			},
 			"Heco": &types.ControllerInfo{
 				ControllerAddress: "0x532a24b58067adee3192390a6ff2c7751b5efe4f",
-				ActiveAmount:      "0.030200000000000000",
-				ClaimedReward:     "0.000000000000000000",
+				VaultAmount:       "",
+				SoloAmount:        "",
 			},
 		},
 	}
