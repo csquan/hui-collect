@@ -204,6 +204,12 @@ chain:%s
 hash:%s
 `
 
+func (t *Transaction) isTxBlockSafe(chain string, txHeight, curHeight uint64) bool {
+	chaiInfo := t.config.MustGetChainInfo(chain)
+	blockSafe := chaiInfo.BlockSafe
+	return curHeight-txHeight > uint64(blockSafe)
+}
+
 func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error {
 	clikey := strings.ToLower(task.ChainName)
 	client, ok := t.clientMap[clikey]
@@ -212,7 +218,7 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 	}
 	receipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(task.Hash))
 	if err != nil {
-		logrus.Warnf("hash not found, task:%v", task)
+		logrus.Warnf("hash not found, task:%v,err:%v,hash:%s", task, err, task.Hash)
 		err = nil
 	}
 	if receipt == nil {
@@ -227,20 +233,30 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 		}
 		return nil
 	}
-	if receipt.Status == 1 {
-		task.State = int(types.TxSuccessState)
-	} else if receipt.Status == 0 {
-		alert.Dingding.SendAlert("transaction failed",
-			alert.TaskFailedContent("transaction", task.ID, "CheckReceipt", fmt.Errorf(txErrFormat, task.ChainName, task.Hash)), nil)
-		task.State = int(types.TxFailedState)
-	}
-	err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
-		execErr = t.db.UpdateTransactionTask(session, task)
-		if execErr != nil {
-			logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
-			return execErr
-		}
+	curh, err := client.BlockNumber(context.Background())
+	if err != nil {
+		logrus.Warnf("get block num err:%v", err)
 		return nil
-	})
+	}
+	txh := receipt.BlockNumber.Uint64()
+	if t.isTxBlockSafe(task.ChainName, txh, curh) {
+		if receipt.Status == 1 {
+			task.State = int(types.TxSuccessState)
+		} else if receipt.Status == 0 {
+			alert.Dingding.SendAlert("transaction failed",
+				alert.TaskFailedContent("transaction", task.ID, "CheckReceipt", fmt.Errorf(txErrFormat, task.ChainName, task.Hash)), nil)
+			task.State = int(types.TxFailedState)
+		}
+		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
+			execErr = t.db.UpdateTransactionTask(session, task)
+			if execErr != nil {
+				logrus.Errorf("update part audit task error:%v task:[%v]", err, task)
+				return execErr
+			}
+			return nil
+		})
+	} else {
+		logrus.Debugf("tx not safe txh:%d,curh:%d,hash:%s,chain:%s", txh, curh, task.Hash, task.ChainName)
+	}
 	return err
 }

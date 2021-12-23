@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	remote "github.com/shima-park/agollo/viper-remote"
 	"github.com/spf13/viper"
@@ -73,6 +74,16 @@ type ChainInfo struct {
 	RpcUrl        string `mapstructure:"rpc_url"`
 	Timeout       int    `mapstructure:"timeout"`
 	BridgeAddress string `mapstructure:"bridge_address"`
+	BlockSafe     uint   `mapstructure:"block_safe"`
+}
+
+func (c *Config) MustGetChainInfo(chain string) *ChainInfo {
+	chain = strings.ToLower(chain)
+	if v, ok := c.Chains[chain]; ok {
+		return v
+	}
+	logrus.Fatalf("chain info not found chain:%s", chain)
+	return nil
 }
 
 func (c *Config) init() {
