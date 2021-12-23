@@ -6,6 +6,7 @@ import (
 	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/clients"
 	"github.com/starslabhq/hermes-rebalance/utils"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
@@ -21,6 +22,7 @@ type PartReBalance struct {
 	db       types.IDB
 	config   *config.Config
 	handlers map[types.PartReBalanceState]StateHandler
+	ticker   int64
 }
 
 func NewPartReBalanceService(db types.IDB, conf *config.Config) (p *PartReBalance, err error) {
@@ -54,6 +56,14 @@ func (p *PartReBalance) Name() string {
 	return "part_rebalance"
 }
 
+func (p *PartReBalance) clearTick() {
+	p.ticker = 0
+}
+
+func (p *PartReBalance) startTick() {
+	p.ticker = time.Now().Unix()
+}
+
 func (p *PartReBalance) Run() (err error) {
 	tasks, err := p.db.GetOpenedPartReBalanceTasks()
 	if err != nil {
@@ -70,6 +80,8 @@ func (p *PartReBalance) Run() (err error) {
 		return
 	}
 
+	p.startTick()
+
 	handler, ok := p.handlers[tasks[0].State]
 	if !ok {
 		err = fmt.Errorf("unkonwn state for part rebalance task:%v", tasks[0])
@@ -84,6 +96,17 @@ func (p *PartReBalance) Run() (err error) {
 	if !finished {
 		return
 	}
+
+	if p.ticker > p.config.Alert.MaxWaitTime {
+		//TODO 把子状态拿出来
+		alert.Dingding.SendAlert("State 停滞提醒", "", nil)
+		p.clearTick()
+	}
+
+	if finished {
+		p.clearTick()
+	}
+
 	var status string
 	tasks[0].Message, status = utils.GenPartRebalanceMessage(next, "")
 	logrus.Infof("part rebalance task move state, from:[%v], to:[%v]", types.PartReBalanceStateName[tasks[0].State], types.PartReBalanceStateName[next])

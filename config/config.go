@@ -23,9 +23,10 @@ type DataBaseConf struct {
 }
 
 type AlertConf struct {
-	URL     string   `mapstructure:"url"`
-	Mobiles []string `mapstructure:"mobiles"`
-	Secret  string   `mapstructure:"secret"`
+	URL         string   `mapstructure:"url"`
+	Mobiles     []string `mapstructure:"mobiles"`
+	Secret      string   `mapstructure:"secret"`
+	MaxWaitTime int64    `mapstructure:"max_wait_time"`
 }
 
 type ApiConf struct {
