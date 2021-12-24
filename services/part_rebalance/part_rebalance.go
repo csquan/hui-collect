@@ -97,19 +97,17 @@ func (p *PartReBalance) Run() (err error) {
 	}
 
 	if !finished {
+		now := time.Now().Unix()
+		if now-p.ticker > p.config.Alert.MaxWaitTime {
+			// 把子状态拿出来
+			msg := handler.GetOpenedTaskMsg(tasks[0].ID)
+			if msg != "" {
+				alert.Dingding.SendAlert("State 停滞提醒", msg, nil)
+			}
+			p.clearTick()
+		}
 		return
 	}
-
-	now := time.Now().Unix()
-	if now-p.ticker > p.config.Alert.MaxWaitTime {
-		// 把子状态拿出来
-		msg := handler.GetOpenedTaskMsg(tasks[0].ID)
-		if msg != "" {
-			alert.Dingding.SendAlert("State 停滞提醒", msg, nil)
-		}
-		p.clearTick()
-	}
-
 	if finished {
 		p.clearTick()
 	}

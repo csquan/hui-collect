@@ -223,3 +223,7 @@ func mustGetChainInfo(chainName string, conf *config.Config) *config.ChainInfo {
 	}
 	return chain
 }
+
+func (r *recyclingHandler) GetOpenedTaskMsg(taskId uint64) string {
+	return ""
+}

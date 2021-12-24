@@ -460,3 +460,7 @@ func (w *claimLPHandler) stateChanged(next types.FullReBalanceState, txTasks []*
 	}
 
 }
+
+func (w *claimLPHandler) GetOpenedTaskMsg(taskId uint64) string {
+	return ""
+}

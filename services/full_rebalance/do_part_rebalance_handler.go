@@ -2,6 +2,7 @@ package full_rebalance
 
 import (
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
 )
@@ -38,4 +39,8 @@ func (d *doPartRebalanceHandler) CheckFinished(task *types.FullReBalanceTask) (f
 		finished = false
 		return
 	}
+}
+
+func (d *doPartRebalanceHandler) GetOpenedTaskMsg(taskId uint64) string {
+	return ""
 }

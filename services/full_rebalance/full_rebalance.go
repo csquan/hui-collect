@@ -3,6 +3,8 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/config"
@@ -28,12 +30,14 @@ type StateHandler interface {
 	//movetoCurstate
 	Do(task *types.FullReBalanceTask) error
 	Name() string
+	GetOpenedTaskMsg(taskId uint64) string
 }
 
 type FullReBalance struct {
 	db       types.IDB
 	config   *config.Config
 	handlers map[types.FullReBalanceState]StateHandler
+	ticker   int64
 }
 
 func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, err error) {
@@ -91,6 +95,13 @@ func checkState(state types.FullReBalanceState) error {
 	return fmt.Errorf("unexpected state")
 }
 
+func (p *FullReBalance) startTick() {
+	p.ticker = time.Now().Unix()
+}
+func (p *FullReBalance) clearTick() {
+	p.ticker = 0
+}
+
 func (p *FullReBalance) Run() (err error) {
 	tasks, err := p.db.GetOpenedFullReBalanceTasks()
 	if err != nil {
@@ -106,6 +117,9 @@ func (p *FullReBalance) Run() (err error) {
 		err = fmt.Errorf("more than one full_rebalance tasks are being processed. tasks:%v", tasks)
 		return
 	}
+	if p.ticker == 0 {
+		p.startTick()
+	}
 
 	handler := p.getHandler(tasks[0].State)
 	finished, next, err := handler.CheckFinished(tasks[0])
@@ -114,7 +128,18 @@ func (p *FullReBalance) Run() (err error) {
 	}
 
 	if !finished {
+		now := time.Now().Unix()
+		if now-p.ticker > p.config.Alert.MaxWaitTime {
+			// 把子状态拿出来
+			var msg = handler.GetOpenedTaskMsg(tasks[0].ID)
+			if msg != "" {
+				alert.Dingding.SendAlert("State 停滞提醒", msg, nil)
+			}
+			p.clearTick()
+		}
 		return
+	} else {
+		p.clearTick()
 	}
 	var status string
 	tasks[0].Message, status = utils.GenFullRebalanceMessage(next, "")

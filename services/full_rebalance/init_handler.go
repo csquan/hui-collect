@@ -22,5 +22,6 @@ func (i *initHandler) CheckFinished(task *types.FullReBalanceTask) (finished boo
 	return true, types.FullReBalanceMarginIn, nil
 }
 
-
-
+func (i *initHandler) GetOpenedTaskMsg(taskId uint64) string {
+	return ""
+}

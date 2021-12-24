@@ -3,13 +3,14 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"path"
+
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
-	"net/url"
-	"path"
 )
 
 type impermanenceLostHandler struct {
@@ -144,4 +145,12 @@ func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {
 		req = append(req, r)
 	}
 	return
+}
+
+// GetOpenedTaskMsg full_rebalance task_id作为bizNo
+func (i *impermanenceLostHandler) GetOpenedTaskMsg(taskId uint64) string {
+	return fmt.Sprintf(`
+	# full_margin_in_runtimeout
+	- bizNo: %d
+	`, taskId)
 }
