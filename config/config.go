@@ -129,6 +129,7 @@ func LoadConf(fpath string) (*Config, error) {
 		LogConf:          DefaultLogConfig,
 		QueryIntervalInt: 3000,
 		ServerConf:       DefaultServerConf,
+		Alert:            DefaultAlertConf,
 	}
 
 	vip := viper.New()
