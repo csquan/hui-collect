@@ -3,10 +3,11 @@ package part_rebalance
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/clients"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
@@ -16,6 +17,7 @@ import (
 type StateHandler interface {
 	CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error)
 	MoveToNextState(task *types.PartReBalanceTask, nextState types.PartReBalanceState) (err error)
+	GetOpenedTaskMsg(taskId uint64) string
 }
 
 type PartReBalance struct {
@@ -79,8 +81,9 @@ func (p *PartReBalance) Run() (err error) {
 		err = fmt.Errorf("more than one rebalance tasks are being processed. tasks:%v", tasks)
 		return
 	}
-
-	p.startTick()
+	if p.ticker == 0 {
+		p.startTick()
+	}
 
 	handler, ok := p.handlers[tasks[0].State]
 	if !ok {
@@ -97,9 +100,13 @@ func (p *PartReBalance) Run() (err error) {
 		return
 	}
 
-	if p.ticker > p.config.Alert.MaxWaitTime {
-		//TODO 把子状态拿出来
-		alert.Dingding.SendAlert("State 停滞提醒", "", nil)
+	now := time.Now().Unix()
+	if now-p.ticker > p.config.Alert.MaxWaitTime {
+		// 把子状态拿出来
+		msg := handler.GetOpenedTaskMsg(tasks[0].ID)
+		if msg != "" {
+			alert.Dingding.SendAlert("State 停滞提醒", msg, nil)
+		}
 		p.clearTick()
 	}
 

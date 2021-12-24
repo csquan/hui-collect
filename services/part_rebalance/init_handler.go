@@ -43,3 +43,7 @@ func (i *initHandler) MoveToNextState(task *types.PartReBalanceTask, nextState t
 	})
 	return
 }
+
+func (i *initHandler) GetOpenedTaskMsg(taskId uint64) string {
+	return ""
+}

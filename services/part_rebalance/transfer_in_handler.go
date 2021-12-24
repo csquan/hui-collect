@@ -91,3 +91,7 @@ func CreateTransactionTask(task *types.PartReBalanceTask, transactionType types.
 	}
 	return
 }
+
+func (t *transferInHandler) GetOpenedTaskMsg(taskId uint64) string {
+	return ""
+}

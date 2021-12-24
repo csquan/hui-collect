@@ -86,3 +86,7 @@ func (t *transferOutHandler) MoveToNextState(task *types.PartReBalanceTask, next
 
 	return
 }
+
+func (t *transferOutHandler) GetOpenedTaskMsg(taskId uint64) string {
+	return ""
+}

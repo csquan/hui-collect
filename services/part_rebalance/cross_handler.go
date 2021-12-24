@@ -1,11 +1,14 @@
 package part_rebalance
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/clients"
+	"html/template"
 	"math/big"
+
+	"github.com/starslabhq/hermes-rebalance/clients"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -168,4 +171,43 @@ func CreateApproveTask(taskID uint64, param *types.ReceiveFromBridgeParam) (task
 		InputData:       hexutil.Encode(inputData),
 	}
 	return
+}
+
+const openedTemp = `
+# cross_run_timeout
+# task
+{{ range . }}
+- id: {{.ID}}
+- rebalance_id: {{.RebalanceId}}
+- chain: {{.ChainFrom}} -> {{.ChainTo}}
+- addr: {{.ChainFromAddr}} -> {{.ChainToAddr}}
+- currency: {{.CurrencyFrom}} -> {{.CurrencyTo}}
+- amount: {{.Amount}}
+- state: {{.State}}
+{{- end}}
+`
+
+func getOpenedTaskMsg(tasks []*types.CrossTask) string {
+	t := template.New("cross_timeout_msg")
+	temp := template.Must(t.Parse(openedTemp))
+	buf := &bytes.Buffer{}
+	err := temp.Execute(buf, &tasks)
+	if err != nil {
+		logrus.Errorf("exec cross timeout msg err:%v", err)
+	}
+	return buf.String()
+}
+
+func (c *crossHandler) GetOpenedTaskMsg(taskId uint64) string {
+	tasks, err := c.db.GetCrossTasksByReBalanceId(taskId)
+	if err != nil {
+		logrus.Errorf("get cross task err:%v", err)
+	}
+	var opened []*types.CrossTask
+	for _, t := range tasks {
+		if t.State != types.TaskSuc {
+			opened = append(opened, t)
+		}
+	}
+	return getOpenedTaskMsg(opened)
 }

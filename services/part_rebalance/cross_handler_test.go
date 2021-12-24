@@ -189,6 +189,23 @@ func powN(num *big.Int, n int64) string {
 	return num.Mul(num, a).String()
 }
 
-func TestTemp(t *testing.T) {
-	t.Logf("%d", len("000000000000000000"))
+func TestGetOpened(t *testing.T) {
+	opened := []*types.CrossTask{
+		&types.CrossTask{
+			Base: &types.Base{
+				ID: 22,
+			},
+			RebalanceId:   1,
+			ChainFrom:     "from",
+			ChainTo:       "to",
+			ChainFromAddr: "addr_from",
+			ChainToAddr:   "addr_to",
+			CurrencyFrom:  "c_from",
+			CurrencyTo:    "c_to",
+			Amount:        "12",
+			State:         1,
+		},
+	}
+	msg := getOpenedTaskMsg(opened)
+	t.Logf("msg:%s", msg)
 }
