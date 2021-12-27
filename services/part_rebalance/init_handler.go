@@ -1,6 +1,8 @@
 package part_rebalance
 
 import (
+	"encoding/json"
+
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -8,12 +10,12 @@ import (
 )
 
 type initHandler struct {
-	db        types.IDB
+	db types.IDB
 }
 
 func newInitHandler(db types.IDB) *initHandler {
 	return &initHandler{
-		db:        db,
+		db: db,
 	}
 }
 
@@ -32,7 +34,9 @@ func (i *initHandler) CheckFinished(task *types.PartReBalanceTask) (finished boo
 		if err != nil {
 			return false, 0, err
 		}
-		if !ok{
+		if !ok {
+			b, _ := json.Marshal(param)
+			logrus.Warnf("sendToBridge valut amount not enough task_id:%d,params:%s", task.ID, b)
 			return true, types.PartReBalanceFailed, nil
 		}
 	}
@@ -73,5 +77,5 @@ func (i *initHandler) GetOpenedTaskMsg(taskId uint64) string {
 }
 
 func (i *initHandler) checkSendToBridgeParam(param *types.SendToBridgeParam) (bool, error) {
-	return true, nil
+	return false, nil
 }
