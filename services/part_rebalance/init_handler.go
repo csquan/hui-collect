@@ -8,6 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/clients"
+
+	"github.com/starslabhq/hermes-rebalance/config"
 	"math/big"
 	"strings"
 
@@ -19,15 +21,20 @@ import (
 
 type initHandler struct {
 	db types.IDB
+	conf *config.Config
 }
 
-func newInitHandler(db types.IDB) *initHandler {
+func newInitHandler(db types.IDB, conf *config.Config) *initHandler {
 	return &initHandler{
 		db: db,
+		conf: conf,
 	}
 }
 
 func (i *initHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
+	if !i.conf.IsCheckParams{
+		return true, types.PartReBalanceTransferOut, nil
+	}
 	var params []types.TransactionParamInterface
 	params, err = task.ReadTransactionParams(types.SendToBridge)
 	if err != nil {

@@ -32,7 +32,7 @@ func NewPartReBalanceService(db types.IDB, conf *config.Config) (p *PartReBalanc
 		db:     db,
 		config: conf,
 		handlers: map[types.PartReBalanceState]StateHandler{
-			types.PartReBalanceInit: newInitHandler(db),
+			types.PartReBalanceInit: newInitHandler(db, conf),
 			types.PartReBalanceTransferOut: &transferOutHandler{
 				db: db,
 			},

@@ -64,6 +64,7 @@ type Config struct {
 	Margin           *Margin               `mapstructure:"margin"`
 	Env              string                `mapstructure:"env"`
 	ServerConf       ServerConf            `mapstructure:"server_conf"`
+	IsCheckParams    bool                  `mapstructure:"is_check_params"`
 }
 type Margin struct {
 	AppID     string `mapstructure:"app_id"`

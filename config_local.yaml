@@ -39,6 +39,8 @@ margin:
   app_id: "rebalance-test"
   secret_key: "k0uKyWwYZdaaEIaO"
 
+is_check_params: true
+
 log:
   stdout:
     enable: true
