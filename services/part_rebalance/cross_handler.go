@@ -53,11 +53,7 @@ func (c *crossHandler) CheckFinished(task *types.PartReBalanceTask) (finished bo
 func (c *crossHandler) MoveToNextState(task *types.PartReBalanceTask, nextState types.PartReBalanceState) (err error) {
 	var tasks []*types.TransactionTask
 	if nextState == types.PartReBalanceTransferIn {
-		params, err1 := task.ReadTransactionParams(types.ReceiveFromBridge)
-		if err1 != nil {
-			return fmt.Errorf("receiveFromBridge params err:%v", err1)
-		}
-		tasks, err = CreateTransactionTask(task, types.ReceiveFromBridge, params)
+		tasks, err = CreateTransactionTask(task, types.ReceiveFromBridge)
 		if err != nil {
 			logrus.Errorf("InvestTask error:%v task:[%v]", err, task)
 			return
