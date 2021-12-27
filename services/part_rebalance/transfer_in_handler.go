@@ -1,6 +1,8 @@
 package part_rebalance
 
 import (
+	"fmt"
+
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -35,7 +37,11 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 
 	var tasks []*types.TransactionTask
 	if nextState == types.PartReBalanceInvest {
-		tasks, err = CreateTransactionTask(task, types.Invest)
+		params, err1 := task.ReadTransactionParams(types.Invest)
+		if err1 != nil {
+			return fmt.Errorf("invest params err:%v", err1)
+		}
+		tasks, err = CreateTransactionTask(task, types.Invest, params)
 		if err != nil {
 			logrus.Errorf("InvestTask error:%v task:[%v]", err, task)
 			return
@@ -62,11 +68,11 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 	return
 }
 
-func CreateTransactionTask(task *types.PartReBalanceTask, transactionType types.TransactionType) (tasks []*types.TransactionTask, err error) {
-	params, err := task.ReadTransactionParams(transactionType)
-	if err != nil {
-		return
-	}
+func CreateTransactionTask(task *types.PartReBalanceTask, transactionType types.TransactionType, params []types.TransactionParamInterface) (tasks []*types.TransactionTask, err error) {
+	// params, err := task.ReadTransactionParams(transactionType)
+	// if err != nil {
+	// 	return
+	// }
 	for _, param := range params {
 		if transactionType == types.ReceiveFromBridge {
 			var approveTask *types.TransactionTask
