@@ -2,6 +2,7 @@ package clients
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -25,6 +26,6 @@ func Init(c *config.Config) {
 			logrus.Fatalf("init rpc client err:%v", err)
 		}
 
-		ClientMap[k] = ethclient.NewClient(client)
+		ClientMap[strings.ToLower(k)] = ethclient.NewClient(client)
 	}
 }

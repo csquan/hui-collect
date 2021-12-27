@@ -1,7 +1,15 @@
 package part_rebalance
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/starslabhq/hermes-rebalance/alert"
+	"github.com/starslabhq/hermes-rebalance/clients"
+	"math/big"
+	"strings"
 
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
@@ -20,9 +28,9 @@ func newInitHandler(db types.IDB) *initHandler {
 }
 
 func (i *initHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
-	params, err1 := task.ReadTransactionParams(types.SendToBridge)
-	if err1 != nil {
-		err = err1
+	var params []types.TransactionParamInterface
+	params, err = task.ReadTransactionParams(types.SendToBridge)
+	if err != nil {
 		return
 	}
 	for _, param := range params {
@@ -30,8 +38,9 @@ func (i *initHandler) CheckFinished(task *types.PartReBalanceTask) (finished boo
 		if !ok {
 			logrus.Fatalf("unexpected sendtobridge param:%v", param)
 		}
-		ok, err = i.checkSendToBridgeParam(sendParam)
+		ok, err = i.checkSendToBridgeParam(sendParam, task)
 		if err != nil {
+			logrus.Warnf("err:%v", err)
 			return false, 0, err
 		}
 		if !ok {
@@ -76,6 +85,39 @@ func (i *initHandler) GetOpenedTaskMsg(taskId uint64) string {
 	return ""
 }
 
-func (i *initHandler) checkSendToBridgeParam(param *types.SendToBridgeParam) (bool, error) {
+func (i *initHandler) checkSendToBridgeParam(param *types.SendToBridgeParam, task *types.PartReBalanceTask) (result bool, err error) {
+	client, ok := clients.ClientMap[strings.ToLower(param.ChainName)]
+	if !ok {
+		logrus.Fatalf("not find chain client, chainName:%s", param.ChainName)
+		return
+	}
+	to := common.HexToAddress(param.To)
+	input, err := types.CapableAmountInput()
+	if err != nil {
+		return
+	}
+	msg := ethereum.CallMsg{To: &to, Data: input}
+	ret, err := client.CallContract(context.Background(), msg, nil)
+	if err != nil {
+		return
+	}
+	output, err := types.CapableAmountOutput(ret)
+	if err != nil {
+		return
+	}
+	var amount *big.Int
+	if amount, ok = new(big.Int).SetString(param.Amount, 10); !ok {
+		err = fmt.Errorf("sendToBridge param error")
+		return
+	}
+	if output[0].(*big.Int).Cmp(amount) >= 0 {
+		return true, nil
+	}
+	errMsg := fmt.Errorf("sendToBridge amount not enough, chain:%s, vault:%s vaultAmount:%s less then param amount:%s",
+		param.ChainName, param.To, output[0].(*big.Int).String(), param.Amount)
+	alert.Dingding.SendAlert("Amount not Enough",
+		alert.TaskFailedContent("小Re", task.ID, "failed", errMsg), nil)
+	message, _ := utils.GenPartRebalanceMessage(types.PartReBalanceFailed, fmt.Sprintf("%v", errMsg))
+	i.db.UpdatePartReBalanceTaskMessage(task.ID, message)
 	return false, nil
 }

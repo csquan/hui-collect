@@ -51,6 +51,24 @@ func InvestInput(address []common.Address, baseTokenAmount, counterTokenAmount [
 	return abi.Pack("invest", address, baseTokenAmount, counterTokenAmount)
 }
 
+func CapableAmountInput() (input []byte, err error) {
+	r := strings.NewReader(content)
+	abi, err := abi.JSON(r)
+	if err != nil {
+		return nil, err
+	}
+	return abi.Pack("getCapableAmount")
+}
+
+func CapableAmountOutput(result hexutil.Bytes) ( []interface{}, error) {
+	r := strings.NewReader(content)
+	abi, err := abi.JSON(r)
+	if err != nil {
+		return nil, err
+	}
+	return abi.Unpack("getCapableAmount", result)
+}
+
 func ApproveInput(address string) (input []byte, err error) {
 	r := strings.NewReader(erc20abi)
 	abi, err := abi.JSON(r)
@@ -228,5 +246,18 @@ var content = `[
         ],
         "stateMutability":"nonpayable",
         "type":"function"
-    }
+    },
+	{
+		"inputs": [],
+		"name": "getCapableAmount",
+		"outputs": [
+		  {
+			"internalType": "uint256",
+			"name": "capAmount",
+			"type": "uint256"
+		  }
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
 ]`
