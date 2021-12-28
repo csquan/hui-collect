@@ -4,8 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
+	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/types"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"path"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -15,6 +20,16 @@ var httpCli *http.Client
 
 func init() {
 	httpCli = &http.Client{Timeout: 20 * time.Second}
+}
+
+func JoinUrl(urlInput string, pathInput string) (string, error) {
+	u, err := url.Parse(urlInput)
+	if err != nil {
+		logrus.Errorf("parse url error:%v", err)
+		return "", err
+	}
+	u.Path = path.Join(u.Path, pathInput)
+	return u.String(), nil
 }
 
 func DoRequest(url string, method string, params interface{}) (data []byte, err error) {
@@ -51,4 +66,26 @@ func DoRequestWithHeaders(url string, method string, reqData []byte, headers map
 	return
 }
 
-
+func CallTaskManager(conf *config.Config, path string, method string) (resp *types.TaskManagerResponse, err error) {
+	var urlStr string
+	if urlStr, err = JoinUrl(conf.ApiConf.TaskManager, path); err != nil {
+		logrus.Errorf("parse url error:%v", err)
+		return
+	}
+	urlStr, err = url.QueryUnescape(urlStr)
+	var data []byte
+	if data, err = DoRequest(urlStr, method, nil); err != nil {
+		return
+	}
+	resp = &types.TaskManagerResponse{}
+	if err = json.Unmarshal(data, resp); err != nil {
+		logrus.Errorf("unmashal taskManagerResponse err:%v", err)
+		return
+	}
+	if resp.Code != 200 {
+		err = errors.New("task manager response code not 200")
+		logrus.Infof("task manager resonse %v", resp)
+		return
+	}
+	return
+}

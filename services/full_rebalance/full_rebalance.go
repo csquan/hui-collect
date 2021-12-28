@@ -51,6 +51,7 @@ func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, e
 		handlers: map[types.FullReBalanceState]StateHandler{
 			types.FullReBalanceInit: &initHandler{
 				db: db,
+				conf: conf,
 			},
 			types.FullReBalanceMarginIn: &impermanenceLostHandler{
 				conf: conf,
@@ -147,6 +148,14 @@ func (p *FullReBalance) Run() (err error) {
 		return fmt.Errorf("state err:%v,state:%d,tid:%d,handler:%s", err, next, tasks[0].ID, handler.Name())
 	}
 	if next == types.FullReBalanceSuccess || next == types.FullReBalanceFailed || next == types.FullReBalanceParamsCalc {
+		if next == types.FullReBalanceFailed || next == types.FullReBalanceSuccess {
+			var resp *types.TaskManagerResponse
+			resp, err = utils.CallTaskManager(p.config, fmt.Sprintf(`/v1/open/task/end/Full_%d?taskType=rebalance`, tasks[0].ID), "POST")
+			if err != nil || !resp.Data {
+				logrus.Info("call task manager func:end resp:%v, err：%v", resp, err)
+				return
+			}
+		}
 		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status))
 		//update state
 		tasks[0].State = next

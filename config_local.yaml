@@ -33,6 +33,7 @@ api:
   margin_out_url: "http://neptune-hermes-mgt-v2.test-15.huobiapps.com/v1/auto-transfer/all-margin-balance-transfer-out-job/"
   # lp_url: "http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re"
   lp_url: "http://neptune-hermes-fe-mgt.test-15.huobiapps.com/v2/open/re"
+  task_manager: "http://neptune-hermes-mgt-v2.test-20.huobiapps.com"
 
 #for margin api sign
 margin:
