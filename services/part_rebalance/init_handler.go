@@ -4,14 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/clients"
 
-	"github.com/starslabhq/hermes-rebalance/config"
 	"math/big"
 	"strings"
+
+	"github.com/starslabhq/hermes-rebalance/config"
 
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
@@ -20,19 +22,19 @@ import (
 )
 
 type initHandler struct {
-	db types.IDB
+	db   types.IDB
 	conf *config.Config
 }
 
 func newInitHandler(db types.IDB, conf *config.Config) *initHandler {
 	return &initHandler{
-		db: db,
+		db:   db,
 		conf: conf,
 	}
 }
 
 func (i *initHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
-	if !i.conf.IsCheckParams{
+	if !i.conf.IsCheckParams {
 		return true, types.PartReBalanceTransferOut, nil
 	}
 	var params []types.TransactionParamInterface
@@ -47,7 +49,7 @@ func (i *initHandler) CheckFinished(task *types.PartReBalanceTask) (finished boo
 		}
 		ok, err = i.checkSendToBridgeParam(sendParam, task)
 		if err != nil {
-			logrus.Warnf("err:%v", err)
+			logrus.Warnf("check send bridge err:%v,tid:%d", err, task.ID)
 			return false, 0, err
 		}
 		if !ok {
@@ -106,18 +108,26 @@ func (i *initHandler) checkSendToBridgeParam(param *types.SendToBridgeParam, tas
 	msg := ethereum.CallMsg{To: &to, Data: input}
 	ret, err := client.CallContract(context.Background(), msg, nil)
 	if err != nil {
+		err = fmt.Errorf("eth_call getCapableAmount err:%v", err)
 		return
 	}
 	output, err := types.CapableAmountOutput(ret)
 	if err != nil {
+		err = fmt.Errorf("ret unpack err:%v,ret:%s", err, ret)
+		return
+	}
+	if len(output) == 0 {
+		err = fmt.Errorf("getCapableAmount output size zero")
 		return
 	}
 	var amount *big.Int
 	if amount, ok = new(big.Int).SetString(param.Amount, 10); !ok {
-		err = fmt.Errorf("sendToBridge param error")
+		err = fmt.Errorf("sendToBridge param error amount:%s", param.Amount)
 		return
 	}
-	if output[0].(*big.Int).Cmp(amount) >= 0 {
+	valutAmout := output[0].(*big.Int)
+	logrus.Infof("sendBridge amout:%s,valutAmout:%s", param.Amount, valutAmout.String())
+	if valutAmout.Cmp(amount) >= 0 {
 		return true, nil
 	}
 	errMsg := fmt.Errorf("sendToBridge amount not enough, chain:%s, vault:%s vaultAmount:%s less then param amount:%s",
