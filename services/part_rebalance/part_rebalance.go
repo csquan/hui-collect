@@ -110,7 +110,7 @@ func (p *PartReBalance) Run() (err error) {
 	if finished {
 		p.clearTick()
 	}
-	if next == types.FullReBalanceFailed || next == types.PartReBalanceSuccess {
+	if next == types.PartReBalanceFailed || next == types.PartReBalanceSuccess {
 		if tasks[0].TaskID != "" {
 			var resp *types.TaskManagerResponse
 			resp, err = utils.CallTaskManager(p.config, fmt.Sprintf("/v1/open/task/end/%s?taskType=rebalance", tasks[0].TaskID), "POST")
