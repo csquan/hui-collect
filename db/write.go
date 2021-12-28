@@ -71,7 +71,7 @@ func (m *Mysql) UpdateFullReBalanceTaskMessage(taskID uint64, message string) er
 func (m *Mysql) SaveTxTasks(itf xorm.Interface, tasks []*types.TransactionTask) (err error) {
 	for _, t := range tasks {
 		if t.GasLimit == "" {
-			t.GasLimit = "2000000"
+			t.GasLimit = "5000000"
 		}
 		if t.Amount == "" {
 			t.Amount = "0"
