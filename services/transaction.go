@@ -189,6 +189,7 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 				logrus.Warnf("get nonce err:%v", err)
 				return err
 			}
+			task.State = int(types.TxUnInitState)
 			task.Nonce = nonce
 			t.db.UpdateTransactionTask(t.db.GetEngine(), task)
 		}
@@ -245,6 +246,7 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 					return nil
 				}
 				task.Nonce = nonce
+				task.State = int(types.TxUnInitState)
 				t.db.UpdateTransactionTask(t.db.GetEngine(), task)
 			}
 			logrus.Warnf("SendTransaction err:%v task:%v", err, task)
