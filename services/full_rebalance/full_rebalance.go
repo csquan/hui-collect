@@ -50,7 +50,7 @@ func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, e
 		config: conf,
 		handlers: map[types.FullReBalanceState]StateHandler{
 			types.FullReBalanceInit: &initHandler{
-				db: db,
+				db:   db,
 				conf: conf,
 			},
 			types.FullReBalanceMarginIn: &impermanenceLostHandler{
@@ -152,7 +152,7 @@ func (p *FullReBalance) Run() (err error) {
 			var resp *types.TaskManagerResponse
 			resp, err = utils.CallTaskManager(p.config, fmt.Sprintf(`/v1/open/task/end/Full_%d?taskType=rebalance`, tasks[0].ID), "POST")
 			if err != nil || !resp.Data {
-				logrus.Info("call task manager func:end resp:%v, err：%v", resp, err)
+				logrus.Infof("call task manager func:end resp:%v, err:%v", resp, err)
 				return
 			}
 		}

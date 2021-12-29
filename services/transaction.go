@@ -202,6 +202,7 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 var txErrFormat = `
 chain:%s
 hash:%s
+tx_type:%d
 `
 
 func (t *Transaction) isTxBlockSafe(chain string, txHeight, curHeight uint64) bool {
@@ -244,7 +245,7 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 			task.State = int(types.TxSuccessState)
 		} else if receipt.Status == 0 {
 			alert.Dingding.SendAlert("transaction failed",
-				alert.TaskFailedContent("transaction", task.ID, "CheckReceipt", fmt.Errorf(txErrFormat, task.ChainName, task.Hash)), nil)
+				alert.TaskFailedContent("transaction", task.ID, "CheckReceipt", fmt.Errorf(txErrFormat, task.ChainName, task.Hash, task.TransactionType)), nil)
 			task.State = int(types.TxFailedState)
 		}
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
