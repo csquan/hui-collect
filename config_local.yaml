@@ -1,46 +1,61 @@
 database:
   #  db: "heco_test:hDyhVaPfwvPzF8ek@tcp(bigdata-tidb-e604534a50b9d35d.elb.ap-northeast-1.amazonaws.com:4000)/chain_test?charset=utf8mb4"
-  db: "root:123456sj@tcp(127.0.0.1:3306)/rebalance?charset=utf8mb4"
+  # db: "test:123@tcp(127.0.0.1:3306)/rebalance?charset=utf8mb4"
+  db : "root:12345678@tcp(huobichain-dev-01.sinnet.huobiidc.com:3306)/rebalance02?charset=utf8mb4"
   block_worker: 5
   tx_worker: 1
   sql_batch: 500
   retry_times: 5
   retry_interval: 300
 
-bridge_conf:
-  url: "http://cex-bridge-api.test-15.huobiapps.com/cex-bridge-api/v1"
-  timeout: "5s"
-  ak: "kB01A8gsMv2CP4Tctd7XnUaG3iDE9rQJ"
-  sk: "ho8XcsfygSKTLEvPYOZ9W12k0i4IFJbC"
+app_name: rebalance
+env: test20
+apollo:
+  appname: rebalance
+  profile: default
 
-#chainname作为map的key，必须使用全小写，因为获取的时候使用了strings.Tolower
+bridge_conf:
+  #url: "http://cex-bridge-api.test-15.huobiapps.com/cex-bridge-api/v1"
+  url: "http://cex-bridge-api2.tctest-1.tc-jp1.huobiapps.com/cex-bridge-api/v1"
+  timeout: "10s"
+  ak: "vmiNuhGtCVBEzo4lRjf3qXcb26ITHwA0"
+  sk: "z9wvRAjU5cOpBKi13th0x2VP4kfXLDus"
+
+is_check_params: true
+
 chains:
   heco:
     id: 128
     rpc_url: "https://http-mainnet.hecochain.com"
     fetch_timeout: 3000
-    bridge_address: "0x9f0583a209fedbc404c4968e2157c2e7d4359803"
+    bridge_address: "0xd02c3f75dff68e787f028e7214f1089a7c9be5b9"
+    block_safe: 20
   bsc:
     id: 56
     rpc_url: "https://bsc-dataseed.binance.org"
     fetch_timeout: 3000
-    bridge_address: "0x74938228ae77e5fcc3504ad46fac4a965d210761"
+    bridge_address: "0xba1828f24220c8f2ffcb790787a1a7a0d6e7e1c9"
+    block_safe: 15
+  polygon:
+    id: 137
+    rpc_url: "https://polygon-rpc.com"
+    fetch_timeout: 3000
+    bridge_address: "0x83b39565a8632f9e7f8d6ed1cb4850481d956510"
+    block_safe: 128
 
-env: local
+alert:
+  url: "https://oapi.dingtalk.com/robot/send?access_token=aaa86b55b1132b9452a6f51d977aaa3d26ec4857f4f6aa81869f7c7ab06f9e9b"
+  secret: "SECdead74cf499741658a668c2491c4aced51bc2e80bd18cafd09249e85e0119ecc"
 
 api:
-  margin_url: "http://neptune-hermes-mgt-v2.test-15.huobiapps.com/v1/auto-transfer/impermanent-loss-margin-preparing-job/"
-  margin_out_url: "http://neptune-hermes-mgt-v2.test-15.huobiapps.com/v1/auto-transfer/all-margin-balance-transfer-out-job/"
-  # lp_url: "http://neptune-hermes-mgt-h5.test-15.huobiapps.com/v2/v1/open/re"
-  lp_url: "http://neptune-hermes-fe-mgt.test-15.huobiapps.com/v2/open/re"
+  margin_url: "http://neptune-hermes-mgt-v2.test-20.huobiapps.com/v1/auto-transfer/impermanent-loss-margin-preparing-job/"
+  margin_out_url: "http://neptune-hermes-mgt-v2.test-20.huobiapps.com/v1/auto-transfer/all-margin-balance-transfer-out-job/"
+  lp_url: "http://neptune-hermes-mgt-v2.test-20.huobiapps.com/v1/open/re"
   task_manager: "http://neptune-hermes-mgt-v2.test-20.huobiapps.com"
 
-#for margin api sign
 margin:
   app_id: "rebalance-test"
   secret_key: "k0uKyWwYZdaaEIaO"
-
-is_check_params: true
 
 log:
   stdout:
@@ -51,10 +66,17 @@ log:
     path: "/tmp/hermes-rebalance/app.log"
     level: 4
   kafka:
-    enable: false
-    topic: "huobi-test"
+    enable: true
+    topic: "applog-heco"
     kafka_servers:
-      - "kafka-1.huobidev.com:9092"
-      - "kafka-2.huobidev.com:9092"
-      - "kafka-3.huobidev.com:9092"
-    level: 3
+      - "kafka-01.sinnet.huobiidc.com:9092"
+      - "kafka-02.sinnet.huobiidc.com:9092"
+      - "kafka-03.sinnet.huobiidc.com:9092"
+      - "kafka-04.sinnet.huobiidc.com:9092"
+      - "kafka-05.sinnet.huobiidc.com:9092"
+      - "kafka-06.sinnet.huobiidc.com:9092"
+    level: 5
+
+server_conf:
+  users:
+    admin: "10244201"

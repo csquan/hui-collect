@@ -183,16 +183,6 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 	}
 	if err = client.SendTransaction(context.Background(), transaction); err != nil {
 		//TODO nonce too low, 重新走签名流程？
-		if strings.Contains(err.Error(), "nonce too low") {
-			var nonce uint64
-			if nonce, err = types.GetNonce(task.From, task.ChainName); err != nil {
-				logrus.Warnf("get nonce err:%v", err)
-				return err
-			}
-			task.State = int(types.TxUnInitState)
-			task.Nonce = nonce
-			t.db.UpdateTransactionTask(t.db.GetEngine(), task)
-		}
 		logrus.Errorf("SendTransaction err:%v task:%v", err, task)
 		return err
 	}
@@ -239,16 +229,6 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 			return err
 		}
 		if err := client.SendTransaction(context.Background(), transaction); err != nil {
-			if strings.Contains(err.Error(), "nonce too low") {
-				var nonce uint64
-				if nonce, err = types.GetNonce(task.From, task.ChainName); err != nil {
-					logrus.Warnf("get nonce err:%v", err)
-					return nil
-				}
-				task.Nonce = nonce
-				task.State = int(types.TxUnInitState)
-				t.db.UpdateTransactionTask(t.db.GetEngine(), task)
-			}
 			logrus.Warnf("SendTransaction err:%v task:%v", err, task)
 			return nil
 		}

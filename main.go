@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/api"
 	"os"
 	"os/signal"
 	"syscall"
@@ -74,7 +73,7 @@ func main() {
 		logrus.Fatalf("connect to dbConnection error:%v", err)
 	}
 
-	go api.Run(conf.ServerConf, dbConnection)
+	//go api.Run(conf.ServerConf, dbConnection)
 
 	//setup rpc clients
 	clients.Init(conf)
