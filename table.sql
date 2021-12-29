@@ -124,11 +124,11 @@ create TABLE `t_strategy` (
 
 insert into t_strategy(f_chain, f_project, f_currency0, f_currency1, f_enabled)
 values ('bsc', 'biswap', 'bnb', 'usd', false),
-       ('bsc', 'pancake', 'bnb', 'usd', false),
+       ('bsc', 'pancakeswap', 'bnb', 'usd', false),
        ('bsc', 'biswap', 'bnb', 'usdt', false),
-       ('bsc', 'pancake', 'bnb', 'usdt', false),
-       ('bsc', 'pancake', 'cake', 'usd', false),
-       ('bsc', 'pancake', 'cake', 'usdt', false),
+       ('bsc', 'pancakeswap', 'bnb', 'usdt', false),
+       ('bsc', 'pancakeswap', 'cake', 'usd', false),
+       ('bsc', 'pancakeswap', 'cake', 'usdt', false),
        ('bsc', 'biswap', 'btc', 'usdt', false),
        ('bsc', 'biswap', 'eth', 'usdt', false),
        ('bsc', 'solo.top', 'bnb', null, false),
