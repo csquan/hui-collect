@@ -123,3 +123,12 @@ func TaskFailedContent(taskType string, taskID uint64, status string, err error)
 	- err:%v
 	`, taskType, taskID, status, err)
 }
+
+func TaskErrContent(taskType string, taskID uint64, err error) string {
+	return fmt.Sprintf(`
+	#### %s任务异常
+
+	- taskID:%d
+	- err:%v
+	`, taskType, taskID, err)
+}

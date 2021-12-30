@@ -81,3 +81,14 @@ func TestTransactionFaiMsg(t *testing.T) {
 	err := fmt.Errorf(txErrFormat, task.ChainName, task.Hash, task.TransactionType)
 	t.Logf("errmsg:%s", err.Error())
 }
+
+func TestGetAndIncreaseSendTxErrTimes(t *testing.T) {
+	service, _ := NewTransactionService(nil, nil)
+	times := service.GetAndIncreaseSendTxErrTimes(1)
+	t.Log(times)
+	times = service.GetAndIncreaseSendTxErrTimes(2)
+	t.Log(times)
+	times = service.GetAndIncreaseSendTxErrTimes(1)
+	t.Log(times)
+
+}

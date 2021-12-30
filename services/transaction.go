@@ -24,6 +24,10 @@ type Transaction struct {
 	db        types.IDB
 	config    *config.Config
 	clientMap map[string]*ethclient.Client
+	runInfo   map[uint64]*TaskRunInfo
+}
+type TaskRunInfo struct {
+	SendTxErrTimes int
 }
 
 func NewTransactionService(db types.IDB, conf *config.Config) (p *Transaction, err error) {
@@ -31,8 +35,20 @@ func NewTransactionService(db types.IDB, conf *config.Config) (p *Transaction, e
 		db:        db,
 		config:    conf,
 		clientMap: clients.ClientMap,
+		runInfo:   make(map[uint64]*TaskRunInfo),
 	}
 	return
+}
+
+func (t *Transaction) GetAndIncreaseSendTxErrTimes(taskID uint64) int {
+	info, ok := t.runInfo[taskID]
+	if !ok {
+		t.runInfo[taskID] = &TaskRunInfo{SendTxErrTimes: 1}
+		return 0
+	} else {
+		t.runInfo[taskID] = &TaskRunInfo{info.SendTxErrTimes + 1}
+		return info.SendTxErrTimes
+	}
 }
 
 func (t *Transaction) Name() string {
@@ -229,6 +245,11 @@ func (t *Transaction) handleTransactionCheck(task *types.TransactionTask) error 
 			return err
 		}
 		if err := client.SendTransaction(context.Background(), transaction); err != nil {
+			times := t.GetAndIncreaseSendTxErrTimes(task.ID)
+			if times == 30 || times == 300 {
+				alert.Dingding.SendAlert("send tx err",
+					alert.TaskErrContent("transaction", task.ID, err), nil)
+			}
 			logrus.Warnf("SendTransaction err:%v task:%v", err, task)
 			return nil
 		}
