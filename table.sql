@@ -209,5 +209,5 @@ values ('btc', 'heco', 'HBTC', '0x66a79d23e58475d2738179ca52cd0b41d73f0bea', 18,
        ('usdc', 'polygon', 'USDC', '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', 6, 'usdc'),
        ('dai', 'heco', 'DAI-HECO', '0x9362bbef4b8313a8aa9f0c9808b80577aa26b73b', 18, 'dai'),
        ('dai', 'polygon', 'DAI', '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063', 18, 'dai'),
-       ('usd', 'heco', 'HUSD', '0x0298c2b32eae4da002a15f36fdf7615bea3da047', 8, 'husd'),
-       ('usd', 'bsc', 'BUSD', '0xe9e7cea3dedca5984780bafc599bd69add087d56', 18, 'busd');
+       ('usd', 'heco', 'HUSD', '0x0298c2b32eae4da002a15f36fdf7615bea3da047', 8, 'usd'),
+       ('usd', 'bsc', 'BUSD', '0xe9e7cea3dedca5984780bafc599bd69add087d56', 18, 'usd');
