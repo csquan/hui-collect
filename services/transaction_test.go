@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/types"
 )
 
 var c *ethclient.Client
@@ -68,4 +70,25 @@ func TestBlockSafe(t *testing.T) {
 			t.Errorf("unexpected i:%d", i)
 		}
 	}
+}
+
+func TestTransactionFaiMsg(t *testing.T) {
+	task := &types.TransactionTask{
+		ChainName:       "bsc",
+		Hash:            "hash",
+		TransactionType: 2,
+	}
+	err := fmt.Errorf(txErrFormat, task.ChainName, task.Hash, task.TransactionType)
+	t.Logf("errmsg:%s", err.Error())
+}
+
+func TestGetAndIncreaseSendTxErrTimes(t *testing.T) {
+	service, _ := NewTransactionService(nil, nil)
+	times := service.GetAndIncreaseSendTxErrTimes(1)
+	t.Log(times)
+	times = service.GetAndIncreaseSendTxErrTimes(2)
+	t.Log(times)
+	times = service.GetAndIncreaseSendTxErrTimes(1)
+	t.Log(times)
+
 }

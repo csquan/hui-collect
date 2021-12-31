@@ -115,7 +115,7 @@ func (p *PartReBalance) Run() (err error) {
 			var resp *types.TaskManagerResponse
 			resp, err = utils.CallTaskManager(p.config, fmt.Sprintf("/v1/open/task/end/%s?taskType=rebalance", tasks[0].TaskID), "POST")
 			if err != nil || !resp.Data {
-				logrus.Info("call task manager end resp:%v, err：%v, taskID:%s", resp, err, tasks[0].TaskID)
+				logrus.Infof("call task manager end resp:%v, err:%v, taskID:%s", resp, err, tasks[0].TaskID)
 				return
 			}
 		}
