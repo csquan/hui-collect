@@ -44,7 +44,6 @@ func (t *ServiceScheduler) Start() {
 	if err != nil {
 		logrus.Fatalf("new part rebalance service error: %v", err)
 	}
-	t.services = append(t.services, partReBalance)
 
 	transaction, err := NewTransactionService(t.db, t.conf)
 	if err != nil {
