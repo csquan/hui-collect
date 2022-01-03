@@ -3,16 +3,31 @@ package part_rebalance
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
 type investHandler struct {
 	db       types.IDB
-	eChecker eventChecker
+	eChecker EventChecker
+}
+
+func newInvestHandler(db types.IDB, conf *config.Config) *investHandler {
+	eChecker := &eventCheckHandler{
+		url: "", //TODO
+		c: &http.Client{
+			Timeout: 15 * time.Second,
+		},
+	}
+	return &investHandler{
+		db:       db,
+		eChecker: eChecker,
+	}
 }
 
 func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
@@ -37,9 +52,9 @@ func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished b
 
 func (i *investHandler) MoveToNextState(task *types.PartReBalanceTask, nextState types.PartReBalanceState) (err error) {
 	var txTasks []*types.TransactionTask
-	var params []*checkEventParam
+	var params []*CheckEventParam
 	for _, txTask := range txTasks {
-		param := &checkEventParam{
+		param := &CheckEventParam{
 			chainID: txTask.ChainId,
 			hash:    txTask.Hash,
 		}
@@ -67,7 +82,7 @@ func (i *investHandler) GetOpenedTaskMsg(taskId uint64) string {
 	return ""
 }
 
-func (i *investHandler) checkEventsHandled(params []*checkEventParam) (bool, error) {
+func (i *investHandler) checkEventsHandled(params []*CheckEventParam) (bool, error) {
 	for _, p := range params {
 		ok, err := i.eChecker.checkEventHandled(p)
 		if err != nil {
@@ -80,13 +95,14 @@ func (i *investHandler) checkEventsHandled(params []*checkEventParam) (bool, err
 	return true, nil
 }
 
-type checkEventParam struct {
+type CheckEventParam struct {
 	hash    string
 	chainID int
 }
 
-type eventChecker interface {
-	checkEventHandled(*checkEventParam) (bool, error)
+//go:generate mockgen -source=$GOFILE -destination=./mock/mock_invest_handler.go -package=mock
+type EventChecker interface {
+	checkEventHandled(*CheckEventParam) (bool, error)
 }
 
 type eventCheckHandler struct {
@@ -94,6 +110,6 @@ type eventCheckHandler struct {
 	c   *http.Client
 }
 
-func (e *eventCheckHandler) checkEventHandled(*checkEventParam) (bool, error) {
+func (e *eventCheckHandler) checkEventHandled(*CheckEventParam) (bool, error) {
 	return true, nil
 }
