@@ -163,3 +163,7 @@ func (m *Mysql) SaveFullRebalanceTask(itf xorm.Interface, task *types.FullReBala
 	}
 	return nil
 }
+func (m *Mysql) UpdateTaskSwitch(isRun bool) error {
+	_, err := m.engine.Exec(fmt.Sprintf("update t_task_switch set f_is_run = %t", isRun))
+	return err
+}

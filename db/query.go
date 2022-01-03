@@ -126,3 +126,15 @@ func (m *Mysql) GetFullRelalanceTask(taskId uint64) (*types.FullReBalanceTask, e
 	}
 	return ret, nil
 }
+
+func (m *Mysql) GetTaskSwitch() (bool, error){
+	var isRun bool
+	ok, err := m.engine.SQL("select f_is_run from t_task_switch").Limit(1).Get(&isRun)
+	if err != nil {
+		return false, err
+	}
+	if !ok {
+		return false, nil
+	}
+	return isRun, nil
+}

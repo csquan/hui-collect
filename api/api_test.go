@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/base64"
 	"fmt"
 	"testing"
 	"time"
@@ -29,4 +30,9 @@ func TestAPIRun(t *testing.T) {
 	}, dbtest)
 	t.Logf("http server start")
 	time.Sleep(600 * time.Second)
+}
+
+func TestAuthorization(t *testing.T) {
+	auth := "admin:10244201"
+	t.Logf("Basic "+base64.StdEncoding.EncodeToString([]byte(auth)))
 }

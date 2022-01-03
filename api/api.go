@@ -24,6 +24,16 @@ type FullRebalanceHandler struct {
 }
 
 func (h *FullRebalanceHandler) AddTask(c *gin.Context) {
+	isRun, err := h.db.GetTaskSwitch()
+	if err != nil {
+		logrus.Errorf("get task switch err:%v", err)
+		c.JSON(http.StatusInternalServerError, "server err")
+		return
+	}
+	if !isRun{
+		c.JSON(http.StatusConflict, "task switch is closed")
+		return
+	}
 	tasks, err := h.db.GetOpenedFullReBalanceTasks()
 	if err != nil {
 		logrus.Errorf("get opened full task err:%v", err)
@@ -93,6 +103,36 @@ func (h *FullRebalanceHandler) GetTask(c *gin.Context) {
 	c.JSON(http.StatusOK, taskView)
 }
 
+func (h *FullRebalanceHandler) Open(c *gin.Context) {
+	err := h.db.UpdateTaskSwitch(true)
+	if err != nil {
+		logrus.Errorf("open task switch err:%v", err)
+		c.JSON(http.StatusInternalServerError, "server err")
+		return
+	}
+	c.JSON(http.StatusOK, "success")
+}
+
+func (h *FullRebalanceHandler) Close(c *gin.Context) {
+	err := h.db.UpdateTaskSwitch(false)
+	if err != nil {
+		logrus.Errorf("open task switch err:%v", err)
+		c.JSON(http.StatusInternalServerError, "server err")
+		return
+	}
+	c.JSON(http.StatusOK, "success")
+}
+
+func (h *FullRebalanceHandler) GetTaskSwitch(c *gin.Context) {
+	isRun, err := h.db.GetTaskSwitch()
+	if err != nil{
+		logrus.Errorf("get task switch err:%v", err)
+		c.JSON(http.StatusInternalServerError, "server err")
+		return
+	}
+	c.JSON(http.StatusOK, isRun)
+}
+
 type CustomResponseWriter struct {
 	gin.ResponseWriter
 	body *bytes.Buffer
@@ -127,9 +167,14 @@ func Run(conf config.ServerConf, db types.IDB) {
 
 	authorized.POST("fullRebalance/create", h.AddTask)
 	authorized.GET("fullRebalance/get", h.GetTask)
+	authorized.GET("taskSwitch/get", h.GetTaskSwitch)
+	authorized.POST("taskSwitch/open", h.Open)
+	authorized.POST("taskSwitch/close", h.Close)
+
 
 	err := r.Run(fmt.Sprintf(":%d", conf.Port))
 	if err != nil {
 		logrus.Fatalf("start http server err:%v", err)
 	}
 }
+

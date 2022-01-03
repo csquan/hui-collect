@@ -25,6 +25,7 @@ type IReader interface {
 
 	GetCurrency() ([]*Currency, error)
 	GetTokens() ([]*Token, error)
+	GetTaskSwitch() (bool, error)
 }
 
 type IWriter interface {
@@ -50,6 +51,7 @@ type IWriter interface {
 	SaveCrossSubTasks(itf xorm.Interface, subTask []*CrossSubTask) error
 	//update cross sub task state
 	UpdateCrossSubTaskState(id uint64, state int) error
+	UpdateTaskSwitch(isRun bool) error
 }
 
 type IDB interface {

@@ -208,3 +208,14 @@ values ('btc', 0.001, 0.0001, 3),
        ('usdc', 10, 1, 0),
        ('dai', 10, 1, 0),
        ('usd', 10, 1, 0);
+
+create TABLE `t_task_switch`
+(
+    `f_id`     int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `f_is_run` tinyint(1)       NOT NULL COMMENT 'is_run',
+    PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+    COMMENT ='运行时策略';
+
+insert into t_task_switch (f_is_run) values (true);
