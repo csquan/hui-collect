@@ -57,7 +57,7 @@ func (i *investHandler) MoveToNextState(task *types.PartReBalanceTask, nextState
 		})
 	} else {
 		b, _ := json.Marshal(params)
-		logrus.Warnf("event not handled hashs:%s", b)
+		logrus.Warnf("event not handled hashs:%s,err:%v", b, err1)
 	}
 
 	return
@@ -92,4 +92,8 @@ type eventChecker interface {
 type eventCheckHandler struct {
 	url string
 	c   *http.Client
+}
+
+func (e *eventCheckHandler) checkEventHandled(*checkEventParam) (bool, error) {
+	return true, nil
 }
