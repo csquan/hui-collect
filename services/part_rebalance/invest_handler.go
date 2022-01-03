@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
+	"net/http"
 )
 
 type investHandler struct {
@@ -47,4 +48,22 @@ func (i *investHandler) MoveToNextState(task *types.PartReBalanceTask, nextState
 
 func (i *investHandler) GetOpenedTaskMsg(taskId uint64) string {
 	return ""
+}
+
+type checkEventParam struct {
+	hash string
+	chainID int
+}
+
+type eventChecker interface {
+	checkEventHandled([]*checkEventParam) (bool, error)
+}
+
+type eventCheckHandler struct {
+	url string
+	c *http.Client
+}
+
+func(e *eventCheckHandler) checkEventHandled([]*checkEventParam) (bool, error){
+	return true, nil
 }
