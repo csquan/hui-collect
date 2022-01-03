@@ -127,7 +127,7 @@ func (m *Mysql) GetFullRelalanceTask(taskId uint64) (*types.FullReBalanceTask, e
 	return ret, nil
 }
 
-func (m *Mysql) GetTaskSwitch() (bool, error){
+func (m *Mysql) GetTaskSwitch() (bool, error) {
 	var isRun bool
 	ok, err := m.engine.SQL("select f_is_run from t_task_switch").Limit(1).Get(&isRun)
 	if err != nil {
@@ -137,4 +137,13 @@ func (m *Mysql) GetTaskSwitch() (bool, error){
 		return false, nil
 	}
 	return isRun, nil
+}
+
+func (m *Mysql) GetTransactionTasksWithPartRebalanceId(partRebalanceId uint64, transactionType types.TransactionType) ([]*types.TransactionTask, error) {
+	tasks := make([]*types.TransactionTask, 0)
+	err := m.engine.Table("t_transaction_task").Where("f_rebalance_id = ? and f_type = ?", partRebalanceId, transactionType).Find(&tasks)
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }

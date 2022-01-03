@@ -18,6 +18,8 @@ type IReader interface {
 	//GetOrderID() (int, error)
 	GetTransactionTasksWithFullRebalanceId(fullReBalanceId uint64, transactionType TransactionType) ([]*TransactionTask, error)
 
+	GetTransactionTasksWithPartRebalanceId(partRebalanceId uint64, transactionType TransactionType) ([]*TransactionTask, error)
+
 	GetOpenedCrossTasks() ([]*CrossTask, error)
 	GetCrossTasksByReBalanceId(reBalanceId uint64) ([]*CrossTask, error)
 	GetCrossSubTasks(crossTaskId uint64) ([]*CrossSubTask, error)
