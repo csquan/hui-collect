@@ -88,10 +88,6 @@ func (p *PartReBalance) Run() (err error) {
 	}
 
 	finished, next, err := handler.CheckFinished(tasks[0])
-	if err != nil {
-		return err
-	}
-
 	if !finished {
 		now := time.Now().Unix()
 		if now-p.ticker > p.config.Alert.MaxWaitTime {
@@ -104,7 +100,9 @@ func (p *PartReBalance) Run() (err error) {
 		}
 		return
 	}
-
+	if err != nil {
+		return err
+	}
 	if finished {
 		p.clearTick()
 	}
