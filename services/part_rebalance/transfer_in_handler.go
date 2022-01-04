@@ -1,6 +1,7 @@
 package part_rebalance
 
 import (
+	"fmt"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -93,5 +94,8 @@ func CreateTransactionTask(task *types.PartReBalanceTask, transactionType types.
 }
 
 func (t *transferInHandler) GetOpenedTaskMsg(taskId uint64) string {
-	return ""
+	return fmt.Sprintf(`
+	# receiveFromBridge
+	- taskID: %d
+	`, taskId)
 }

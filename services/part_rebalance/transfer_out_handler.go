@@ -1,6 +1,7 @@
 package part_rebalance
 
 import (
+	"fmt"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -88,5 +89,8 @@ func (t *transferOutHandler) MoveToNextState(task *types.PartReBalanceTask, next
 }
 
 func (t *transferOutHandler) GetOpenedTaskMsg(taskId uint64) string {
-	return ""
+	return fmt.Sprintf(`
+	# sendToBridge
+	- taskID: %d
+	`, taskId)
 }

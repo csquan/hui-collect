@@ -125,9 +125,9 @@ func (i *initHandler) checkSendToBridgeParam(param *types.SendToBridgeParam, tas
 		err = fmt.Errorf("sendToBridge param error amount:%s", param.Amount)
 		return
 	}
-	valutAmout := output[0].(*big.Int)
-	logrus.Infof("sendBridge amout:%s,valutAmout:%s", param.Amount, valutAmout.String())
-	if valutAmout.Cmp(amount) >= 0 {
+	vaultAmount := output[0].(*big.Int)
+	logrus.Infof("sendBridge amout:%s,valutAmout:%s", param.Amount, vaultAmount.String())
+	if vaultAmount.Cmp(amount) >= 0 {
 		return true, nil
 	}
 	errMsg := fmt.Errorf("sendToBridge amount not enough, chain:%s, vault:%s vaultAmount:%s less then param amount:%s",
