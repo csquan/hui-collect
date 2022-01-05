@@ -371,7 +371,7 @@ func (w *claimLPHandler) CheckFinished(task *types.FullReBalanceTask) (finished 
 
 		w.stateChanged(types.FullReBalanceFailed, failed, task)
 
-		return false, types.FullReBalanceFailed, nil
+		return true, types.FullReBalanceFailed, nil
 	}
 	return false, types.FullReBalanceClaimLP, nil
 }
@@ -462,5 +462,8 @@ func (w *claimLPHandler) stateChanged(next types.FullReBalanceState, txTasks []*
 }
 
 func (w *claimLPHandler) GetOpenedTaskMsg(taskId uint64) string {
-	return ""
+	return fmt.Sprintf(`
+	# fullRebalance claimLP
+	- taskID: %d
+	`, taskId)
 }

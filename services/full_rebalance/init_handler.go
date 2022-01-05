@@ -31,6 +31,9 @@ func (i *initHandler) CheckFinished(task *types.FullReBalanceTask) (finished boo
 }
 
 func (i *initHandler) GetOpenedTaskMsg(taskId uint64) string {
-	return ""
+	return fmt.Sprintf(`
+	# fullRebalance init
+	- taskID: %d
+	`, taskId)
 }
 

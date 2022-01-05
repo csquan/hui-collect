@@ -2,6 +2,7 @@ package full_rebalance
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
@@ -71,5 +72,8 @@ func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 }
 
 func (i *marginOutHandler) GetOpenedTaskMsg(taskId uint64) string {
-	return ""
+	return fmt.Sprintf(`
+	# fullMarginOut
+	- taskID: %d
+	`, taskId)
 }

@@ -43,15 +43,13 @@ chains:
     bridge_address: "0x83b39565a8632f9e7f8d6ed1cb4850481d956510"
     block_safe: 128
 
-alert:
-  url: "https://oapi.dingtalk.com/robot/send?access_token=aaa86b55b1132b9452a6f51d977aaa3d26ec4857f4f6aa81869f7c7ab06f9e9b"
-  secret: "SECdead74cf499741658a668c2491c4aced51bc2e80bd18cafd09249e85e0119ecc"
+
 
 api:
-  margin_url: "http://neptune-hermes-mgt-v2.test-20.huobiapps.com/v1/auto-transfer/impermanent-loss-margin-preparing-job/"
-  margin_out_url: "http://neptune-hermes-mgt-v2.test-20.huobiapps.com/v1/auto-transfer/all-margin-balance-transfer-out-job/"
-  lp_url: "http://neptune-hermes-mgt-v2.test-20.huobiapps.com/v1/open/re"
-  task_manager: "http://neptune-hermes-mgt-v2.test-20.huobiapps.com"
+  margin_url: "http://localhost:8088/v1/auto-transfer/impermanent-loss-margin-preparing-job/"
+  margin_out_url: "http://localhost:8088/v1/auto-transfer/all-margin-balance-transfer-out-job/"
+  lp_url: "http://localhost:8088/v1/open/re"
+  task_manager: "http://localhost:8088/"
 
 margin:
   app_id: "rebalance-test"

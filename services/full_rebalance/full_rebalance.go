@@ -66,10 +66,10 @@ func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, e
 				conf: conf,
 				db:   db,
 			},
-			// // 计算状态由python处理
-			// //types.FullReBalanceParamsCalc: &paramsCalcHandler{
-			// //	db: db,
-			// //},
+			//计算状态由python处理
+			types.FullReBalanceParamsCalc: &paramsCalcHandler{
+				db: db,
+			},
 			types.FullReBalanceOndoing: &doPartRebalanceHandler{
 				db: db,
 			},
@@ -147,14 +147,12 @@ func (p *FullReBalance) Run() (err error) {
 	if err := checkState(next); err != nil {
 		return fmt.Errorf("state err:%v,state:%d,tid:%d,handler:%s", err, next, tasks[0].ID, handler.Name())
 	}
-	if next == types.FullReBalanceSuccess || next == types.FullReBalanceFailed || next == types.FullReBalanceParamsCalc {
-		if next == types.FullReBalanceFailed || next == types.FullReBalanceSuccess {
-			var resp *types.TaskManagerResponse
-			resp, err = utils.CallTaskManager(p.config, fmt.Sprintf(`/v1/open/task/end/Full_%d?taskType=rebalance`, tasks[0].ID), "POST")
-			if err != nil || !resp.Data {
-				logrus.Infof("call task manager func:end resp:%v, err:%v", resp, err)
-				return
-			}
+	if next == types.FullReBalanceSuccess || next == types.FullReBalanceFailed {
+		var resp *types.TaskManagerResponse
+		resp, err = utils.CallTaskManager(p.config, fmt.Sprintf(`/v1/open/task/end/Full_%d?taskType=rebalance`, tasks[0].ID), "POST")
+		if err != nil || !resp.Data {
+			logrus.Infof("call task manager func:end resp:%v, err:%v", resp, err)
+			return
 		}
 		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status))
 		//update state

@@ -42,5 +42,8 @@ func (d *doPartRebalanceHandler) CheckFinished(task *types.FullReBalanceTask) (f
 }
 
 func (d *doPartRebalanceHandler) GetOpenedTaskMsg(taskId uint64) string {
-	return ""
+	return fmt.Sprintf(`
+	# fullRebalance doPartRebalance
+	- taskID: %d
+	`, taskId)
 }

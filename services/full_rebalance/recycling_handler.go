@@ -49,9 +49,6 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		ReceiveFromBridgeParams: make([]*types.ReceiveFromBridgeParam, 0),
 		InvestParams:            make([]*types.InvestParam, 0),
 	}
-	if res.VaultInfoList == nil || len(res.VaultInfoList) == 0 {
-		return fmt.Errorf("recycling get LP, vaultInfoList is null, task:%+v, res:%+v", task, res)
-	}
 	for _, vault := range res.VaultInfoList {
 		if err = r.appendParam(vault, partRebalanceParam, tokens, currencyList); err != nil {
 			logrus.Warnf("recyclingHandler appendParam err:%v, res:%+v, task:%+v", err, res, task)
