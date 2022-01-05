@@ -49,11 +49,16 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		ReceiveFromBridgeParams: make([]*types.ReceiveFromBridgeParam, 0),
 		InvestParams:            make([]*types.InvestParam, 0),
 	}
+	if res.VaultInfoList == nil || len(res.VaultInfoList) == 0 {
+		return fmt.Errorf("recycling get LP, vaultInfoList is null, task:%+v, res:%+v", task, res)
+	}
 	for _, vault := range res.VaultInfoList {
 		if err = r.appendParam(vault, partRebalanceParam, tokens, currencyList); err != nil {
+			logrus.Warnf("recyclingHandler appendParam err:%v, res:%+v, task:%+v", err, res, task)
 			return
 		}
 	}
+	logrus.Infof("recyclingHandler appendParam res:%+v, task:%+v, param:%+v", res, task, partRebalanceParam)
 	data, _ := json.Marshal(partRebalanceParam)
 	if len(data) > 65535 {
 		return fmt.Errorf("part rebalance size is over 65535")
@@ -225,5 +230,8 @@ func mustGetChainInfo(chainName string, conf *config.Config) *config.ChainInfo {
 }
 
 func (r *recyclingHandler) GetOpenedTaskMsg(taskId uint64) string {
-	return ""
+	return fmt.Sprintf(`
+	# recycling
+	- taskID: %d
+	`, taskId)
 }
