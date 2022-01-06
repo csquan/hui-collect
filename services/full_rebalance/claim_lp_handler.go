@@ -113,13 +113,59 @@ func strMustToDecimal(v string) decimal.Decimal {
 	return num
 }
 
-func findParams(params []*claimParam, vaultAddr string) *claimParam {
+func findParams(params []*claimParam, chain, vaultAddr string) *claimParam {
 	for _, param := range params {
-		if param.VaultAddr == vaultAddr {
+		if param.VaultAddr == vaultAddr && param.ChainName == chain {
 			return param
 		}
 	}
 	return nil
+}
+
+func (w *claimLPHandler) getSoloClaimParam(vaults []*types.VaultInfo) ([]*claimParam, error) {
+	params := make([]*claimParam, 0)
+	for _, info := range vaults {
+		for chain, strategies := range info.Strategies {
+			if strings.ToUpper(chain) == "HECO" {
+				continue
+			}
+			soloStrategies, ok := strategies["Solo.top"] //目前solo项目只有一个
+			if !ok || len(soloStrategies) == 0 {
+				continue
+			}
+			for _, s := range soloStrategies {
+				vault, ok := info.ActiveAmount[chain]
+				if !ok {
+					logrus.Errorf("strategy chain not exist in vaults chain:%s", chain)
+					return nil, fmt.Errorf("stratey chain not exist in valuts chain:%s", chain)
+				}
+				if vault.SoloAmount == "" {
+					vault.SoloAmount = "0"
+				}
+				base := strMustToDecimal(vault.SoloAmount)
+				if base.Equal(decimal.Zero) {
+					continue
+				}
+				quote := strMustToDecimal("0")
+				p := &claimParam{
+					ChainId:   0,
+					ChainName: chain,
+					VaultAddr: vault.ControllerAddress,
+					Strategies: []*strategy{
+						&strategy{
+							StrategyAddr: s.Addr,
+							BaseSymbol:   s.TokenSymbol,
+							QuoteSymbol:  "",
+							BaseAmount:   base,
+							QuoteAmount:  quote,
+						},
+					},
+				}
+				params = append(params, p)
+			}
+		}
+	}
+	return params, nil
 }
 
 func (w *claimLPHandler) getClaimParams(lps []*types.LiquidityProvider, vaults []*types.VaultInfo) (params []*claimParam, err error) {
@@ -152,7 +198,7 @@ func (w *claimLPHandler) getClaimParams(lps []*types.LiquidityProvider, vaults [
 					return nil, fmt.Errorf("vault addr not found,symbol:%s, chain:%s", s.BaseSymbol, lp.Chain)
 				}
 
-				param := findParams(params, addr)
+				param := findParams(params, lp.Chain, addr)
 				if param == nil {
 					param := &claimParam{
 						ChainId:    lp.ChainId,
@@ -167,7 +213,18 @@ func (w *claimLPHandler) getClaimParams(lps []*types.LiquidityProvider, vaults [
 			}
 		}
 	}
-
+	soloParams, err := w.getSoloClaimParam(vaults)
+	if err != nil {
+		return nil, fmt.Errorf("get slolo claim param err:%v", err)
+	}
+	for _, soloParam := range soloParams {
+		param := findParams(params, soloParam.ChainName, soloParam.VaultAddr)
+		if param == nil {
+			params = append(params, soloParam)
+		} else {
+			param.Strategies = append(param.Strategies, soloParam.Strategies...)
+		}
+	}
 	return params, nil
 }
 
@@ -209,13 +266,18 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 			bases = append(bases, base)
 
 			//quote
-			decimal1, ok := w.token.GetDecimals(param.ChainName, s.QuoteSymbol)
-			if !ok {
-				logrus.Fatalf("unexpectd decimal quoteSymbol:%s,chain:%s", s.QuoteSymbol, param.ChainName)
+			if s.QuoteSymbol != "" { //多币
+				decimal1, ok := w.token.GetDecimals(param.ChainName, s.QuoteSymbol)
+				if !ok {
+					logrus.Fatalf("unexpectd decimal quoteSymbol:%s,chain:%s", s.QuoteSymbol, param.ChainName)
+				}
+				quoteDecimal := powN(s.QuoteAmount, decimal1)
+				quote := decimalToBigInt(quoteDecimal)
+				quotes = append(quotes, quote)
+			} else { //单币
+				quotes = append(quotes, big.NewInt(0))
 			}
-			quoteDecimal := powN(s.QuoteAmount, decimal1)
-			quote := decimalToBigInt(quoteDecimal)
-			quotes = append(quotes, quote)
+
 			claimIds = append(claimIds, big.NewInt(0))
 		}
 		logrus.Infof("claimAll tid:%d,addrs:%v,bases:%v,quotes:%v,claimIds:%v", tid, addrs, bases, quotes, claimIds)
@@ -266,6 +328,21 @@ func (w *claimLPHandler) insertTxTasksAndUpdateState(txTasks []*types.Transactio
 	return err1
 }
 
+func (w *claimLPHandler) getVault(tokenSymbol, chain string, vaults []*types.VaultInfo) *types.ControllerInfo {
+	currency := w.token.GetCurrency(chain, tokenSymbol)
+	for _, vault := range vaults {
+		if vault.Currency == currency {
+			c, ok := vault.ActiveAmount[chain]
+			if !ok {
+				b, _ := json.Marshal(vault)
+				logrus.Fatalf("vault activeAmount not found tokenSymbol:%s,chain:%s,vault:%s", tokenSymbol, chain, b)
+			}
+			return c
+		}
+	}
+	return nil
+}
+
 func (w *claimLPHandler) getVaultAddr(tokenSymbol, chain string, vaults []*types.VaultInfo) (string, bool) {
 	currency := w.token.GetCurrency(chain, tokenSymbol)
 	for _, vault := range vaults {
@@ -300,6 +377,12 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 		return fmt.Errorf("lp data valutlist empty")
 	}
 	params, err := w.getClaimParams(lps, data.VaultInfoList)
+	var b0, b1 []byte
+	if params != nil {
+		b0, _ = json.Marshal(params)
+		b1, _ = json.Marshal(data)
+	}
+	logrus.Infof("claimParams input:%s,params:%s,err:%v", b1, b0, err)
 	if err != nil {
 		b0, _ := json.Marshal(lps)
 		b1, _ := json.Marshal(data.VaultInfoList)

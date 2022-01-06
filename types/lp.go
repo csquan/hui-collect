@@ -40,11 +40,17 @@ type LpInfo struct {
 	QuoteTokenAmount  string `json:"quoteTokenAmount"`
 	StrategyAddress   string `json:"strategyAddress"`
 }
+
+type Strategy struct {
+	Addr        string `json:"strategyAddress"`
+	TokenSymbol string `json:"tokenSymbol"`
+}
 type VaultInfo struct {
-	TokenSymbol  string                     `json:"tokenSymbol"`
-	Chain        string                     `json:"chain"`
-	Currency     string                     `json:"currency"`
-	ActiveAmount map[string]*ControllerInfo `json:"activeAmount"`
+	TokenSymbol  string                            `json:"tokenSymbol"`
+	Chain        string                            `json:"chain"`
+	Currency     string                            `json:"currency"`
+	ActiveAmount map[string]*ControllerInfo        `json:"activeAmount"`
+	Strategies   map[string]map[string][]*Strategy `json:"strategies"`
 }
 
 type ControllerInfo struct {
