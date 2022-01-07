@@ -55,7 +55,12 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 			return
 		}
 	}
-	logrus.Infof("recyclingHandler appendParam res:%+v, task:%+v, param:%+v", res, task, partRebalanceParam)
+	var b0, b1 []byte
+	if res != nil {
+		b0, _ = json.Marshal(res)
+		b1, _ = json.Marshal(partRebalanceParam)
+	}
+	logrus.Infof("recyclingHandler appendParam res:%s, task:%+v, param:%s", b0, task, b1)
 	data, _ := json.Marshal(partRebalanceParam)
 	if len(data) > 65535 {
 		return fmt.Errorf("part rebalance size is over 65535")
