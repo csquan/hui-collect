@@ -139,7 +139,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			return
 		}
 		amount = amount.Add(soloAmount)
-		amount = amount.Truncate(currency.CrossScale)
+		//amount = amount.Truncate(currency.CrossScale) 由跨链桥处理
 
 		if amount.Cmp(currency.Min) == -1 {
 			logrus.Infof("amount less than currency.min amount:%s, min:%s,vaultAddr:%s", amount.String(), currency.Min.String(), info.ControllerAddress)
