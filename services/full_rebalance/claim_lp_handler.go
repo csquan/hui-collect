@@ -306,7 +306,8 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 	return tasks, nil
 }
 
-func (w *claimLPHandler) updateState(fullTask *types.FullReBalanceTask, state types.FullReBalanceState) error {
+func (w *claimLPHandler) updateState(fullTask *types.FullReBalanceTask, state types.FullReBalanceState, lpData *types.Data) error {
+	fullTask.AppendMessage(&types.FullReMsg{Status: "ClaimLP", Params: lpData})
 	fullTask.State = state
 	return w.db.UpdateFullReBalanceTask(w.db.GetEngine(), fullTask)
 }
@@ -367,7 +368,7 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 
 	var lps = data.LiquidityProviderList
 	if len(lps) == 0 {
-		err = w.updateState(task, types.FullReBalanceClaimLP)
+		err = w.updateState(task, types.FullReBalanceClaimLP, data)
 		if err != nil {
 			return fmt.Errorf("update claim state err:%v,tid:%d", err, task.ID)
 		}
@@ -397,7 +398,7 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 		return err
 	}
 	if len(txTasks) == 0 {
-		err = w.updateState(task, types.FullReBalanceClaimLP)
+		err = w.updateState(task, types.FullReBalanceClaimLP, data)
 		if err != nil {
 			return fmt.Errorf("update claim state err:%v,tid:%d", err, task.ID)
 		}
@@ -407,6 +408,7 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 		logrus.Errorf("set gas_price and fee err:%v,tid:%d", err, task.ID)
 		return err
 	}
+	task.AppendMessage(&types.FullReMsg{Status: "ClaimLP", Params: data})
 	err = w.insertTxTasksAndUpdateState(txTasks, task, types.FullReBalanceClaimLP)
 	if err == nil {
 		w.stateChanged(types.FullReBalanceClaimLP, txTasks, task)

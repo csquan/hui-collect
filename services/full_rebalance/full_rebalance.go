@@ -142,11 +142,10 @@ func (p *FullReBalance) Run() (err error) {
 	} else {
 		p.clearTick()
 	}
-	var status string
-	tasks[0].Message, status = utils.GenFullRebalanceMessage(next, "")
 	if err := checkState(next); err != nil {
 		return fmt.Errorf("state err:%v,state:%d,tid:%d,handler:%s", err, next, tasks[0].ID, handler.Name())
 	}
+	status := types.FullReBalanceStateName[tasks[0].State]
 	if next == types.FullReBalanceSuccess || next == types.FullReBalanceFailed {
 		var resp *types.TaskManagerResponse
 		resp, err = utils.CallTaskManager(p.config, fmt.Sprintf(`/v1/open/task/end/Full_%d?taskType=rebalance`, tasks[0].ID), "POST")
@@ -155,9 +154,7 @@ func (p *FullReBalance) Run() (err error) {
 			return
 		}
 		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status))
-		//update state
-		tasks[0].State = next
-		return p.db.UpdateFullReBalanceTask(p.db.GetEngine(), tasks[0])
+		return moveState(p.db, tasks[0], next, nil)
 	} else {
 		nextHandler := p.getHandler(next)
 		if nextHandler == nil {
@@ -166,12 +163,18 @@ func (p *FullReBalance) Run() (err error) {
 			return
 		}
 		if err := nextHandler.Do(tasks[0]); err != nil {
-			message, _ := utils.GenFullRebalanceMessage(next, fmt.Sprintf("%v", err))
-			p.db.UpdateFullReBalanceTaskMessage(tasks[0].ID, message)
 			logrus.Errorf("handler do err:%v,name:%s", err, nextHandler.Name())
 			return err
 		}
 		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status))
 	}
 	return
+}
+
+
+func moveState(db types.IDB, task *types.FullReBalanceTask, state types.FullReBalanceState, params interface{}) error {
+	status := types.FullReBalanceStateName[state]
+	task.AppendMessage(&types.FullReMsg{Status: status, Params: params})
+	task.State = state
+	return db.UpdateFullReBalanceTask(db.GetEngine(), task)
 }

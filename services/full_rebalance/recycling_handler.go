@@ -74,6 +74,7 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		if execErr != nil {
 			return
 		}
+		task.AppendMessage(&types.FullReMsg{Status: "Recycling", Params: res})
 		task.State = types.FullReBalanceRecycling
 		execErr = r.db.UpdateFullReBalanceTask(session, task)
 		if execErr != nil {
@@ -83,6 +84,7 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	})
 	return
 }
+
 
 func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	partTask, err := r.db.GetPartReBalanceTaskByFullRebalanceID(task.ID)

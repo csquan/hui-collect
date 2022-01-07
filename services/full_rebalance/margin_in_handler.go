@@ -28,9 +28,7 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 		return
 	}
 	if lpData.LiquidityProviderList == nil || len(lpData.LiquidityProviderList) == 0 {
-		task.State = types.FullReBalanceMarginIn
-		err = i.db.UpdateFullReBalanceTask(i.db.GetEngine(), task)
-		return
+		return moveState(i.db, task, types.FullReBalanceMarginIn, lpData)
 	}
 	lpReq, err := lp2Req(lpData.LiquidityProviderList)
 	if err != nil {
@@ -54,11 +52,9 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 		return
 	}
 	task.Params = string(params) //save params for margin out
-	task.State = types.FullReBalanceMarginIn
-	err = i.db.UpdateFullReBalanceTask(i.db.GetEngine(), task)
-
-	return
+	return moveState(i.db, task, types.FullReBalanceMarginIn, lpData)
 }
+
 
 func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	if task.Params == "" {

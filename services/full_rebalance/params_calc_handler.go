@@ -14,9 +14,7 @@ func (r *paramsCalcHandler) Name() string {
 }
 
 func (r *paramsCalcHandler) Do(task *types.FullReBalanceTask) (err error) {
-	task.State = types.FullReBalanceParamsCalc
-	err = r.db.UpdateFullReBalanceTask(r.db.GetEngine(), task)
-	return
+	return moveState(r.db, task, types.FullReBalanceParamsCalc, nil)
 }
 
 func (r *paramsCalcHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {

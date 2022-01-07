@@ -26,8 +26,35 @@ type FullReBalanceTask struct {
 	Params    string `xorm:"f_params"`
 }
 
-func (p *FullReBalanceTask) TableName() string {
+func (t *FullReBalanceTask) TableName() string {
 	return "t_full_rebalance_task"
+}
+
+type FullReMsg struct {
+	Status string
+	Params interface{}
+}
+
+func (t *FullReBalanceTask) AppendMessage(msg *FullReMsg) {
+	if t.Message == "" {
+		t.Message = "[]"
+	}
+	data := make([]*FullReMsg, 0)
+	if err := json.Unmarshal([]byte(t.Message), &data); err != nil {
+		logrus.Warnf("AppendMessage err:%v, task:%+v, msg:%+v", err, t, msg)
+		return
+	}
+	if len(data) > 10 {
+		return
+	}
+	data = append(data, msg)
+	var l []byte
+	var err error
+	if l, err = json.Marshal(data); err != nil {
+		logrus.Warnf("AppendMessage err:%v, task:%+v, msg:%+v", err, t, msg)
+	}
+	t.Message = string(l)
+	return
 }
 
 type PartReBalanceTask struct {
