@@ -25,6 +25,29 @@ func (r *recyclingHandler) Name() string {
 	return "recycling_handler"
 }
 
+func isSoloClaimed(solos []*types.SingleStrategy) bool {
+	for _, solo := range solos {
+		if strings.ToUpper(solo.Chain) == "HECO" {
+			continue
+		}
+		if solo.Amount == "" {
+			solo.Amount = "0"
+			b, _ := json.Marshal(solo)
+			logrus.Warnf("solo amount empty strategy:%s", b)
+			continue
+		}
+		amount := strMustToDecimal(solo.Amount)
+		if amount.Equal(decimal.Zero) {
+			continue
+		} else {
+			b, _ := json.Marshal(solo)
+			logrus.Warnf("solo not claimed strategy:%s", b)
+			return false
+		}
+	}
+	return true
+}
+
 func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	res, err := getLpData(r.conf.ApiConf.LpUrl)
 	if err != nil {
@@ -34,6 +57,9 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	if res.LiquidityProviderList != nil && len(res.LiquidityProviderList) > 0 {
 		logrus.Infof("LiquidityProviderList is not nil, cannot do recycling")
 		return errors.New("LiquidityProviderList is not nil, cannot do recycling") //返回err，避免重复发送钉钉通知
+	}
+	if !isSoloClaimed(res.SingleList) {
+		return fmt.Errorf("solo not claimed")
 	}
 	tokens, err1 := r.db.GetTokens()
 	if err1 != nil {
@@ -84,7 +110,6 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	})
 	return
 }
-
 
 func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	partTask, err := r.db.GetPartReBalanceTaskByFullRebalanceID(task.ID)
