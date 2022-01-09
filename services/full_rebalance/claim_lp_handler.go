@@ -122,6 +122,66 @@ func findParams(params []*claimParam, chain, vaultAddr string) *claimParam {
 	return nil
 }
 
+func isHasSoloStrategy(solos []*types.SingleStrategy) bool {
+	for _, solo := range solos {
+		if strings.ToUpper(solo.Chain) != "HECO" {
+			if solo.Amount == "" {
+				continue
+			}
+			amount := strMustToDecimal(solo.Amount)
+			if !amount.Equal(decimal.Zero) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (w *claimLPHandler) getSoloClaimParamV2(solos []*types.SingleStrategy) ([]*claimParam, error) {
+	params := make([]*claimParam, 0)
+	if len(solos) == 0 {
+		return params, nil
+	}
+	for _, solo := range solos {
+		if solo.Chain == "" {
+			return nil, fmt.Errorf("solo chain empty")
+		}
+		if solo.VaultAddress == "" {
+			return nil, fmt.Errorf("valut addr not exist")
+		}
+		if strings.ToUpper(solo.Chain) == "HECO" {
+			continue
+		}
+		if solo.Platform != "Solo.top" {
+			return nil, fmt.Errorf("strategy not solo")
+		}
+		quote := strMustToDecimal("0")
+		if solo.Amount == "" {
+			solo.Amount = "0"
+		}
+		base := strMustToDecimal(solo.Amount)
+		if base.Equal(decimal.Zero) {
+			continue
+		}
+		p := &claimParam{
+			ChainId:   0,
+			ChainName: solo.Chain,
+			VaultAddr: solo.VaultAddress,
+			Strategies: []*strategy{
+				&strategy{
+					StrategyAddr: solo.StrategyAddress,
+					BaseSymbol:   solo.TokenSymbol,
+					QuoteSymbol:  "",
+					BaseAmount:   base,
+					QuoteAmount:  quote,
+				},
+			},
+		}
+		params = append(params, p)
+	}
+	return params, nil
+}
+
 func (w *claimLPHandler) getSoloClaimParam(vaults []*types.VaultInfo) ([]*claimParam, error) {
 	params := make([]*claimParam, 0)
 	for _, info := range vaults {
@@ -168,7 +228,7 @@ func (w *claimLPHandler) getSoloClaimParam(vaults []*types.VaultInfo) ([]*claimP
 	return params, nil
 }
 
-func (w *claimLPHandler) getClaimParams(lps []*types.LiquidityProvider, vaults []*types.VaultInfo) (params []*claimParam, err error) {
+func (w *claimLPHandler) getClaimParams(lps []*types.LiquidityProvider, vaults []*types.VaultInfo, solos []*types.SingleStrategy) (params []*claimParam, err error) {
 	params = make([]*claimParam, 0)
 	for _, lp := range lps {
 		strategiesM := make(map[string]*strategy)
@@ -213,7 +273,15 @@ func (w *claimLPHandler) getClaimParams(lps []*types.LiquidityProvider, vaults [
 			}
 		}
 	}
-	soloParams, err := w.getSoloClaimParam(vaults)
+	soloParams, err := w.getSoloClaimParamV2(solos)
+	var b0, b1 []byte
+	if solos != nil {
+		b0, _ = json.Marshal(solos)
+	}
+	if soloParams != nil {
+		b1, _ = json.Marshal(soloParams)
+	}
+	logrus.Infof("soloClaim input:%s,ret:%s,err:%v", b0, b1, err)
 	if err != nil {
 		return nil, fmt.Errorf("get slolo claim param err:%v", err)
 	}
@@ -367,7 +435,7 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 	}
 
 	var lps = data.LiquidityProviderList
-	if len(lps) == 0 {
+	if len(lps) == 0 && isHasSoloStrategy(data.SingleList) {
 		err = w.updateState(task, types.FullReBalanceClaimLP, data)
 		if err != nil {
 			return fmt.Errorf("update claim state err:%v,tid:%d", err, task.ID)
@@ -377,13 +445,13 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 	if len(data.VaultInfoList) == 0 {
 		return fmt.Errorf("lp data valutlist empty")
 	}
-	params, err := w.getClaimParams(lps, data.VaultInfoList)
+	params, err := w.getClaimParams(lps, data.VaultInfoList, data.SingleList)
 	var b0, b1 []byte
 	if params != nil {
 		b0, _ = json.Marshal(params)
 		b1, _ = json.Marshal(data)
 	}
-	logrus.Infof("claimParams input:%s,params:%s,err:%v", b1, b0, err)
+	logrus.Infof("claimParams input:%s,ret:%s,err:%v", b1, b0, err)
 	if err != nil {
 		b0, _ := json.Marshal(lps)
 		b1, _ := json.Marshal(data.VaultInfoList)

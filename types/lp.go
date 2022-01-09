@@ -7,10 +7,24 @@ type LPResponse struct {
 	Ts   int64  `json:"ts"`
 	Data *Data  `json:"data"`
 }
+
+type SingleStrategy struct {
+	VaultAddress    string `json:"vaultAddress"`
+	Amount          string `json:"amount"`
+	StrategyAddress string `json:"strategyAddress"`
+	TokenSymbol     string `json:"tokenSymbol"`
+	TokenAddress    string `json:"tokenAddress"`
+	Platform        string `json:"platform"`
+	Chain           string `json:"chain"`
+	ChainId         int    `json:"chainId"`
+	Decimal         int    `json:"decimal"`
+}
+
 type Data struct {
 	Thresholds            []*Threshold         `json:"threshold"`
 	VaultInfoList         []*VaultInfo         `json:"vaultInfoList"`
 	LiquidityProviderList []*LiquidityProvider `json:"liquidityProviderList"`
+	SingleList            []*SingleStrategy    `json:"singleList"`
 }
 type Threshold struct {
 	TokenAddress    string `json:"tokenAddress"`
