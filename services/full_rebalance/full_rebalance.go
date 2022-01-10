@@ -34,10 +34,11 @@ type StateHandler interface {
 }
 
 type FullReBalance struct {
-	db       types.IDB
-	config   *config.Config
-	handlers map[types.FullReBalanceState]StateHandler
-	ticker   int64
+	db         types.IDB
+	config     *config.Config
+	handlers   map[types.FullReBalanceState]StateHandler
+	ticker     int64
+	costTicker int64
 }
 
 func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, err error) {
@@ -98,9 +99,13 @@ func checkState(state types.FullReBalanceState) error {
 
 func (p *FullReBalance) startTick() {
 	p.ticker = time.Now().Unix()
+	p.costTicker = p.ticker
 }
 func (p *FullReBalance) clearTick() {
 	p.ticker = 0
+}
+func (p *FullReBalance) clearCostTick() {
+	p.costTicker = 0
 }
 
 func (p *FullReBalance) Run() (err error) {
@@ -127,7 +132,6 @@ func (p *FullReBalance) Run() (err error) {
 	if err != nil {
 		return err
 	}
-
 	if !finished {
 		now := time.Now().Unix()
 		if now-p.ticker > p.config.Alert.MaxWaitTime {
@@ -145,7 +149,7 @@ func (p *FullReBalance) Run() (err error) {
 	if err := checkState(next); err != nil {
 		return fmt.Errorf("state err:%v,state:%d,tid:%d,handler:%s", err, next, tasks[0].ID, handler.Name())
 	}
-	status := types.FullReBalanceStateName[tasks[0].State]
+	status := types.FullReBalanceStateName[next]
 	if next == types.FullReBalanceSuccess || next == types.FullReBalanceFailed {
 		var resp *types.TaskManagerResponse
 		resp, err = utils.CallTaskManager(p.config, fmt.Sprintf(`/v1/open/task/end/Full_%d?taskType=rebalance`, tasks[0].ID), "POST")
@@ -166,11 +170,13 @@ func (p *FullReBalance) Run() (err error) {
 			logrus.Errorf("handler do err:%v,name:%s", err, nextHandler.Name())
 			return err
 		}
-		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status))
+		cost := time.Now().Unix() - p.costTicker
+		logrus.Infof("fullRe do cost:%d taskID:%d status:%s", cost, tasks[0].ID, status)
+		p.clearCostTick()
+		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status, cost))
 	}
 	return
 }
-
 
 func moveState(db types.IDB, task *types.FullReBalanceTask, state types.FullReBalanceState, params interface{}) error {
 	status := types.FullReBalanceStateName[state]
