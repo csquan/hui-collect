@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/starslabhq/hermes-rebalance/alert"
 	"strings"
 	"time"
 
@@ -17,8 +18,9 @@ import (
 )
 
 type recyclingHandler struct {
-	db   types.IDB
-	conf *config.Config
+	db    types.IDB
+	conf  *config.Config
+	start int64
 }
 
 func (r *recyclingHandler) Name() string {
@@ -49,6 +51,9 @@ func isSoloClaimed(solos []*types.SingleStrategy) bool {
 }
 
 func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
+	if r.start == 0 {
+		r.start = time.Now().Unix()
+	}
 	res, err := getLpData(r.conf.ApiConf.LpUrl)
 	if err != nil {
 		return
@@ -106,6 +111,7 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		if execErr != nil {
 			return
 		}
+		r.costAlert(task.ID)
 		return
 	})
 	return
@@ -263,4 +269,19 @@ func (r *recyclingHandler) GetOpenedTaskMsg(taskId uint64) string {
 	# recycling
 	- taskID: %d
 	`, taskId)
+}
+
+func (r *recyclingHandler) costAlert(taskID uint64) {
+	cost := time.Now().Unix() - r.start
+	step := "大Re回跨-接口数据检查"
+	logrus.Infof("task cost:%d step:%s taskID:%d", cost, step, taskID)
+	content := fmt.Sprintf(`
+	#### 耗时提醒
+
+	- taskID:%d
+	- step:%s
+	- cost:%d
+	`, taskID, step, cost)
+	alert.Dingding.SendMessage("耗时提醒", content)
+	r.start = 0
 }

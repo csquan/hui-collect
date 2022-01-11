@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -69,6 +70,7 @@ type claimLPHandler struct {
 	abi    abi.ABI
 	conf   *config.Config
 	getter lpDataGetter
+	start int64
 }
 
 func newClaimLpHandler(conf *config.Config, db types.IDB, token tokens.Tokener) *claimLPHandler {
@@ -428,14 +430,16 @@ func (w *claimLPHandler) getVaultAddr(tokenSymbol, chain string, vaults []*types
 }
 
 func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
-
+	if w.start == 0 {
+		w.start = time.Now().Unix()
+	}
 	data, err := w.getter.getLpData(w.conf.ApiConf.LpUrl)
 	if err != nil {
 		return fmt.Errorf("claim get lpData err:%v", err)
 	}
 
 	var lps = data.LiquidityProviderList
-	if len(lps) == 0 && isHasSoloStrategy(data.SingleList) {
+	if len(lps) == 0 && !isHasSoloStrategy(data.SingleList) {
 		err = w.updateState(task, types.FullReBalanceClaimLP, data)
 		if err != nil {
 			return fmt.Errorf("update claim state err:%v,tid:%d", err, task.ID)
