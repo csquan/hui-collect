@@ -27,10 +27,10 @@ func TestCheckEvents(t *testing.T) {
 	}
 	checker.EXPECT().checkEventHandled(params[0]).Return(true, nil)
 	checker.EXPECT().checkEventHandled(params[1]).Return(true, nil)
-	i := &investHandler{
-		eChecker: checker,
-	}
-	ok, err := i.checkEventsHandled(params)
+	// i := &investHandler{
+	// 	eChecker: checker,
+	// }
+	ok, err := checkEventsHandled(checker, params)
 	t.Logf("suc ret:%t,err:%v", ok, err)
 	if !ok || err != nil {
 		t.Fatalf("all suc fail")
@@ -38,18 +38,18 @@ func TestCheckEvents(t *testing.T) {
 
 	checker.EXPECT().checkEventHandled(params[0]).Return(true, nil)
 	checker.EXPECT().checkEventHandled(params[1]).Return(false, nil)
-	ok, err = i.checkEventsHandled(params)
+	ok, err = checkEventsHandled(checker, params)
 	if ok || err != nil {
 		t.Fatalf("part suc fail")
 	}
 	checker.EXPECT().checkEventHandled(params[0]).Return(false, nil)
-	ok, err = i.checkEventsHandled(params)
+	ok, err = checkEventsHandled(checker, params)
 	if ok || err != nil {
 		t.Fatalf("all fail err:%v", err)
 	}
 	checker.EXPECT().checkEventHandled(params[0]).Return(true, nil)
 	checker.EXPECT().checkEventHandled(params[1]).Return(true, errors.New("rpc err"))
-	ok, err = i.checkEventsHandled(params)
+	ok, err = checkEventsHandled(checker, params)
 	t.Logf("ret:%t,err:%v", ok, err)
 	if ok || err == nil {
 		t.Fatalf("all fail fail")

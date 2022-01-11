@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
@@ -20,13 +19,13 @@ type investHandler struct {
 	eChecker EventChecker
 }
 
-func newInvestHandler(db types.IDB, conf *config.Config) *investHandler {
-	eChecker := &eventCheckHandler{
-		url: conf.ApiConf.TaskManager,
-		c: &http.Client{
-			Timeout: 15 * time.Second,
-		},
-	}
+func newInvestHandler(db types.IDB, eChecker EventChecker, conf *config.Config) *investHandler {
+	// eChecker := &eventCheckHandler{
+	// 	url: conf.ApiConf.TaskManager,
+	// 	c: &http.Client{
+	// 		Timeout: 15 * time.Second,
+	// 	},
+	// }
 	return &investHandler{
 		db:       db,
 		eChecker: eChecker,
@@ -65,7 +64,7 @@ func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished b
 			}
 			params = append(params, param)
 		}
-		ok, err1 := i.checkEventsHandled(params)
+		ok, err1 := checkEventsHandled(i.eChecker, params)
 		if err1 != nil || !ok {
 			logrus.Warnf("event not handled params:%+v,err:%v", params, err1)
 			finished = false
@@ -76,15 +75,15 @@ func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished b
 }
 
 func (i *investHandler) MoveToNextState(task *types.PartReBalanceTask, nextState types.PartReBalanceState) (err error) {
-		err = utils.CommitWithSession(i.db, func(session *xorm.Session) (execErr error) {
-			task.State = nextState
-			execErr = i.db.UpdatePartReBalanceTask(session, task)
-			if execErr != nil {
-				logrus.Errorf("update part rebalance task error:%v task:[%v]", execErr, task)
-				return
-			}
+	err = utils.CommitWithSession(i.db, func(session *xorm.Session) (execErr error) {
+		task.State = nextState
+		execErr = i.db.UpdatePartReBalanceTask(session, task)
+		if execErr != nil {
+			logrus.Errorf("update part rebalance task error:%v task:[%v]", execErr, task)
 			return
-		})
+		}
+		return
+	})
 	return
 }
 
@@ -95,12 +94,12 @@ func (i *investHandler) GetOpenedTaskMsg(taskId uint64) string {
 	`, taskId)
 }
 
-func (i *investHandler) checkEventsHandled(params []*checkEventParam) (bool, error) {
+func checkEventsHandled(checker EventChecker, params []*checkEventParam) (bool, error) {
 	if len(params) == 0 {
 		return true, nil
 	}
 	for _, p := range params {
-		ok, err := i.eChecker.checkEventHandled(p)
+		ok, err := checker.checkEventHandled(p)
 		if err != nil {
 			return false, err
 		}

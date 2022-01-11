@@ -3,6 +3,7 @@ package part_rebalance
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/starslabhq/hermes-rebalance/alert"
@@ -28,6 +29,12 @@ type PartReBalance struct {
 }
 
 func NewPartReBalanceService(db types.IDB, conf *config.Config) (p *PartReBalance, err error) {
+	eChecker := &eventCheckHandler{
+		url: conf.ApiConf.TaskManager,
+		c: &http.Client{
+			Timeout: 15 * time.Second,
+		},
+	}
 	p = &PartReBalance{
 		db:     db,
 		config: conf,
@@ -41,9 +48,10 @@ func NewPartReBalanceService(db types.IDB, conf *config.Config) (p *PartReBalanc
 				clientMap: clients.ClientMap,
 			},
 			types.PartReBalanceTransferIn: &transferInHandler{
-				db: db,
+				eChecker: eChecker,
+				db:       db,
 			},
-			types.PartReBalanceInvest: newInvestHandler(db, conf),
+			types.PartReBalanceInvest: newInvestHandler(db, eChecker, conf),
 		},
 	}
 

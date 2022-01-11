@@ -1,7 +1,10 @@
 package part_rebalance
 
 import (
+	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -9,21 +12,67 @@ import (
 )
 
 type transferInHandler struct {
-	db types.IDB
+	db       types.IDB
+	eChecker EventChecker
+	start    int64
+}
+
+func costSince(start int64) int64 {
+	return time.Now().Unix() - start
 }
 
 func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
+	if t.start == 0 {
+		t.start = time.Now().Unix()
+	}
 	state, err := getTransactionState(t.db, task, types.ReceiveFromBridge)
 	if err != nil {
 		return
 	}
 	switch state {
-	case types.StateSuccess:
-		finished = true
-		nextState = types.PartReBalanceInvest
+	case types.StateSuccess: //tx suc check event handled
+		txSucCost := costSince(t.start)
+		logrus.Infof("part_handler_cost name:%s,cost:%d,task_id:%d", "receiveFromBridge", txSucCost, task.ID)
+		txTasks, err1 := t.db.GetTransactionTasksWithPartRebalanceId(task.ID, types.ReceiveFromBridge)
+		if err != nil {
+			err = fmt.Errorf("get tx_task err:%v,task_id:%d,tx_type:%d", err1, task.ID, types.ReceiveFromBridge)
+			return
+		}
+		if len(txTasks) != 0 {
+			var params []*checkEventParam
+			for _, txTask := range txTasks {
+				param := &checkEventParam{
+					ChainID: txTask.ChainId,
+					Hash:    txTask.Hash,
+				}
+				params = append(params, param)
+			}
+			b, _ := json.Marshal(params)
+			ok, err1 := checkEventsHandled(t.eChecker, params)
+			if err1 != nil {
+				err = fmt.Errorf("check receiveFromBridge err:%v,params:%s", err1, b)
+				finished = false
+				return
+			}
+			if ok {
+				checkCost := costSince(t.start) - txSucCost
+				logrus.Infof("part_handler_cost name:%s,cost:%d,task_id:%d", "receiveFromBridge_eventHandled", checkCost, task.ID)
+				finished = true
+				t.start = 0
+				nextState = types.PartReBalanceInvest
+				logrus.Info("receiveFromBridgeEvent handled hashs:%s,task_id:%d", b, task.ID)
+			} else {
+				logrus.Warnf("receiveFromBridge event not handled hashs:%s,task_id:%d", b, task.ID)
+			}
+		} else {
+			finished = true
+			nextState = types.PartReBalanceInvest
+			t.start = 0
+		}
 	case types.StateFailed:
 		finished = true
 		nextState = types.PartReBalanceFailed
+		t.start = 0
 	case types.StateOngoing:
 		finished = false
 	default:
