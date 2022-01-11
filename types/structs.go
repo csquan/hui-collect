@@ -33,9 +33,11 @@ func (t *FullReBalanceTask) TableName() string {
 type FullReMsg struct {
 	Status string
 	Params interface{}
+	Time string
 }
 
 func (t *FullReBalanceTask) AppendMessage(msg *FullReMsg) {
+	msg.Time = time.Now().Format("2006-01-02 15:04:05")
 	if t.Message == "" {
 		t.Message = "[]"
 	}

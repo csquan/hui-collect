@@ -38,7 +38,6 @@ type FullReBalance struct {
 	config     *config.Config
 	handlers   map[types.FullReBalanceState]StateHandler
 	ticker     int64
-	costTicker int64
 }
 
 func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, err error) {
@@ -99,13 +98,9 @@ func checkState(state types.FullReBalanceState) error {
 
 func (p *FullReBalance) startTick() {
 	p.ticker = time.Now().Unix()
-	p.costTicker = p.ticker
 }
 func (p *FullReBalance) clearTick() {
 	p.ticker = 0
-}
-func (p *FullReBalance) clearCostTick() {
-	p.costTicker = 0
 }
 
 func (p *FullReBalance) Run() (err error) {
@@ -170,10 +165,7 @@ func (p *FullReBalance) Run() (err error) {
 			logrus.Errorf("handler do err:%v,name:%s", err, nextHandler.Name())
 			return err
 		}
-		cost := time.Now().Unix() - p.costTicker
-		logrus.Infof("fullRe do cost:%d taskID:%d status:%s", cost, tasks[0].ID, status)
-		p.clearCostTick()
-		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status, cost))
+		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status))
 	}
 	return
 }

@@ -21,6 +21,7 @@ type recyclingHandler struct {
 	db    types.IDB
 	conf  *config.Config
 	start int64
+	alertedTaskID uint64
 }
 
 func (r *recyclingHandler) Name() string {
@@ -66,6 +67,7 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	if !isSoloClaimed(res.SingleList) {
 		return fmt.Errorf("solo not claimed")
 	}
+	r.costAlert(task.ID)
 	tokens, err1 := r.db.GetTokens()
 	if err1 != nil {
 		return fmt.Errorf("get tokens err:%v", err1)
@@ -111,7 +113,6 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		if execErr != nil {
 			return
 		}
-		r.costAlert(task.ID)
 		return
 	})
 	return
@@ -272,16 +273,21 @@ func (r *recyclingHandler) GetOpenedTaskMsg(taskId uint64) string {
 }
 
 func (r *recyclingHandler) costAlert(taskID uint64) {
-	cost := time.Now().Unix() - r.start
-	step := "大Re回跨-接口数据检查"
-	logrus.Infof("task cost:%d step:%s taskID:%d", cost, step, taskID)
-	content := fmt.Sprintf(`
+	if r.alertedTaskID != taskID {
+		cost := time.Now().Unix() - r.start
+		step := "大Re回跨-接口数据检查"
+		logrus.Infof("task cost:%d step:%s taskID:%d", cost, step, taskID)
+		content := fmt.Sprintf(`
 	#### 耗时提醒
 
 	- taskID:%d
 	- step:%s
-	- cost:%d
+	- cost:%ds
 	`, taskID, step, cost)
-	alert.Dingding.SendMessage("耗时提醒", content)
-	r.start = 0
+		if cost > 60 {
+			alert.Dingding.SendMessage("耗时提醒", content)
+		}
+		r.start = 0
+		r.alertedTaskID = taskID
+	}
 }
