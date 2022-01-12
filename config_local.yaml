@@ -9,10 +9,15 @@ database:
   retry_interval: 300
 
 app_name: rebalance
-env: test20
+env: test10000
 apollo:
   appname: rebalance
   profile: default
+
+alert:
+  url: "https://oapi.dingtalk.com/robot/send?access_token=0ccf9862740c5e49c1008a3367920fef69e59ebad50c589792b545212c7b723f"
+  secret: "SEC2c2958b2e400e1129e829b95b5f55471e91f698b967ca7a8723e9b402f3cec2e"
+  max_wait_time: "200"
 
 bridge_conf:
   #url: "http://cex-bridge-api.test-15.huobiapps.com/cex-bridge-api/v1"

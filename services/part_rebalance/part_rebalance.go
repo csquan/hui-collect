@@ -22,18 +22,10 @@ type StateHandler interface {
 }
 
 type PartReBalance struct {
-	db         types.IDB
-	config     *config.Config
-	handlers   map[types.PartReBalanceState]StateHandler
-	ticker     int64
-	checkInfo  *checkInfo
-}
-
-type checkInfo struct {
-	taskID   uint64
-	curState int
-	next     int
-	finished bool
+	db       types.IDB
+	config   *config.Config
+	handlers map[types.PartReBalanceState]StateHandler
+	ticker   int64
 }
 
 func NewPartReBalanceService(db types.IDB, conf *config.Config) (p *PartReBalance, err error) {
@@ -98,40 +90,34 @@ func (p *PartReBalance) Run() (err error) {
 	if p.ticker == 0 {
 		p.startTick()
 	}
-	if p.checkInfo == nil{
-		p.checkInfo = &checkInfo{}
-	}
 	handler, ok := p.handlers[tasks[0].State]
 	if !ok {
 		err = fmt.Errorf("unkonwn state for part rebalance task:%v", tasks[0])
 		return
 	}
-	if p.checkInfo.finished && p.checkInfo.curState == tasks[0].State && p.checkInfo.taskID == tasks[0].ID {
-		logrus.Infof("task step has finished,taskID:%d state:%d", tasks[0].ID, tasks[0].State)
-	} else {
-		p.checkInfo.finished, p.checkInfo.next, err = handler.CheckFinished(tasks[0])
-		if !p.checkInfo.finished {
-			now := time.Now().Unix()
-			if now-p.ticker > p.config.Alert.MaxWaitTime {
-				// 把子状态拿出来
-				msg := handler.GetOpenedTaskMsg(tasks[0].ID)
-				if msg != "" {
-					alert.Dingding.SendAlert("State 停滞提醒", msg, nil)
-				}
-				p.clearTick()
+
+	finished, next, err := handler.CheckFinished(tasks[0])
+	if !finished {
+		now := time.Now().Unix()
+		if now-p.ticker > p.config.Alert.MaxWaitTime {
+			// 把子状态拿出来
+			msg := handler.GetOpenedTaskMsg(tasks[0].ID)
+			if msg != "" {
+				alert.Dingding.SendAlert("State 停滞提醒", msg, nil)
 			}
-			return
-		}
-		if err != nil {
-			return err
-		}
-		if p.checkInfo.finished {
-			p.checkInfo.curState = tasks[0].State
-			p.checkInfo.taskID = tasks[0].ID
 			p.clearTick()
 		}
+		return
 	}
-	if p.checkInfo.next == types.PartReBalanceFailed || p.checkInfo.next == types.PartReBalanceSuccess {
+	if err != nil {
+		return err
+	}
+	if finished {
+		p.clearTick()
+	}
+
+	if next == types.PartReBalanceFailed || next == types.PartReBalanceSuccess {
+		//alert.Dingding.SendMessage("小Re耗时", utils.GetPartReCost(tasks[0].ID).Report)
 		logrus.Info(utils.GetPartReCost(tasks[0].ID).Report)
 		if tasks[0].FullRebalanceID == 0 {
 			var resp *types.TaskManagerResponse
@@ -143,15 +129,15 @@ func (p *PartReBalance) Run() (err error) {
 		}
 	}
 	var status string
-	tasks[0].Message, status = utils.GenPartRebalanceMessage(p.checkInfo.next, "")
-	logrus.Infof("part rebalance task move state, from:[%v], to:[%v]", types.PartReBalanceStateName[tasks[0].State], types.PartReBalanceStateName[p.checkInfo.next])
-	err = handler.MoveToNextState(tasks[0], p.checkInfo.next)
+	tasks[0].Message, status = utils.GenPartRebalanceMessage(next, "")
+	logrus.Infof("part rebalance task move state, from:[%v], to:[%v]", types.PartReBalanceStateName[tasks[0].State], types.PartReBalanceStateName[next])
+	err = handler.MoveToNextState(tasks[0], next)
 	if err != nil {
-		message, _ := utils.GenPartRebalanceMessage(p.checkInfo.next, fmt.Sprintf("%v", err))
+		message, _ := utils.GenPartRebalanceMessage(next, fmt.Sprintf("%v", err))
 		p.db.UpdatePartReBalanceTaskMessage(tasks[0].ID, message)
 		return err
 	}
-	if p.checkInfo.next == types.PartReBalanceFailed {
+	if next == types.PartReBalanceFailed {
 		alert.Dingding.SendAlert("Part Rebalance State Change", alert.TaskFailedContent("小Re", tasks[0].ID, status, errors.New(tasks[0].Message)), nil)
 	} else {
 		alert.Dingding.SendMessage("Part Rebalance State Change", alert.TaskStateChangeContent("小Re", tasks[0].ID, status))

@@ -34,17 +34,10 @@ type StateHandler interface {
 }
 
 type FullReBalance struct {
-	db                 types.IDB
-	config             *config.Config
-	handlers           map[types.FullReBalanceState]StateHandler
-	ticker             int64
-	checkInfo          *checkInfo
-}
-type checkInfo struct {
-	taskID   uint64
-	curState int
-	next     int
-	finished bool
+	db       types.IDB
+	config   *config.Config
+	handlers map[types.FullReBalanceState]StateHandler
+	ticker   int64
 }
 
 func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, err error) {
@@ -128,40 +121,31 @@ func (p *FullReBalance) Run() (err error) {
 	if p.ticker == 0 {
 		p.startTick()
 	}
-	if p.checkInfo == nil {
-		p.checkInfo = &checkInfo{}
-	}
 	//checkInfo的作用是避免重复checkFinished。
 	handler := p.getHandler(tasks[0].State)
-	if p.checkInfo.curState == tasks[0].State && p.checkInfo.taskID == tasks[0].ID && p.checkInfo.finished {
-		logrus.Infof("task step has finished,taskID:%d state:%d", tasks[0].ID, tasks[0].State)
-	} else {
-		p.checkInfo.finished, p.checkInfo.next, err = handler.CheckFinished(tasks[0])
-		if err != nil {
-			return err
-		}
-		if !p.checkInfo.finished {
-			now := time.Now().Unix()
-			if now-p.ticker > p.config.Alert.MaxWaitTime {
-				// 把子状态拿出来
-				var msg = handler.GetOpenedTaskMsg(tasks[0].ID)
-				if msg != "" {
-					alert.Dingding.SendAlert("State 停滞提醒", msg, nil)
-				}
-				p.clearTick()
+	finished, next, err := handler.CheckFinished(tasks[0])
+	if err != nil {
+		return err
+	}
+	if !finished {
+		now := time.Now().Unix()
+		if now-p.ticker > p.config.Alert.MaxWaitTime {
+			// 把子状态拿出来
+			var msg = handler.GetOpenedTaskMsg(tasks[0].ID)
+			if msg != "" {
+				alert.Dingding.SendAlert("State 停滞提醒", msg, nil)
 			}
-			return
-		} else {
-			p.checkInfo.curState = tasks[0].State
-			p.checkInfo.taskID = tasks[0].ID
 			p.clearTick()
 		}
+		return
+	} else {
+		p.clearTick()
 	}
-	if err := checkState(p.checkInfo.next); err != nil {
-		return fmt.Errorf("state err:%v,state:%d,tid:%d,handler:%s", err, p.checkInfo.next, tasks[0].ID, handler.Name())
+	if err := checkState(next); err != nil {
+		return fmt.Errorf("state err:%v,state:%d,tid:%d,handler:%s", err, next, tasks[0].ID, handler.Name())
 	}
-	status := types.FullReBalanceStateName[p.checkInfo.next]
-	if p.checkInfo.next == types.FullReBalanceSuccess || p.checkInfo.next == types.FullReBalanceFailed {
+	status := types.FullReBalanceStateName[next]
+	if next == types.FullReBalanceSuccess || next == types.FullReBalanceFailed {
 		var resp *types.TaskManagerResponse
 		resp, err = utils.CallTaskManager(p.config, fmt.Sprintf(`/v1/open/task/end/Full_%d?taskType=rebalance`, tasks[0].ID), "POST")
 		if err != nil || !resp.Data {
@@ -170,12 +154,13 @@ func (p *FullReBalance) Run() (err error) {
 		}
 		logrus.Info(utils.GetFullReCost(tasks[0].ID).Report)
 		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status))
-		return moveState(p.db, tasks[0], p.checkInfo.next, nil)
+		//alert.Dingding.SendMessage("大Re耗时", utils.GetFullReCost(tasks[0].ID).Report)
+		return moveState(p.db, tasks[0], next, nil)
 	} else {
-		nextHandler := p.getHandler(p.checkInfo.next)
+		nextHandler := p.getHandler(next)
 		if nextHandler == nil {
 			b, _ := json.Marshal(tasks[0])
-			logrus.Fatalf("unexpectd state:%d,task:%s", p.checkInfo.next, b)
+			logrus.Fatalf("unexpectd state:%d,task:%s", next, b)
 			return
 		}
 		if err := nextHandler.Do(tasks[0]); err != nil {

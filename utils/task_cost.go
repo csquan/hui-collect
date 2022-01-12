@@ -9,8 +9,9 @@ var fullReCost *Cost
 var partReCost *Cost
 
 type Cost struct {
-	Start  int64
-	Report string
+	Start    int64
+	Report   string
+	lastStep string
 }
 
 func GetFullReCost(taskID uint64) *Cost {
@@ -35,9 +36,13 @@ func InitPartReCost(taskID uint64) {
 }
 
 func (f *Cost) AppendReport(step string) {
+	if step == f.lastStep { //当checkFinish成功之后，moveToNextState不一定成功，有可能多次执行checkFinish，这种情况不做处理，只记录第一次的时间
+		return
+	}
 	now := time.Now().Unix()
 	cost := now - f.Start
 	f.Start = now
 	f.Report = fmt.Sprintf(`%s
 - %s:%ds`, f.Report, step, cost)
+	f.lastStep = step
 }
