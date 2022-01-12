@@ -19,7 +19,6 @@ import (
 type recyclingHandler struct {
 	db    types.IDB
 	conf  *config.Config
-	start int64
 }
 
 func (r *recyclingHandler) Name() string {
@@ -50,9 +49,6 @@ func isSoloClaimed(solos []*types.SingleStrategy) bool {
 }
 
 func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
-	if r.start == 0 {
-		r.start = time.Now().Unix()
-	}
 	res, err := getLpData(r.conf.ApiConf.LpUrl)
 	if err != nil {
 		return
@@ -65,8 +61,6 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 	if !isSoloClaimed(res.SingleList) {
 		return fmt.Errorf("solo not claimed")
 	}
-	utils.CostLog(r.start, task.ID, "大Re回跨-接口数据检查")
-	r.start = 0
 	tokens, err1 := r.db.GetTokens()
 	if err1 != nil {
 		return fmt.Errorf("get tokens err:%v", err1)
@@ -112,6 +106,7 @@ func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
 		if execErr != nil {
 			return
 		}
+		utils.GetFullReCost(task.ID).AppendReport("回跨前接口数据检查")
 		return
 	})
 	return
@@ -124,10 +119,12 @@ func (r *recyclingHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 		return
 	}
 	if partTask == nil {
+		utils.GetFullReCost(task.ID).AppendReport("回跨")
 		return true, types.FullReBalanceParamsCalc, nil
 	}
 	switch partTask.State {
 	case types.PartReBalanceSuccess:
+		utils.GetFullReCost(task.ID).AppendReport("回跨")
 		return true, types.FullReBalanceParamsCalc, nil
 	case types.PartReBalanceFailed:
 		return true, types.FullReBalanceFailed, nil

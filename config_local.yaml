@@ -27,13 +27,13 @@ chains:
   heco:
     id: 128
     rpc_url: "https://http-mainnet.hecochain.com"
-    fetch_timeout: 3000
+    timeout: 3000
     bridge_address: "0xd02c3f75dff68e787f028e7214f1089a7c9be5b9"
     block_safe: 20
   bsc:
     id: 56
     rpc_url: "https://bsc-dataseed.binance.org"
-    fetch_timeout: 3000
+    timeout: 3000
     bridge_address: "0xba1828f24220c8f2ffcb790787a1a7a0d6e7e1c9"
     block_safe: 15
   polygon:

@@ -4,11 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
-	"math/big"
-	"strings"
-	"time"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -21,6 +16,9 @@ import (
 	"github.com/starslabhq/hermes-rebalance/tokens"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
+	"html/template"
+	"math/big"
+	"strings"
 )
 
 const (
@@ -70,7 +68,6 @@ type claimLPHandler struct {
 	abi    abi.ABI
 	conf   *config.Config
 	getter lpDataGetter
-	start int64
 }
 
 func newClaimLpHandler(conf *config.Config, db types.IDB, token tokens.Tokener) *claimLPHandler {
@@ -430,9 +427,6 @@ func (w *claimLPHandler) getVaultAddr(tokenSymbol, chain string, vaults []*types
 }
 
 func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
-	if w.start == 0 {
-		w.start = time.Now().Unix()
-	}
 	data, err := w.getter.getLpData(w.conf.ApiConf.LpUrl)
 	if err != nil {
 		return fmt.Errorf("claim get lpData err:%v", err)
@@ -502,6 +496,7 @@ func (w *claimLPHandler) CheckFinished(task *types.FullReBalanceTask) (finished 
 	//TODO 假设没有需要claim的 这里应该就是0
 	if taskCnt == 0 {
 		logrus.Infof("claim txTasks size  zero tid:%d", task.ID)
+		utils.GetFullReCost(task.ID).AppendReport("拆LP")
 		return true, types.FullReBalanceMarginBalanceTransferOut, nil
 	}
 	var (
@@ -521,13 +516,14 @@ func (w *claimLPHandler) CheckFinished(task *types.FullReBalanceTask) (finished 
 	}
 	if sucCnt == taskCnt {
 		w.stateChanged(types.FullReBalanceMarginBalanceTransferOut, txTasks, task)
+		utils.GetFullReCost(task.ID).AppendReport("拆LP")
 		return true, types.FullReBalanceMarginBalanceTransferOut, nil
 	}
 	if failCnt != 0 {
 		logrus.Warnf("claim lp handler failed tid:%d", task.ID)
 
 		w.stateChanged(types.FullReBalanceFailed, failed, task)
-
+		utils.GetFullReCost(task.ID).AppendReport("拆LP")
 		return true, types.FullReBalanceFailed, nil
 	}
 	return false, types.FullReBalanceClaimLP, nil

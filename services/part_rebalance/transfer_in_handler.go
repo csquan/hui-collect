@@ -14,7 +14,6 @@ import (
 type transferInHandler struct {
 	db       types.IDB
 	eChecker EventChecker
-	start    int64
 }
 
 func costSince(start int64) int64 {
@@ -28,9 +27,7 @@ func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finish
 	}
 	switch state {
 	case types.StateSuccess: //tx suc check event handled
-		if t.start == 0 {
-			t.start = time.Now().Unix()
-		}
+
 		txTasks, err1 := t.db.GetTransactionTasksWithPartRebalanceId(task.ID, types.ReceiveFromBridge)
 		if err != nil {
 			err = fmt.Errorf("get tx_task err:%v,task_id:%d,tx_type:%d", err1, task.ID, types.ReceiveFromBridge)
@@ -53,8 +50,7 @@ func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finish
 				return
 			}
 			if ok {
-				utils.CostLog(t.start, task.ID, "receiveFromBridge后等待账本更新")
-				t.start = 0
+				utils.GetPartReCost(task.ID).AppendReport("资金从跨链桥到vault")
 				finished = true
 				nextState = types.PartReBalanceInvest
 				logrus.Info("receiveFromBridgeEvent handled hashs:%s,task_id:%d", b, task.ID)
@@ -63,13 +59,12 @@ func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finish
 			}
 		} else {
 			finished = true
+			utils.GetPartReCost(task.ID).AppendReport("资金从跨链桥到vault")
 			nextState = types.PartReBalanceInvest
-			t.start = 0
 		}
 	case types.StateFailed:
 		finished = true
 		nextState = types.PartReBalanceFailed
-		t.start = 0
 	case types.StateOngoing:
 		finished = false
 	default:

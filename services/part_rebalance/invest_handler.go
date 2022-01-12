@@ -4,21 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
-	"time"
-
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
+	"net/http"
+	"net/url"
 )
 
 type investHandler struct {
 	db       types.IDB
 	eChecker EventChecker
-	start int64
 }
 
 func newInvestHandler(db types.IDB, eChecker EventChecker, conf *config.Config) *investHandler {
@@ -53,9 +50,6 @@ func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished b
 	}
 	//检查账本是否更新
 	if finished && nextState == types.PartReBalanceSuccess {
-		if i.start == 0{
-			i.start = time.Now().Unix()
-		}
 		txTasks, err1 := i.db.GetTransactionTasksWithPartRebalanceId(task.ID, types.Invest)
 		if err1 != nil {
 			finished = false
@@ -75,8 +69,7 @@ func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished b
 			finished = false
 			return
 		}
-		utils.CostLog(i.start, task.ID, "invest后等待账本")
-		i.start = 0
+		utils.GetPartReCost(task.ID).AppendReport("invest")
 	}
 	return
 }

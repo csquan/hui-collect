@@ -2,6 +2,7 @@ package full_rebalance
 
 import (
 	"fmt"
+	"github.com/starslabhq/hermes-rebalance/utils"
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -32,8 +33,10 @@ func (d *doPartRebalanceHandler) CheckFinished(task *types.FullReBalanceTask) (f
 	}
 	switch partTask.State {
 	case types.PartReBalanceSuccess:
+		utils.GetFullReCost(task.ID).AppendReport("正向小R")
 		return true, types.FullReBalanceSuccess, nil
 	case types.PartReBalanceFailed:
+		utils.GetFullReCost(task.ID).AppendReport("正向小R")
 		return true, types.FullReBalanceFailed, nil
 	default:
 		finished = false

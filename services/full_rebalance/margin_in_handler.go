@@ -3,22 +3,19 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/utils"
-	"net/url"
-	"path"
-	"time"
-
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
+	"github.com/starslabhq/hermes-rebalance/utils"
+	"net/url"
+	"path"
 )
 
 type impermanenceLostHandler struct {
 	db            types.IDB
 	conf          *config.Config
-	start         int64
 	alertedTaskID uint64 //避免重复报警
 }
 
@@ -60,11 +57,8 @@ func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) 
 }
 
 func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
-	if i.start == 0 {
-		i.start = time.Now().Unix()
-	}
 	if task.Params == "" {
-		i.start = 0
+		utils.GetFullReCost(task.ID).AppendReport("平无常")
 		return true, types.FullReBalanceClaimLP, nil
 	}
 	bizNo := fmt.Sprintf("%d", task.ID)
@@ -79,18 +73,15 @@ func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (
 	if err != nil {
 		return
 	}
-
 	status, ok := res.Data["status"]
 	if !ok {
 		return
 	}
 	if status.(string) == "SUCCESS" {
-		utils.CostLog(i.start, task.ID, "平无常耗时")
-		i.start = 0
+		utils.GetFullReCost(task.ID).AppendReport("平无常")
 		return true, types.FullReBalanceClaimLP, nil
 	}
 	if status.(string) == "FAILED" {
-		i.start = 0
 		alert.Dingding.SendAlert("Full Rebalance Failed", alert.TaskFailedContent("大Re", task.ID, "marginIn", fmt.Errorf("magin in failed")), nil)
 		return true, types.FullReBalanceFailed, nil
 	}

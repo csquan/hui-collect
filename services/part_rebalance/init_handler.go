@@ -34,6 +34,7 @@ func newInitHandler(db types.IDB, conf *config.Config) *initHandler {
 }
 
 func (i *initHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
+	utils.InitPartReCost(task.ID)
 	if !i.conf.IsCheckParams {
 		return true, types.PartReBalanceTransferOut, nil
 	}

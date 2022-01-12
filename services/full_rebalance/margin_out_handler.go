@@ -3,10 +3,10 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
+	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
 type marginOutHandler struct {
@@ -66,6 +66,7 @@ func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finishe
 	//if !ok || status.(string) != "SUCCESS" {
 	//	return
 	//}
+	utils.GetFullReCost(task.ID).AppendReport("保证金转出，不等待结果")
 	return true, types.FullReBalanceRecycling, nil
 }
 

@@ -22,6 +22,7 @@ func (i *initHandler) Do(task *types.FullReBalanceTask) error {
 }
 
 func (i *initHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
+	utils.InitFullReCost(task.ID)
 	resp, err := utils.CallTaskManager(i.conf, fmt.Sprintf(`/v1/open/task/begin/Full_%d?taskType=rebalance`, task.ID), "POST")
 	if err != nil || !resp.Data {
 		logrus.Infof("call task manager begin resp:%v, err：%v", resp, err)
@@ -36,4 +37,3 @@ func (i *initHandler) GetOpenedTaskMsg(taskId uint64) string {
 	- taskID: %d
 	`, taskId)
 }
-
