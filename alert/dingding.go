@@ -105,18 +105,12 @@ func (d *Ding) calcSignature(timestamp int64, secret string) string {
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
-func TaskStateChangeContent(taskType string, taskID uint64, status string, a ...interface{}) string {
-	var cost int64
-	if len(a) > 0{
-		cost = a[0].(int64)
-	}
+func TaskStateChangeContent(taskType string, taskID uint64, status string) string {
 	return fmt.Sprintf(`
 	#### %s状态改变
-
 	- taskID:%d
 	- curStatus:%s
-	- costTime:%d
-	`, taskType, taskID, status, cost)
+	`, taskType, taskID, status)
 }
 
 func TaskFailedContent(taskType string, taskID uint64, status string, err error) string {

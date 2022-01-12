@@ -28,7 +28,7 @@ type crossHandler struct {
 }
 
 func (c *crossHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
-	if c.start != 0 {
+	if c.start == 0 {
 		c.start = time.Now().Unix()
 	}
 	crossTasks, err := c.db.GetCrossTasksByReBalanceId(task.ID)
