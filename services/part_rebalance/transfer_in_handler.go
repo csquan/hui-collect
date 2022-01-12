@@ -22,17 +22,15 @@ func costSince(start int64) int64 {
 }
 
 func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
-	if t.start == 0 {
-		t.start = time.Now().Unix()
-	}
 	state, err := getTransactionState(t.db, task, types.ReceiveFromBridge)
 	if err != nil {
 		return
 	}
 	switch state {
 	case types.StateSuccess: //tx suc check event handled
-		txSucCost := costSince(t.start)
-		logrus.Infof("part_handler_cost name:%s,cost:%d,task_id:%d", "receiveFromBridge", txSucCost, task.ID)
+		if t.start == 0 {
+			t.start = time.Now().Unix()
+		}
 		txTasks, err1 := t.db.GetTransactionTasksWithPartRebalanceId(task.ID, types.ReceiveFromBridge)
 		if err != nil {
 			err = fmt.Errorf("get tx_task err:%v,task_id:%d,tx_type:%d", err1, task.ID, types.ReceiveFromBridge)
@@ -55,10 +53,9 @@ func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finish
 				return
 			}
 			if ok {
-				checkCost := costSince(t.start) - txSucCost
-				logrus.Infof("part_handler_cost name:%s,cost:%d,task_id:%d", "receiveFromBridge_eventHandled", checkCost, task.ID)
-				finished = true
+				utils.CostLog(t.start, task.ID, "receiveFromBridge后等待账本更新")
 				t.start = 0
+				finished = true
 				nextState = types.PartReBalanceInvest
 				logrus.Info("receiveFromBridgeEvent handled hashs:%s,task_id:%d", b, task.ID)
 			} else {

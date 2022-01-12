@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/starslabhq/hermes-rebalance/alert"
@@ -24,6 +23,7 @@ import (
 type initHandler struct {
 	db   types.IDB
 	conf *config.Config
+	start int64
 }
 
 func newInitHandler(db types.IDB, conf *config.Config) *initHandler {

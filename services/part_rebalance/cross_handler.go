@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"math/big"
+	"time"
 
 	"github.com/starslabhq/hermes-rebalance/clients"
 
@@ -23,9 +24,13 @@ import (
 type crossHandler struct {
 	db        types.IDB
 	clientMap map[string]*ethclient.Client
+	start int64
 }
 
 func (c *crossHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
+	if c.start != 0 {
+		c.start = time.Now().Unix()
+	}
 	crossTasks, err := c.db.GetCrossTasksByReBalanceId(task.ID)
 	if err != nil {
 		logrus.Errorf("get cross task for rebalance [%v] failed, err:%v", task, err)
@@ -42,8 +47,11 @@ func (c *crossHandler) CheckFinished(task *types.PartReBalanceTask) (finished bo
 	}
 
 	if success {
+		utils.CostLog(c.start, task.ID, "跨链耗时")
+		c.start = 0
 		nextState = types.PartReBalanceTransferIn
 	} else {
+		c.start = 0
 		nextState = types.PartReBalanceFailed
 	}
 

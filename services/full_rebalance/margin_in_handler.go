@@ -3,6 +3,7 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/starslabhq/hermes-rebalance/utils"
 	"net/url"
 	"path"
 	"time"
@@ -15,9 +16,9 @@ import (
 )
 
 type impermanenceLostHandler struct {
-	db    types.IDB
-	conf  *config.Config
-	start int64
+	db            types.IDB
+	conf          *config.Config
+	start         int64
 	alertedTaskID uint64 //避免重复报警
 }
 
@@ -63,7 +64,7 @@ func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (
 		i.start = time.Now().Unix()
 	}
 	if task.Params == "" {
-		i.costAlert(task.ID)
+		i.start = 0
 		return true, types.FullReBalanceClaimLP, nil
 	}
 	bizNo := fmt.Sprintf("%d", task.ID)
@@ -84,10 +85,12 @@ func (i *impermanenceLostHandler) CheckFinished(task *types.FullReBalanceTask) (
 		return
 	}
 	if status.(string) == "SUCCESS" {
-		i.costAlert(task.ID)
+		utils.CostLog(i.start, task.ID, "平无常耗时")
+		i.start = 0
 		return true, types.FullReBalanceClaimLP, nil
 	}
 	if status.(string) == "FAILED" {
+		i.start = 0
 		alert.Dingding.SendAlert("Full Rebalance Failed", alert.TaskFailedContent("大Re", task.ID, "marginIn", fmt.Errorf("magin in failed")), nil)
 		return true, types.FullReBalanceFailed, nil
 	}
@@ -156,24 +159,4 @@ func (i *impermanenceLostHandler) GetOpenedTaskMsg(taskId uint64) string {
 	# full_margin_in_runtimeout
 	- bizNo: %d
 	`, taskId)
-}
-
-func (i *impermanenceLostHandler) costAlert(taskID uint64) {
-	if i.alertedTaskID != taskID {
-		cost := time.Now().Unix() - i.start
-		step := "大Re-划转状态检查"
-		logrus.Infof("task cost:%d step:%s taskID:%d", cost, step, taskID)
-		content := fmt.Sprintf(`
-	#### 耗时提醒
-
-	- taskID:%d
-	- step:%s
-	- cost:%ds
-	`, taskID, step, cost)
-		if cost > 60 {
-			alert.Dingding.SendMessage("耗时提醒", content)
-		}
-		i.start = 0
-		i.alertedTaskID = taskID
-	}
 }
