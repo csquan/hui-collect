@@ -29,12 +29,14 @@ type PartReBalance struct {
 }
 
 func NewPartReBalanceService(db types.IDB, conf *config.Config) (p *PartReBalance, err error) {
+	c := &http.Client{
+		Timeout: 15 * time.Second,
+	}
 	eChecker := &eventCheckHandler{
 		url: conf.ApiConf.TaskManager,
-		c: &http.Client{
-			Timeout: 15 * time.Second,
-		},
+		c:   c,
 	}
+	investEventChecker := newInvestEventCheckHandler(conf.ApiConf.TaskManager+"/v1/open/hash", c)
 	p = &PartReBalance{
 		db:     db,
 		config: conf,
@@ -51,7 +53,7 @@ func NewPartReBalanceService(db types.IDB, conf *config.Config) (p *PartReBalanc
 				eChecker: eChecker,
 				db:       db,
 			},
-			types.PartReBalanceInvest: newInvestHandler(db, eChecker, conf),
+			types.PartReBalanceInvest: newInvestHandler(db, investEventChecker, conf),
 		},
 	}
 

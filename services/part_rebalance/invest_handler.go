@@ -2,10 +2,7 @@ package part_rebalance
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/go-xorm/xorm"
@@ -18,16 +15,10 @@ import (
 type investHandler struct {
 	db       types.IDB
 	eChecker EventChecker
-	start int64
+	start    int64
 }
 
 func newInvestHandler(db types.IDB, eChecker EventChecker, conf *config.Config) *investHandler {
-	// eChecker := &eventCheckHandler{
-	// 	url: conf.ApiConf.TaskManager,
-	// 	c: &http.Client{
-	// 		Timeout: 15 * time.Second,
-	// 	},
-	// }
 	return &investHandler{
 		db:       db,
 		eChecker: eChecker,
@@ -53,7 +44,7 @@ func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished b
 	}
 	//检查账本是否更新
 	if finished && nextState == types.PartReBalanceSuccess {
-		if i.start == 0{
+		if i.start == 0 {
 			i.start = time.Now().Unix()
 		}
 		txTasks, err1 := i.db.GetTransactionTasksWithPartRebalanceId(task.ID, types.Invest)
@@ -63,9 +54,20 @@ func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished b
 		}
 		var params []*checkEventParam
 		for _, txTask := range txTasks {
+			investParam := &types.InvestParam{}
+			err1 := json.Unmarshal([]byte(txTask.Params), investParam)
+			if err1 != nil {
+				err = fmt.Errorf("investParamDecodeErr err:%v,data:%s", err, txTask.Params)
+				return
+			}
+			var sAddrs []string
+			for _, addr := range investParam.StrategyAddresses {
+				sAddrs = append(sAddrs, addr.Hex())
+			}
 			param := &checkEventParam{
-				ChainID: txTask.ChainId,
-				Hash:    txTask.Hash,
+				ChainID:       txTask.ChainId,
+				Hash:          txTask.Hash,
+				StrategyAddrs: sAddrs,
 			}
 			params = append(params, param)
 		}
@@ -99,70 +101,4 @@ func (i *investHandler) GetOpenedTaskMsg(taskId uint64) string {
 	# invest
 	- taskID: %d
 	`, taskId)
-}
-
-func checkEventsHandled(checker EventChecker, params []*checkEventParam) (bool, error) {
-	if len(params) == 0 {
-		return true, nil
-	}
-	for _, p := range params {
-		ok, err := checker.checkEventHandled(p)
-		if err != nil {
-			return false, err
-		}
-		if !ok {
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-type checkEventParam struct {
-	Hash    string
-	ChainID int
-}
-
-//go:generate mockgen -source=$GOFILE -destination=./mock_invest_handler.go -package=part_rebalance
-type EventChecker interface {
-	checkEventHandled(*checkEventParam) (bool, error)
-}
-
-type eventCheckHandler struct {
-	url string
-	c   *http.Client
-}
-
-type response struct {
-	Code int    `json:"code"`
-	Msg  string `json:"msg"`
-	Ts   int64  `json:"ts"`
-	Data bool   `json:"data"`
-}
-
-func (e *eventCheckHandler) checkEventHandled(p *checkEventParam) (result bool, err error) {
-	path := fmt.Sprintf("/v1/open/hash?hash=%s&chainId=%d", p.Hash, p.ChainID)
-	urlStr, err := utils.JoinUrl(e.url, path)
-	if err != nil {
-		logrus.Warnf("parse url error:%v", err)
-		return
-	}
-	urlStr, err = url.QueryUnescape(urlStr)
-	if err != nil {
-		logrus.Warnf("checkEventHandled QueryUnescape error:%v", err)
-		return
-	}
-	data, err := utils.DoRequest(urlStr, "GET", nil)
-	if err != nil {
-		return
-	}
-	resp := &response{}
-	if err = json.Unmarshal(data, resp); err != nil {
-		logrus.Warnf("unmarshar resp err:%v,body:%s", err, data)
-		return
-	}
-	if resp.Code != 200 {
-		logrus.Infof("checkEvent response %v", resp)
-		return false, errors.New("response code not 200")
-	}
-	return resp.Data, nil
 }

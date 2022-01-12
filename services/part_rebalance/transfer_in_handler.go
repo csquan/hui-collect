@@ -57,7 +57,7 @@ func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finish
 				t.start = 0
 				finished = true
 				nextState = types.PartReBalanceInvest
-				logrus.Info("receiveFromBridgeEvent handled hashs:%s,task_id:%d", b, task.ID)
+				logrus.Infof("receiveFromBridgeEvent handled hashs:%s,task_id:%d", b, task.ID)
 			} else {
 				logrus.Warnf("receiveFromBridge event not handled hashs:%s,task_id:%d", b, task.ID)
 			}
