@@ -24,8 +24,14 @@ func init() {
 	var err error
 	url := `http://cex-bridge-api2.tctest-1.tc-jp1.huobiapps.com/cex-bridge-api/v1`
 	// url = `http://cex-bridge-api.test-15.huobiapps.com/cex-bridge-api/v1`
+	// b, err = NewBridge(url,
+	// 	"kB01A8gsMv2CP4Tctd7XnUaG3iDE9rQJ", "ho8XcsfygSKTLEvPYOZ9W12k0i4IFJbC", 5*time.Second)
+	// if err != nil {
+	// 	panic(fmt.Sprintf("new bridge err:%v", err))
+	// }
+	//for test_18
 	b, err = NewBridge(url,
-		"kB01A8gsMv2CP4Tctd7XnUaG3iDE9rQJ", "ho8XcsfygSKTLEvPYOZ9W12k0i4IFJbC", 5*time.Second)
+		"xnbOoTrZh7eHpB6vJV8azDS91GtgWmMw", "FMHg4tvUm13RewalhoSJyLOqYkDVr7WE", 5*time.Second)
 	if err != nil {
 		panic(fmt.Sprintf("new bridge err:%v", err))
 	}
@@ -89,8 +95,8 @@ func TestBridgeIDs(t *testing.T) {
 func TestEstimateTask(t *testing.T) {
 	ret, err := b.EstimateTask(&Task{
 		TaskNo:         0,
-		FromAccountId:  80,
-		ToAccountId:    76,
+		FromAccountId:  228,
+		ToAccountId:    227,
 		FromCurrencyId: 1,
 		ToCurrencyId:   1,
 		Amount:         "1",
