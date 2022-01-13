@@ -117,7 +117,7 @@ func (p *PartReBalance) Run() (err error) {
 	}
 
 	if next == types.PartReBalanceFailed || next == types.PartReBalanceSuccess {
-		//alert.Dingding.SendMessage("小Re耗时", utils.GetPartReCost(tasks[0].ID).Report)
+		alert.Dingding.SendMessage("小Re耗时", utils.GetPartReCost(tasks[0].ID).Report)
 		logrus.Info(utils.GetPartReCost(tasks[0].ID).Report)
 		if tasks[0].FullRebalanceID == 0 {
 			var resp *types.TaskManagerResponse

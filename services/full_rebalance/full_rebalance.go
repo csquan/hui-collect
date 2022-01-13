@@ -154,7 +154,7 @@ func (p *FullReBalance) Run() (err error) {
 		}
 		logrus.Info(utils.GetFullReCost(tasks[0].ID).Report)
 		alert.Dingding.SendMessage("Full Rebalance State Change", alert.TaskStateChangeContent("大Re", tasks[0].ID, status))
-		//alert.Dingding.SendMessage("大Re耗时", utils.GetFullReCost(tasks[0].ID).Report)
+		alert.Dingding.SendMessage("大Re耗时", utils.GetFullReCost(tasks[0].ID).Report)
 		return moveState(p.db, tasks[0], next, nil)
 	} else {
 		nextHandler := p.getHandler(next)
