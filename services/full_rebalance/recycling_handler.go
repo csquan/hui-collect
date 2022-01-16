@@ -11,14 +11,16 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/bridge"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
 type recyclingHandler struct {
-	db    types.IDB
-	conf  *config.Config
+	db     types.IDB
+	conf   *config.Config
+	bridge bridge.IBridge
 }
 
 func (r *recyclingHandler) Name() string {
@@ -140,6 +142,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 	hecoChain := mustGetChainInfo(hecoChainName, r.conf)
 	hecoController, err := hecoController(vault, hecoChainName)
 	if err != nil {
+		logrus.Warnf("heco valut not found info:%+v", vault)
 		return
 	}
 	for fromChainName, info := range vault.ActiveAmount {
@@ -153,10 +156,10 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 		fromChain := mustGetChainInfo(fromChainName, r.conf)
 		//Currency的f_min为null或者0则不参与跨回
 		currency := mustGetCurrency(currencyList, vault.Currency)
-		if currency.Min.Cmp(decimal.Zero) <= 0 {
-			logrus.Infof("currency.min not config, currency:%v", vault.Currency)
-			continue
-		}
+		// if currency.Min.Cmp(decimal.Zero) <= 0 {
+		// 	logrus.Infof("currency.min not config, currency:%v", vault.Currency)
+		// 	continue
+		// }
 		//判断amount是否大于最小值
 		var amount, soloAmount decimal.Decimal
 		if info.VaultAmount == "" {
@@ -176,13 +179,21 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 		amount = amount.Add(soloAmount)
 		//amount = amount.Truncate(currency.CrossScale) 由跨链桥处理
 
-		if amount.Cmp(currency.Min) == -1 {
-			logrus.Infof("amount less than currency.min amount:%s, min:%s,vaultAddr:%s", amount.String(), currency.Min.String(), info.ControllerAddress)
-			return
-		}
 		var fromToken, hecoToken *types.Token
 		fromToken = mustGetToken(tokens, vault.Currency, fromChainName)
 		hecoToken = mustGetToken(tokens, vault.Currency, hecoChainName)
+
+		crossMin, err1 := r.bridge.GetCrossMin(fromToken.CrossSymbol, fromChainName, hecoChainName)
+		if err1 != nil || crossMin.Equal(decimal.Zero) {
+			return fmt.Errorf("get cross min err:%v,min:%s,curency:%s,from_chain:%s,to_chain:%s",
+				err1, crossMin, currency.Name, fromChainName, hecoChainName)
+		}
+		if amount.Cmp(crossMin) == -1 {
+			logrus.Infof("amount less than cross_min amount:%s, min:%s,vaultAddr:%s,currency:%s,chain:%s",
+				amount.String(), crossMin.String(), info.ControllerAddress, currency.Name, fromChainName)
+			return
+		}
+
 		amountStr := powN(amount, fromToken.Decimal).String()
 		taskID := fmt.Sprintf("%d", time.Now().UnixNano()/1000)
 		sendParam := &types.SendToBridgeParam{
@@ -246,7 +257,7 @@ func hecoController(vault *types.VaultInfo, hecoChain string) (controller *types
 			break
 		}
 	}
-	if controller == nil {
+	if controller == nil || controller.ControllerAddress == "" {
 		err = fmt.Errorf("heco controller not found, vault:%v", vault)
 		return
 	}
@@ -267,5 +278,3 @@ func (r *recyclingHandler) GetOpenedTaskMsg(taskId uint64) string {
 	- taskID: %d
 	`, taskId)
 }
-
-

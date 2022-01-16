@@ -1,5 +1,7 @@
 package bridge
 
+import "github.com/shopspring/decimal"
+
 //go:generate mockgen -source=$GOFILE -destination=./mock/mock_bridge.go -package=mock
 type IBridge interface {
 	GetCurrencyID(currency string) (int, bool)
@@ -8,6 +10,7 @@ type IBridge interface {
 	GetTaskDetail(taskID uint64) (*TaskDetailResult, error)
 	EstimateTask(t *Task) (*EstimateTaskResult, error)
 	AddTask(t *Task) (uint64, error)
+	GetCrossMin(currency, fromChain, toChain string) (decimal.Decimal, error)
 }
 type Task struct {
 	TaskNo         uint64
@@ -130,4 +133,13 @@ type Account struct {
 type AccountListRet struct {
 	Code int                   `json:"code"`
 	Data map[string][]*Account `json:"data"`
+}
+
+type CrossMin struct {
+	MinAmount string `json:"minAmount"`
+	Status    int    `json:"status"`
+}
+type CrossMinRet struct {
+	Code int       `json:"code"`
+	Data *CrossMin `json:"data"`
 }

@@ -121,3 +121,11 @@ func TestGetTaskDetail(t *testing.T) {
 	b, _ := json.Marshal(ret)
 	t.Logf("ret:%s,err:%v", b, err)
 }
+
+func TestGetCrossMin(t *testing.T) {
+	ret, err := b.GetCrossMin("ETH", "BSC", "HECO")
+	if err != nil {
+		t.Fatalf("get cross min err:%v", err)
+	}
+	t.Logf("crossmin:%s", ret.String())
+}

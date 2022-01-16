@@ -5,10 +5,10 @@
 package mock
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
+	decimal "github.com/shopspring/decimal"
 	bridge "github.com/starslabhq/hermes-rebalance/bridge"
+	reflect "reflect"
 )
 
 // MockIBridge is a mock of IBridge interface
@@ -122,4 +122,19 @@ func (m *MockIBridge) AddTask(t *bridge.Task) (uint64, error) {
 func (mr *MockIBridgeMockRecorder) AddTask(t interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTask", reflect.TypeOf((*MockIBridge)(nil).AddTask), t)
+}
+
+// GetCrossMin mocks base method
+func (m *MockIBridge) GetCrossMin(currency, fromChain, toChain string) (decimal.Decimal, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCrossMin", currency, fromChain, toChain)
+	ret0, _ := ret[0].(decimal.Decimal)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCrossMin indicates an expected call of GetCrossMin
+func (mr *MockIBridgeMockRecorder) GetCrossMin(currency, fromChain, toChain interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCrossMin", reflect.TypeOf((*MockIBridge)(nil).GetCrossMin), currency, fromChain, toChain)
 }

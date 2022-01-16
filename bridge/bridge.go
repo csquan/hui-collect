@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
 
@@ -458,4 +459,60 @@ func (b *Bridge) loadAccounts(chainIds []int) error {
 		}
 	}
 	return nil
+}
+
+func (b *Bridge) GetCrossMin(currency, fromChain, toChain string) (decimal.Decimal, error) {
+	form := url.Values{}
+	now := time.Now().Unix()
+	form.Add("timestamp", fmt.Sprintf("%d", now))
+	form.Add("method", "estimateBridge")
+	form.Add("currency", currency)
+	form.Add("fromChain", fromChain)
+	form.Add("toChain", toChain)
+	params := []string{"timestamp", "method", "currency", "fromChain", "toChain"}
+	sort.Slice(params, func(i, j int) bool {
+		return params[i] > params[j]
+	})
+	var rawStr string
+	for _, p := range params {
+		rawStr += fmt.Sprintf("&%s=%s", p, form.Get(p))
+	}
+	rawStr += "&secret_key=" + b.secretKey
+	logrus.Infof("raw_Str:%s", rawStr)
+	sign := md5SignHex(rawStr)
+	req, err := http.NewRequest("POST", b.url, strings.NewReader(form.Encode()))
+	if err != nil {
+		return decimal.Zero, err
+	}
+	req.Header.Add("apiKey", b.apiKey)
+	req.Header.Add("sign", sign)
+	req.Header.Add("Content-type", "application/x-www-form-urlencoded")
+
+	res, err := b.cli.Do(req)
+	if err != nil {
+		return decimal.Zero, err
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	logrus.Infof("method:%s,ret:%s,param:%+v", "estimateBridge", body, params)
+	if err != nil {
+		return decimal.Zero, err
+	}
+	ret := &CrossMinRet{}
+	err = json.Unmarshal(body, ret)
+	if err != nil {
+		return decimal.Zero, fmt.Errorf("json ecode err:%v,method:%s,ret:%s", err, "estimateBridge", body)
+	}
+	if ret.Data == nil {
+		return decimal.Zero, fmt.Errorf("crossmin not found ret:%s", body)
+	}
+	minStr := ret.Data.MinAmount
+	if minStr == "" {
+		return decimal.Zero, fmt.Errorf("crossmin empty ret:%s", body)
+	}
+	min, err := decimal.NewFromString(minStr)
+	if err != nil {
+		return decimal.Zero, fmt.Errorf("crossmin to decimal err:%v,ret:%s", err, body)
+	}
+	return min, nil
 }
