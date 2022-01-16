@@ -1,11 +1,12 @@
 package services
 
 import (
-	"github.com/starslabhq/hermes-rebalance/bridge"
-	"github.com/starslabhq/hermes-rebalance/services/full_rebalance"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/starslabhq/hermes-rebalance/bridge"
+	"github.com/starslabhq/hermes-rebalance/services/full_rebalance"
 
 	"github.com/starslabhq/hermes-rebalance/services/part_rebalance"
 
@@ -36,10 +37,6 @@ func NewServiceScheduler(conf *config.Config, db types.IDB, closeCh <-chan os.Si
 }
 
 func (t *ServiceScheduler) Start() {
-	fullReBalance, err := full_rebalance.NewReBalanceService(t.db, t.conf)
-	if err != nil {
-		logrus.Fatalf("new rebalance service error: %v", err)
-	}
 	partReBalance, err := part_rebalance.NewPartReBalanceService(t.db, t.conf)
 	if err != nil {
 		logrus.Fatalf("new part rebalance service error: %v", err)
@@ -55,6 +52,10 @@ func (t *ServiceScheduler) Start() {
 	bridgeCli, err := bridge.NewBridge(bridgeConf.URL, bridgeConf.Ak, bridgeConf.Sk, bridgeConf.Timeout)
 	if err != nil {
 		logrus.Fatalf("new bridge cli err:%v", err)
+	}
+	fullReBalance, err := full_rebalance.NewReBalanceService(t.db, t.conf, bridgeCli)
+	if err != nil {
+		logrus.Fatalf("new rebalance service error: %v", err)
 	}
 	crossService := NewCrossService(t.db, bridgeCli, t.conf)
 	crossSubService := NewCrossSubTaskService(t.db, bridgeCli, t.conf)

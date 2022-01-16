@@ -7,6 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/alert"
+	"github.com/starslabhq/hermes-rebalance/bridge"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/tokens"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -40,7 +41,7 @@ type FullReBalance struct {
 	ticker   int64
 }
 
-func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, err error) {
+func NewReBalanceService(db types.IDB, conf *config.Config, bridge bridge.IBridge) (p *FullReBalance, err error) {
 	token, err := tokens.NewTokens(db)
 	if err != nil {
 		return nil, fmt.Errorf("create tokens err:%v", err)
@@ -63,8 +64,9 @@ func NewReBalanceService(db types.IDB, conf *config.Config) (p *FullReBalance, e
 				db:   db,
 			},
 			types.FullReBalanceRecycling: &recyclingHandler{
-				conf: conf,
-				db:   db,
+				conf:   conf,
+				db:     db,
+				bridge: bridge,
 			},
 			//计算状态由python处理
 			types.FullReBalanceParamsCalc: &paramsCalcHandler{
