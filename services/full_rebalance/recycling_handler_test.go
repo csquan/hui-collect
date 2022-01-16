@@ -116,7 +116,7 @@ func TestAppendForCrossMin(t *testing.T) {
 		vaultInfo1,
 	}
 	bridgeCli := mock.NewMockIBridge(ctrl)
-	bridgeCli.EXPECT().GetCrossMin(gomock.Any(), gomock.Any(), gomock.Any()).Return(decimal.NewFromFloat(5.5), nil).AnyTimes()
+	bridgeCli.EXPECT().GetCrossMin(gomock.Any(), gomock.Any(), gomock.Any()).Return(decimal.NewFromFloat(5), nil).AnyTimes()
 	r := &recyclingHandler{
 		conf: &config.Config{
 			Chains: map[string]*config.ChainInfo{

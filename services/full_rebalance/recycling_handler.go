@@ -142,8 +142,9 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 	hecoChain := mustGetChainInfo(hecoChainName, r.conf)
 	hecoController, err := hecoController(vault, hecoChainName)
 	if err != nil {
-		logrus.Warnf("heco valut not found info:%+v", vault)
-		return
+		b, _ := json.Marshal(vault)
+		logrus.Warnf("heco valut not found info:%s", b)
+		return nil
 	}
 	for fromChainName, info := range vault.ActiveAmount {
 		if strings.ToLower(fromChainName) == hecoChainName {
