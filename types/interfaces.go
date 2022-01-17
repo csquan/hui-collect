@@ -11,8 +11,6 @@ type IReader interface {
 	GetOpenedPartReBalanceTasks() ([]*PartReBalanceTask, error)
 	GetOpenedFullReBalanceTasks() ([]*FullReBalanceTask, error)
 	GetFullRelalanceTask(taskId uint64) (*FullReBalanceTask, error)
-	GetTransactionTasksWithReBalanceId(reBalanceId uint64, transactionType TransactionType) ([]*TransactionTask, error)
-
 	GetOpenedTransactionTask() ([]*TransactionTask, error)
 	//GetApprove(token, spender string) (*ApproveRecord, error)
 	//GetOrderID() (int, error)

@@ -117,7 +117,6 @@ func (p *PartReBalance) Run() (err error) {
 	}
 
 	if next == types.PartReBalanceFailed || next == types.PartReBalanceSuccess {
-		alert.Dingding.SendMessage("小Re耗时", utils.GetPartReCost(tasks[0].ID).Report)
 		logrus.Info(utils.GetPartReCost(tasks[0].ID).Report)
 		if tasks[0].FullRebalanceID == 0 {
 			var resp *types.TaskManagerResponse
@@ -127,6 +126,7 @@ func (p *PartReBalance) Run() (err error) {
 				return
 			}
 		}
+		alert.Dingding.SendMessage("小Re耗时", utils.GetPartReCost(tasks[0].ID).Report)
 	}
 	var status string
 	tasks[0].Message, status = utils.GenPartRebalanceMessage(next, "")
@@ -147,7 +147,7 @@ func (p *PartReBalance) Run() (err error) {
 
 //getTransactionState
 func getTransactionState(db types.IDB, task *types.PartReBalanceTask, transferType types.TransactionType) (state types.TaskState, err error) {
-	txTasks, err := db.GetTransactionTasksWithReBalanceId(task.ID, transferType)
+	txTasks, err := db.GetTransactionTasksWithPartRebalanceId(task.ID, transferType)
 	if err != nil {
 		logrus.Errorf("get transaction task error:%v", err)
 		return

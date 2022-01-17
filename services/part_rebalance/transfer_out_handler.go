@@ -20,7 +20,7 @@ func (t *transferOutHandler) CheckFinished(task *types.PartReBalanceTask) (finis
 	switch state {
 	case types.StateSuccess:
 		finished = true
-		utils.GetPartReCost(task.ID).AppendReport("资金从vault到到跨链桥")
+		utils.GetPartReCost(task.ID).AppendReport("vault -> 跨链桥")
 		nextState = types.PartReBalanceCross
 	case types.StateFailed:
 		finished = true
