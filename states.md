@@ -45,11 +45,12 @@
 |3|发送transaction,检查receipt|
 |4|成功|
 |5|失败|
+
 # transaction
 |type|desc|
 |:----|:---|
-0:SendToBridge （从vault到跨链桥地址）
-1:ReceiveFromBridge（从跨链桥地址到vault）
-2:Invest （组LP）
-3:Approve （授权）
-4:ClaimFromVault （拆LP）
+| 0 | SendToBridge （从vault到跨链桥地址）|
+| 1 | ReceiveFromBridge（从跨链桥地址到vault） |
+| 2 | Invest （组LP） |
+| 3 | Approve （授权） |
+| 4 | ClaimFromVault （拆LP）|
