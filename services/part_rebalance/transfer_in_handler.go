@@ -50,7 +50,7 @@ func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finish
 				return
 			}
 			if ok {
-				utils.GetPartReCost(task.ID).AppendReport("资金从跨链桥到vault")
+				utils.GetPartReCost(task.ID).AppendReport("跨链桥 -> vault")
 				finished = true
 				nextState = types.PartReBalanceInvest
 				logrus.Infof("receiveFromBridgeEvent handled hashs:%s,task_id:%d", b, task.ID)
@@ -59,7 +59,7 @@ func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finish
 			}
 		} else {
 			finished = true
-			utils.GetPartReCost(task.ID).AppendReport("资金从跨链桥到vault")
+			utils.GetPartReCost(task.ID).AppendReport("跨链桥 -> vault")
 			nextState = types.PartReBalanceInvest
 		}
 	case types.StateFailed:
