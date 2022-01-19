@@ -104,6 +104,7 @@ func (h *FullRebalanceHandler) GetTask(c *gin.Context) {
 }
 
 func (h *FullRebalanceHandler) Open(c *gin.Context) {
+	logrus.Info("open task switch")
 	err := h.db.UpdateTaskSwitch(true)
 	if err != nil {
 		logrus.Errorf("open task switch err:%v", err)
@@ -114,9 +115,10 @@ func (h *FullRebalanceHandler) Open(c *gin.Context) {
 }
 
 func (h *FullRebalanceHandler) Close(c *gin.Context) {
+	logrus.Info("close task switch")
 	err := h.db.UpdateTaskSwitch(false)
 	if err != nil {
-		logrus.Errorf("open task switch err:%v", err)
+		logrus.Errorf("close task switch err:%v", err)
 		c.JSON(http.StatusInternalServerError, "server err")
 		return
 	}
