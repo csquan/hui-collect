@@ -17,10 +17,6 @@ import (
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
-var (
-	confFile string
-)
-
 func TestCreateTreansfer(t *testing.T) {
 	conf, err := config.LoadConf("../../config.yaml")
 	if err != nil {

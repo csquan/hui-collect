@@ -3,6 +3,7 @@ package part_rebalance
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"

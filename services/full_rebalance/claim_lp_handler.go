@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"math/big"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -16,9 +20,6 @@ import (
 	"github.com/starslabhq/hermes-rebalance/tokens"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"html/template"
-	"math/big"
-	"strings"
 )
 
 const (
@@ -394,21 +395,6 @@ func (w *claimLPHandler) insertTxTasksAndUpdateState(txTasks []*types.Transactio
 		return nil
 	})
 	return err1
-}
-
-func (w *claimLPHandler) getVault(tokenSymbol, chain string, vaults []*types.VaultInfo) *types.ControllerInfo {
-	currency := w.token.GetCurrency(chain, tokenSymbol)
-	for _, vault := range vaults {
-		if vault.Currency == currency {
-			c, ok := vault.ActiveAmount[chain]
-			if !ok {
-				b, _ := json.Marshal(vault)
-				logrus.Fatalf("vault activeAmount not found tokenSymbol:%s,chain:%s,vault:%s", tokenSymbol, chain, b)
-			}
-			return c
-		}
-	}
-	return nil
 }
 
 func (w *claimLPHandler) getVaultAddr(tokenSymbol, chain string, vaults []*types.VaultInfo) (string, bool) {

@@ -5,8 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/utils"
 	"time"
+
+	"github.com/starslabhq/hermes-rebalance/utils"
 
 	"github.com/starslabhq/hermes-rebalance/config"
 )
@@ -64,7 +65,7 @@ func (d *Ding) SendAlert(title string, content string, atMobiles []string) error
 		},
 	}
 
-	if atMobiles != nil && len(atMobiles) > 0 {
+	if len(atMobiles) > 0 {
 		body["at"] = map[string]interface{}{
 			"isAtAll":   false,
 			"atMobiles": atMobiles,

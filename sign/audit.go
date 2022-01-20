@@ -162,6 +162,9 @@ func PostAuditInfo(request AuditRequest, appId string) (AuditResponse, error) {
 	body := bytes.NewReader(reqDataByte)
 
 	req1, err := http.NewRequest("POST", Url, body)
+	if err != nil {
+		return AuditResponse{}, fmt.Errorf("new request err:%v,url:%s", err, Url)
+	}
 	req1.Header.Set("content-type", "application/json")
 
 	//aign with aws v2

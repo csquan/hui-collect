@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/starslabhq/hermes-rebalance/config"
-	"github.com/starslabhq/hermes-rebalance/types"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/starslabhq/hermes-rebalance/types"
 
 	"github.com/sirupsen/logrus"
 )
@@ -44,7 +45,7 @@ func DoRequestWithHeaders(url string, method string, reqData []byte, headers map
 	body := bytes.NewReader(reqData)
 	req, err := http.NewRequest(method, url, body)
 	req.Header.Set("content-type", "application/json")
-	for k,v :=range headers{
+	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 	resp, err := httpCli.Do(req)
@@ -73,6 +74,9 @@ func CallTaskManager(conf *config.Config, path string, method string) (resp *typ
 		return
 	}
 	urlStr, err = url.QueryUnescape(urlStr)
+	if err != nil {
+		return nil, fmt.Errorf("QueryUnescape err:%v,url:%s", err, urlStr)
+	}
 	var data []byte
 	if data, err = DoRequest(urlStr, method, nil); err != nil {
 		return

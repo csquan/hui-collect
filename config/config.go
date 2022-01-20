@@ -13,6 +13,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	appID       string = "rebalance"
+	apolloSever string = "http://apollo-config.system-service.huobiapps.com"
+)
+
 type Conf struct {
 	App string
 	Vip *viper.Viper
@@ -187,22 +192,24 @@ func RemoteSignerConfig(appId string) (conf *Conf) {
 	v := viper.New()
 	v.SetConfigType("yaml")
 
-	v.AddRemoteProvider("apollo", "http://apollo-config.system-service.huobiapps.com", "config.yaml")
+	err := v.AddRemoteProvider("apollo", apolloSever, "config.yaml")
+	if err != nil {
+		logrus.Errorf("signConfErr add remote provider err:%v", err)
+	}
+	err = v.ReadRemoteConfig()
+	if err != nil {
+		logrus.Errorf("signConfErr read remote conf err:%v", err)
+	}
 
-	v.ReadRemoteConfig()
-
-	v.WatchRemoteConfigOnChannel() // 启动一个goroutine来同步配置更改
-
+	err = v.WatchRemoteConfigOnChannel() // 启动一个goroutine来同步配置更改
+	if err != nil {
+		logrus.Errorf("signConfErr watch err:%v", err)
+	}
 	return &Conf{
 		App: appId,
 		Vip: v,
 	}
 }
-
-const (
-	appID       string = "rebalance"
-	apolloSever string = "http://apollo-config.system-service.huobiapps.com"
-)
 
 func remoteConfig(namespace string, v *viper.Viper) error {
 	remote.SetAppID(appID)
