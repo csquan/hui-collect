@@ -2,6 +2,7 @@ package part_rebalance
 
 import (
 	"fmt"
+
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"

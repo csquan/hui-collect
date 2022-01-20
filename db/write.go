@@ -3,12 +3,13 @@ package db
 import (
 	"fmt"
 
+	"time"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
-	"time"
 	"xorm.io/core"
 )
 

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
 )

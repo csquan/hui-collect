@@ -5,8 +5,9 @@
 package part_rebalance
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockEventChecker is a mock of EventChecker interface

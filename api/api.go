@@ -30,7 +30,7 @@ func (h *FullRebalanceHandler) AddTask(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, "server err")
 		return
 	}
-	if !isRun{
+	if !isRun {
 		c.JSON(http.StatusConflict, "task switch is closed")
 		return
 	}
@@ -127,7 +127,7 @@ func (h *FullRebalanceHandler) Close(c *gin.Context) {
 
 func (h *FullRebalanceHandler) GetTaskSwitch(c *gin.Context) {
 	isRun, err := h.db.GetTaskSwitch()
-	if err != nil{
+	if err != nil {
 		logrus.Errorf("get task switch err:%v", err)
 		c.JSON(http.StatusInternalServerError, "server err")
 		return
@@ -173,10 +173,8 @@ func Run(conf config.ServerConf, db types.IDB) {
 	authorized.POST("taskSwitch/open", h.Open)
 	authorized.POST("taskSwitch/close", h.Close)
 
-
 	err := r.Run(fmt.Sprintf(":%d", conf.Port))
 	if err != nil {
 		logrus.Fatalf("start http server err:%v", err)
 	}
 }
-

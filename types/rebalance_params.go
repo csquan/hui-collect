@@ -3,8 +3,9 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"math/big"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -88,7 +89,7 @@ func toBigIntAmounts(bases, counters []string) ([]*big.Int, []*big.Int) {
 	for _, v := range counters {
 		amount, ok := new(big.Int).SetString(v, 10)
 		if !ok {
-			logrus.Fatalf("counter amount to big.Int err,v:%s",v)
+			logrus.Fatalf("counter amount to big.Int err,v:%s", v)
 		}
 		counterAmounts = append(counterAmounts, amount)
 	}

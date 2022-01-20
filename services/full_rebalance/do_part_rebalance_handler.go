@@ -2,6 +2,7 @@ package full_rebalance
 
 import (
 	"fmt"
+
 	"github.com/starslabhq/hermes-rebalance/utils"
 
 	"github.com/sirupsen/logrus"

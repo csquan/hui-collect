@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/clients"
 	"html/template"
 	"math/big"
+
+	"github.com/starslabhq/hermes-rebalance/clients"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"

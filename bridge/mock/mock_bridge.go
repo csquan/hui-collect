@@ -5,10 +5,11 @@
 package mock
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	decimal "github.com/shopspring/decimal"
 	bridge "github.com/starslabhq/hermes-rebalance/bridge"
-	reflect "reflect"
 )
 
 // MockIBridge is a mock of IBridge interface

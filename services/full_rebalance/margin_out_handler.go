@@ -3,6 +3,7 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -42,8 +43,6 @@ func (i *marginOutHandler) Do(task *types.FullReBalanceTask) (err error) {
 	}
 	return moveState(i.db, task, types.FullReBalanceMarginBalanceTransferOut, nil)
 }
-
-
 
 func (i *marginOutHandler) CheckFinished(task *types.FullReBalanceTask) (finished bool, nextState types.FullReBalanceState, err error) {
 	//if task.Params == "" {

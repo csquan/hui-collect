@@ -5,8 +5,9 @@
 package mock_tokens
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockTokener is a mock of Tokener interface
