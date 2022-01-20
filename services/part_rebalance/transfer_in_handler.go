@@ -3,8 +3,6 @@ package part_rebalance
 import (
 	"encoding/json"
 	"fmt"
-	"time"
-
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -16,10 +14,6 @@ type transferInHandler struct {
 	eChecker EventChecker
 }
 
-func costSince(start int64) int64 {
-	return time.Now().Unix() - start
-}
-
 func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
 	state, err := getTransactionState(t.db, task, types.ReceiveFromBridge)
 	if err != nil {
@@ -29,7 +23,7 @@ func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finish
 	case types.StateSuccess: //tx suc check event handled
 
 		txTasks, err1 := t.db.GetTransactionTasksWithPartRebalanceId(task.ID, types.ReceiveFromBridge)
-		if err != nil {
+		if err1 != nil {
 			err = fmt.Errorf("get tx_task err:%v,task_id:%d,tx_type:%d", err1, task.ID, types.ReceiveFromBridge)
 			return
 		}
