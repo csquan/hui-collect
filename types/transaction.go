@@ -60,7 +60,7 @@ func CapableAmountInput() (input []byte, err error) {
 	return abi.Pack("getCapableAmount")
 }
 
-func CapableAmountOutput(result hexutil.Bytes) ( []interface{}, error) {
+func CapableAmountOutput(result hexutil.Bytes) ([]interface{}, error) {
 	r := strings.NewReader(content)
 	abi, err := abi.JSON(r)
 	if err != nil {
@@ -118,7 +118,7 @@ func GetNonce(address string, chainName string) (uint64, error) {
 	if !ok {
 		return 0, fmt.Errorf("not find chain client, chainName:%v", chainName)
 	}
-	//TODO client.PendingNonceAt() ?
+	// client.PendingNonceAt() ?
 	return client.NonceAt(context.Background(), common.HexToAddress(address), nil)
 }
 

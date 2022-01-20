@@ -198,7 +198,7 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 		return err
 	}
 	if err = client.SendTransaction(context.Background(), transaction); err != nil {
-		//TODO nonce too low, 重新走签名流程？
+		// nonce too low, 重新走签名流程？
 		logrus.Errorf("SendTransaction err:%v task:%v", err, task)
 		return err
 	}

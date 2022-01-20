@@ -327,7 +327,8 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 			//base
 			decimal0, ok := w.token.GetDecimals(param.ChainName, s.BaseSymbol)
 			if !ok {
-				logrus.Fatalf("unexpectd decimal bseSymbol:%s", s.BaseSymbol)
+				logrus.Errorf("unexpectd decimal baseSymbol:%s,chain:%s", s.BaseSymbol, param.ChainName)
+				return nil, fmt.Errorf("unexpectd decimal baseSymbol:%s,chain:%s", s.BaseSymbol, param.ChainName)
 			}
 			baseDecimal := powN(s.BaseAmount, decimal0)
 			base := decimalToBigInt(baseDecimal)
@@ -337,7 +338,8 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 			if s.QuoteSymbol != "" { //多币
 				decimal1, ok := w.token.GetDecimals(param.ChainName, s.QuoteSymbol)
 				if !ok {
-					logrus.Fatalf("unexpectd decimal quoteSymbol:%s,chain:%s", s.QuoteSymbol, param.ChainName)
+					logrus.Errorf("unexpectd decimal quoteSymbol:%s,chain:%s", s.QuoteSymbol, param.ChainName)
+					return nil, fmt.Errorf("unexpectd decimal quoteSymbol:%s,chain:%s", s.QuoteSymbol, param.ChainName)
 				}
 				quoteDecimal := powN(s.QuoteAmount, decimal1)
 				quote := decimalToBigInt(quoteDecimal)
@@ -356,7 +358,8 @@ func (w *claimLPHandler) createTxTask(tid uint64, params []*claimParam) ([]*type
 		encoded, _ := json.Marshal(param)
 		chain, ok := w.conf.Chains[strings.ToLower(param.ChainName)]
 		if !ok {
-			logrus.Fatalf("get from addr empty chainName:%s", param.ChainName)
+			logrus.Errorf("get from addr empty chainName:%s", param.ChainName)
+			return nil, fmt.Errorf("get from addr empty chainName:%s", param.ChainName)
 		}
 		task := &types.TransactionTask{
 			FullRebalanceId: tid,
@@ -442,7 +445,7 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 		logrus.Errorf("get claim params err:%v,lps:%s,vaults:%s,tid:%d", err, b0, b1, task.ID)
 		return err
 	}
-	//TODO 考虑空数组的情况
+	// 考虑空数组的情况
 	txTasks, err := w.createTxTask(task.ID, params)
 	if err != nil {
 		b, _ := json.Marshal(params)
@@ -479,7 +482,7 @@ func (w *claimLPHandler) CheckFinished(task *types.FullReBalanceTask) (finished 
 		return false, types.FullReBalanceClaimLP, fmt.Errorf("full_r get txTasks err:%v", err)
 	}
 	taskCnt := len(txTasks)
-	//TODO 假设没有需要claim的 这里应该就是0
+	// 假设没有需要claim的 这里应该就是0
 	if taskCnt == 0 {
 		logrus.Infof("claim txTasks size  zero tid:%d", task.ID)
 		utils.GetFullReCost(task.ID).AppendReport("拆LP")
