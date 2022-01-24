@@ -13,9 +13,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+var Env string
+
 const (
-	appID       string = "rebalance"
-	apolloSever string = "http://apollo-config.system-service.huobiapps.com"
+	appID           string = "rebalance"
+	apolloSeverDev  string = "http://apollo-config.system-service.huobiapps.com"
+	apolloSeverProd string = "http://apollo-config.system-service.apne-1.huobiapps.com:80" //prod
+	envProd                = "prod"
+	envDev                 = "dev"
 )
 
 type Conf struct {
@@ -187,12 +192,22 @@ func localConfig(filename string, v *viper.Viper) error {
 	return err
 }
 
+func getApolloServer() string {
+	var apolloSever string
+	if Env == envDev {
+		apolloSever = apolloSeverDev
+	} else {
+		apolloSever = apolloSeverProd
+	}
+	return apolloSever
+}
+
 func RemoteSignerConfig(appId string) (conf *Conf) {
 	remote.SetAppID(appId)
 	v := viper.New()
 	v.SetConfigType("yaml")
 
-	err := v.AddRemoteProvider("apollo", apolloSever, "config.yaml")
+	err := v.AddRemoteProvider("apollo", getApolloServer(), "config.yaml")
 	if err != nil {
 		logrus.Errorf("signConfErr add remote provider err:%v", err)
 	}
@@ -214,7 +229,7 @@ func RemoteSignerConfig(appId string) (conf *Conf) {
 func remoteConfig(namespace string, v *viper.Viper) error {
 	remote.SetAppID(appID)
 
-	err := v.AddRemoteProvider("apollo", apolloSever, namespace)
+	err := v.AddRemoteProvider("apollo", getApolloServer(), namespace)
 	if err != nil {
 		return fmt.Errorf("add remote provider error : %v", err)
 	}
@@ -231,4 +246,11 @@ func remoteConfig(namespace string, v *viper.Viper) error {
 	err = v.WatchRemoteConfigOnChannel() // 启动一个goroutine来同步配置更改
 
 	return err
+}
+
+func CheckEnv() bool {
+	if Env != envDev && Env != envProd {
+		return false
+	}
+	return true
 }
