@@ -64,7 +64,8 @@ func (c *CrossSubTaskService) Run() error {
 					//update bridge taskId
 					err1 := c.db.UpdateCrossSubTaskBridgeIDAndState(subTask.ID, taskId, int(types.Crossing))
 					if err1 != nil {
-						logrus.Fatalf("sub task state:%d,id:%d,err1:%v", subTask.State, subTask.ID, err1)
+						logrus.Errorf("sub task state:%d,id:%d,err1:%v", subTask.State, subTask.ID, err1)
+						return fmt.Errorf("sub task state:%d,id:%d,err1:%v", subTask.State, subTask.ID, err1)
 					}
 
 					subTask.BridgeTaskId = taskId

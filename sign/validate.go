@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -208,6 +209,9 @@ func ValidatorInfo() (*VaResp, error) {
 	myclient := &http.Client{Transport: tr, Timeout: 123 * time.Second}
 
 	req1, err := http.NewRequest("GET", targetUrl, nil)
+	if err != nil {
+		return nil, fmt.Errorf("new req err:%v,url:%s", err, targetUrl)
+	}
 	resp, err := myclient.Do(req1)
 	if err != nil {
 		logrus.Errorf("Validator service check failed with error %v", err)

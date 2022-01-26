@@ -2,6 +2,7 @@ package part_rebalance
 
 import (
 	"fmt"
+
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/types"
@@ -20,7 +21,7 @@ func (t *transferOutHandler) CheckFinished(task *types.PartReBalanceTask) (finis
 	switch state {
 	case types.StateSuccess:
 		finished = true
-		utils.GetPartReCost(task.ID).AppendReport("资金从vault到到跨链桥")
+		utils.GetPartReCost(task.ID).AppendReport("vault -> 跨链桥")
 		nextState = types.PartReBalanceCross
 	case types.StateFailed:
 		finished = true

@@ -34,5 +34,5 @@ func TestAPIRun(t *testing.T) {
 
 func TestAuthorization(t *testing.T) {
 	auth := "admin:10244201"
-	t.Logf("Basic "+base64.StdEncoding.EncodeToString([]byte(auth)))
+	t.Logf("Basic " + base64.StdEncoding.EncodeToString([]byte(auth)))
 }

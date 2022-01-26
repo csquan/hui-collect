@@ -97,7 +97,6 @@ type EstimateTaskResult struct {
 	TotalQuota   string `json:"totalQuota"`
 	SingleQuota  string `json:"singleQuota"`
 	FeeEnough    int    `json:"feeEnough"`
-	// Routes      []map[string]int `json:"routes"` TODO estimate ret 变更
 }
 
 type EstimateTaskRet struct {

@@ -33,7 +33,7 @@ func (t *FullReBalanceTask) TableName() string {
 type FullReMsg struct {
 	Status string
 	Params interface{}
-	Time string
+	Time   string
 }
 
 func (t *FullReBalanceTask) AppendMessage(msg *FullReMsg) {
@@ -56,7 +56,6 @@ func (t *FullReBalanceTask) AppendMessage(msg *FullReMsg) {
 		logrus.Warnf("AppendMessage err:%v, task:%+v, msg:%+v", err, t, msg)
 	}
 	t.Message = string(l)
-	return
 }
 
 type PartReBalanceTask struct {
@@ -106,7 +105,6 @@ func (p *PartReBalanceTask) ReadTransactionParams(txType TransactionType) (resul
 	default:
 		return
 	}
-	return
 }
 
 type TransactionTask struct {

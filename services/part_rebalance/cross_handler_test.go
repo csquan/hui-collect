@@ -17,10 +17,6 @@ import (
 	"github.com/starslabhq/hermes-rebalance/types"
 )
 
-var (
-	confFile string
-)
-
 func TestCreateTreansfer(t *testing.T) {
 	conf, err := config.LoadConf("../../config.yaml")
 	if err != nil {
@@ -139,7 +135,7 @@ func createTask(conf *config.Config) error {
 			ChainId:   56,
 			ChainName: "bsc",
 			From:      "0x74938228ae77e5fcc3504ad46fac4a965d210761",
-			To:        "0x36Bdee19a991dB559F3072a7974a85759BeE1224", //TODO
+			To:        "0x36Bdee19a991dB559F3072a7974a85759BeE1224",
 			StrategyAddresses: []common.Address{
 				common.HexToAddress("0x4956C5835eDBD358A1D51D6DD8B4E0C0665Fb640"), //solo
 				common.HexToAddress("0xa71c55cB4A091c7Fb676C29913F74B51FFb6e981"), //bisSwap

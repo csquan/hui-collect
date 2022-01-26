@@ -3,20 +3,20 @@ package full_rebalance
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"path"
+
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/starslabhq/hermes-rebalance/alert"
 	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
-	"net/url"
-	"path"
 )
 
 type impermanenceLostHandler struct {
-	db            types.IDB
-	conf          *config.Config
-	alertedTaskID uint64 //避免重复报警
+	db   types.IDB
+	conf *config.Config
 }
 
 func (i *impermanenceLostHandler) Name() string {

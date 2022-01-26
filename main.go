@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/starslabhq/hermes-rebalance/api"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/starslabhq/hermes-rebalance/api"
 
 	"github.com/starslabhq/hermes-rebalance/clients"
 
@@ -28,11 +29,17 @@ var (
 
 func init() {
 	flag.StringVar(&confFile, "conf", "config.yaml", "conf file")
+	flag.StringVar(&config.Env, "env", "dev", "env")
 }
 
 func main() {
 	flag.Parse()
 	logrus.Info(confFile)
+
+	if !config.CheckEnv() {
+		logrus.Fatalf("wrong env")
+	}
+
 	conf, err := config.LoadConf(confFile)
 	if err != nil {
 		logrus.Errorf("load config error:%v", err)

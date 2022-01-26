@@ -1,8 +1,9 @@
 package alert
 
 import (
-	"github.com/starslabhq/hermes-rebalance/config"
 	"testing"
+
+	"github.com/starslabhq/hermes-rebalance/config"
 )
 
 func TestDing_SendMessage(t *testing.T) {

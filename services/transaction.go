@@ -113,7 +113,7 @@ func (t *Transaction) handleSign(task *types.TransactionTask) (err error) {
 
 	signRet, err := signer.SignTx(input, decimal, int(nonce), from, to, GasLimit, GasPrice, Amount, quantity, receiver, task.ChainName)
 
-	if err == nil && signRet.Result == true {
+	if err == nil && signRet.Result {
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 			task.State = int(types.TxAuditState)
 			task.Cipher = signRet.Data.Extra.Cipher
@@ -142,7 +142,7 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 
 	auditRet, err := signer.AuditTx(input, receiver, quantity, orderID, task.ChainName)
 
-	if err == nil && auditRet.Success == true {
+	if err == nil && auditRet.Success {
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 			task.State = int(types.TxValidatorState)
 			task.OrderId = orderID
@@ -160,7 +160,7 @@ func (t *Transaction) handleAudit(task *types.TransactionTask) (err error) {
 func (t *Transaction) handleValidator(task *types.TransactionTask) (err error) {
 	vRet, err := signer.ValidatorTx(task)
 
-	if err == nil && vRet.OK == true {
+	if err == nil && vRet.OK {
 		err = utils.CommitWithSession(t.db, func(session *xorm.Session) (execErr error) {
 			task.State = int(types.TxCheckReceiptState)
 			task.SignData = vRet.RawTx
@@ -198,7 +198,7 @@ func (t *Transaction) handleTransactionSigned(task *types.TransactionTask) error
 		return err
 	}
 	if err = client.SendTransaction(context.Background(), transaction); err != nil {
-		//TODO nonce too low, 重新走签名流程？
+		// nonce too low, 重新走签名流程？
 		logrus.Errorf("SendTransaction err:%v task:%v", err, task)
 		return err
 	}
