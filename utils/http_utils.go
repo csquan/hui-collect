@@ -63,7 +63,7 @@ func DoRequestWithHeaders(url string, method string, reqData []byte, headers map
 		logrus.Errorf("read response body error:%v", err)
 		return
 	}
-	logrus.Infof("DoRequestWithHeaders url:%s, input:%s, response:%v", url, string(reqData), string(data))
+	logrus.Infof("DoRequestWithHeaders host:%s path:%s, input:%s, response:%v", req.Host, req.URL.Path, string(reqData), string(data))
 	return
 }
 
