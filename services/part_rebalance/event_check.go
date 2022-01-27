@@ -113,7 +113,7 @@ func (ie *investEventCheckHandler) checkEventHandled(p *checkEventParam) (result
 		if err := json.Unmarshal(b, res); err != nil {
 			return false, fmt.Errorf("investEventChecker json decode ret err:%v,ret:%s", err, b)
 		}
-		logrus.Infof("investEventChecker req:%s,ret:%s", req.URL.String(), b)
+		logrus.Infof("investEventChecker host:%s,path:%s,ret:%s", req.Host, req.URL.Path, b)
 		if !res.Data {
 			return false, err
 		}
