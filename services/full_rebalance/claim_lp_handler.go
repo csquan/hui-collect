@@ -82,7 +82,7 @@ func newClaimLpHandler(conf *config.Config, db types.IDB, token tokens.Tokener) 
 		db:     db,
 		abi:    abi,
 		token:  token,
-		getter: getter(getLpData),
+		getter: getter(utils.GetLpData),
 	}
 }
 
@@ -467,6 +467,7 @@ func (w *claimLPHandler) Do(task *types.FullReBalanceTask) error {
 	err = w.insertTxTasksAndUpdateState(txTasks, task, types.FullReBalanceClaimLP)
 	if err == nil {
 		w.stateChanged(types.FullReBalanceClaimLP, txTasks, task)
+		part_rebalance.SendLpInfoWithData(data, task.ID, "lp_claim_before", true, nil)
 	}
 	return err
 }
@@ -506,6 +507,9 @@ func (w *claimLPHandler) CheckFinished(task *types.FullReBalanceTask) (finished 
 	if sucCnt == taskCnt {
 		w.stateChanged(types.FullReBalanceMarginBalanceTransferOut, txTasks, task)
 		utils.GetFullReCost(task.ID).AppendReport("拆LP")
+
+		part_rebalance.SendLpInfo(w.conf.ApiConf.LpUrl, task.ID, "lp_claim_after", true, txTasks)
+
 		return true, types.FullReBalanceMarginBalanceTransferOut, nil
 	}
 	if failCnt != 0 {
@@ -513,6 +517,7 @@ func (w *claimLPHandler) CheckFinished(task *types.FullReBalanceTask) (finished 
 
 		w.stateChanged(types.FullReBalanceFailed, failed, task)
 		utils.GetFullReCost(task.ID).AppendReport("拆LP")
+		part_rebalance.SendLpInfo(w.conf.ApiConf.LpUrl, task.ID, "lp_claim_after", false, txTasks)
 		return true, types.FullReBalanceFailed, nil
 	}
 	return false, types.FullReBalanceClaimLP, nil

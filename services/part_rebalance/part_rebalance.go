@@ -49,10 +49,8 @@ func NewPartReBalanceService(db types.IDB, conf *config.Config) (p *PartReBalanc
 				db:        db,
 				clientMap: clients.ClientMap,
 			},
-			types.PartReBalanceTransferIn: &transferInHandler{
-				eChecker: eChecker,
-				db:       db,
-			},
+			types.PartReBalanceTransferIn: newTransferInHandler(db, eChecker, conf),
+
 			types.PartReBalanceInvest: newInvestHandler(db, investEventChecker, conf),
 		},
 	}

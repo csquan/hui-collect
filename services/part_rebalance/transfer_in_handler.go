@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
+	"github.com/starslabhq/hermes-rebalance/config"
 	"github.com/starslabhq/hermes-rebalance/types"
 	"github.com/starslabhq/hermes-rebalance/utils"
 )
@@ -13,6 +14,15 @@ import (
 type transferInHandler struct {
 	db       types.IDB
 	eChecker EventChecker
+	conf     *config.Config
+}
+
+func newTransferInHandler(db types.IDB, eChecker EventChecker, conf *config.Config) *transferInHandler {
+	return &transferInHandler{
+		db:       db,
+		eChecker: eChecker,
+		conf:     conf,
+	}
 }
 
 func (t *transferInHandler) CheckFinished(task *types.PartReBalanceTask) (finished bool, nextState types.PartReBalanceState, err error) {
@@ -93,6 +103,8 @@ func (t *transferInHandler) MoveToNextState(task *types.PartReBalanceTask, nextS
 			logrus.Errorf("update part rebalance task error:%v task:[%v]", execErr, task)
 			return
 		}
+		//get lp info
+		SendLpInfo(t.conf.ApiConf.LpUrl, task.ID, "lp_invest_before", true, nil)
 		return
 	})
 

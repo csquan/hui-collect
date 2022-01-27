@@ -14,26 +14,6 @@ import (
 	"github.com/starslabhq/hermes-rebalance/utils"
 )
 
-func getLpData(url string) (lpList *types.Data, err error) {
-	data, err := utils.DoRequest(url, "GET", nil)
-	if err != nil {
-		logrus.Errorf("request lp err:%v,body:%s", err, data)
-		return
-	}
-	lpResponse := &types.LPResponse{}
-	if err = json.Unmarshal(data, lpResponse); err != nil {
-		logrus.Errorf("unmarshar lpResponse err:%v,body:%s", err, data)
-		return
-	}
-	if lpResponse.Code != 200 {
-		err = fmt.Errorf("lpResponse code not 200, msg:%s", lpResponse.Msg)
-		logrus.Error(err)
-		return
-	}
-	lpList = lpResponse.Data
-	return
-}
-
 func callMarginApi(url string, conf *config.Config, body interface{}) (res *types.NormalResponse, err error) {
 	headers := make(map[string]string)
 	timestamp := fmt.Sprintf("%d", time.Now().Unix())

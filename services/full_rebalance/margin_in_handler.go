@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"strings"
 
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -24,7 +25,7 @@ func (i *impermanenceLostHandler) Name() string {
 }
 
 func (i *impermanenceLostHandler) Do(task *types.FullReBalanceTask) (err error) {
-	lpData, err := getLpData(i.conf.ApiConf.LpUrl)
+	lpData, err := utils.GetLpData(i.conf.ApiConf.LpUrl)
 	if err != nil {
 		return
 	}
@@ -134,7 +135,7 @@ func lp2Req(lpList []*types.LiquidityProvider) (req []*types.LpReq, err error) {
 			&types.TokenInfo{TokenAddress: baseTokenAdress, TokenOriginAmount: totalBaseAmount.String()},
 			&types.TokenInfo{TokenAddress: quoteTokenAddress, TokenOriginAmount: totalQuoteAmount.String()})
 		r := &types.LpReq{
-			Chain:          lp.Chain,
+			Chain:          strings.ToUpper(lp.Chain),
 			LpTokenAddress: lp.LpTokenAddress,
 			LpAmount:       totalLpAmount.String(),
 			TokenList:      tokenList,

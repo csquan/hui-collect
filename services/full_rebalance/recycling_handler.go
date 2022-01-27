@@ -51,7 +51,7 @@ func isSoloClaimed(solos []*types.SingleStrategy) bool {
 }
 
 func (r *recyclingHandler) Do(task *types.FullReBalanceTask) (err error) {
-	res, err := getLpData(r.conf.ApiConf.LpUrl)
+	res, err := utils.GetLpData(r.conf.ApiConf.LpUrl)
 	if err != nil {
 		return
 	}
@@ -189,13 +189,21 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			return fmt.Errorf("get cross min err:%v,min:%s,curency:%s,from_chain:%s,to_chain:%s",
 				err1, crossMin, currency.Name, fromChainName, hecoChainName)
 		}
+		minScale := fromToken.Decimal
+		if minScale > hecoToken.Decimal {
+			minScale = hecoToken.Decimal
+		}
+		logrus.Debugf("recycl scale:%d,from:%d,heco:%d,amount:%s", minScale, fromToken.Decimal, hecoToken.Decimal, amount.String())
+		amount = amount.Truncate(int32(minScale))
+
 		if amount.Cmp(crossMin) == -1 {
 			logrus.Infof("amount less than cross_min amount:%s, min:%s,vaultAddr:%s,currency:%s,chain:%s",
 				amount.String(), crossMin.String(), info.ControllerAddress, currency.Name, fromChainName)
 			return
 		}
+		amountSend := powN(amount, fromToken.Decimal).String()
+		amountRecv := powN(amount, hecoToken.Decimal).Truncate(0).String()
 
-		amountStr := powN(amount, fromToken.Decimal).String()
 		taskID := fmt.Sprintf("%d", time.Now().UnixNano()/1000)
 		sendParam := &types.SendToBridgeParam{
 			ChainId:       fromChain.ID,
@@ -203,7 +211,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			From:          fromChain.BridgeAddress,
 			To:            info.ControllerAddress,
 			BridgeAddress: common.HexToAddress(fromChain.BridgeAddress),
-			Amount:        amountStr,
+			Amount:        amountSend,
 			TaskID:        taskID,
 		}
 		crossParam := &types.CrossBalanceItem{
@@ -221,7 +229,7 @@ func (r *recyclingHandler) appendParam(vault *types.VaultInfo, partRebalancePara
 			From:              hecoChain.BridgeAddress,
 			To:                hecoController.ControllerAddress,
 			Erc20ContractAddr: common.HexToAddress(hecoToken.Address),
-			Amount:            amountStr,
+			Amount:            amountRecv,
 			TaskID:            taskID,
 		}
 		partRebalanceParam.SendToBridgeParams = append(partRebalanceParam.SendToBridgeParams, sendParam)

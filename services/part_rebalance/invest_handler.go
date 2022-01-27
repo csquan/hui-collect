@@ -14,12 +14,14 @@ import (
 type investHandler struct {
 	db       types.IDB
 	eChecker EventChecker
+	conf     *config.Config
 }
 
 func newInvestHandler(db types.IDB, eChecker EventChecker, conf *config.Config) *investHandler {
 	return &investHandler{
 		db:       db,
 		eChecker: eChecker,
+		conf:     conf,
 	}
 }
 
@@ -41,7 +43,7 @@ func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished b
 		logrus.Errorf("invest checkFinished unrecognized state %v", state)
 	}
 	//检查账本是否更新
-	if finished && nextState == types.PartReBalanceSuccess {
+	if finished {
 		txTasks, err1 := i.db.GetTransactionTasksWithPartRebalanceId(task.ID, types.Invest)
 		if err1 != nil {
 			finished = false
@@ -66,11 +68,17 @@ func (i *investHandler) CheckFinished(task *types.PartReBalanceTask) (finished b
 			}
 			params = append(params, param)
 		}
-		ok, err1 := checkEventsHandled(i.eChecker, params)
-		if err1 != nil || !ok {
-			logrus.Warnf("event not handled params:%+v,err:%v", params, err1)
-			finished = false
-			return
+
+		if nextState == types.PartReBalanceSuccess {
+			ok, err1 := checkEventsHandled(i.eChecker, params)
+			if err1 != nil || !ok {
+				logrus.Warnf("event not handled params:%+v,err:%v", params, err1)
+				finished = false
+				return
+			}
+			SendLpInfo(i.conf.ApiConf.LpUrl, task.ID, "lp_invest_after", true, txTasks)
+		} else if nextState == types.PartReBalanceFailed {
+			SendLpInfo(i.conf.ApiConf.LpUrl, task.ID, "lp_invest_after", false, txTasks)
 		}
 		utils.GetPartReCost(task.ID).AppendReport("invest")
 	}
