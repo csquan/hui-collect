@@ -122,9 +122,7 @@ create TABLE `t_strategy` (
 create TABLE `t_currency` (
     `f_id`          bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_name`        varchar(255)        NOT NULL COMMENT '名称',
-    `f_cross_min`   decimal(20, 8) COMMENT '跨链的最小额度',
     `f_invest_min`  decimal(20, 8) COMMENT '投资的最小额度',
-    `f_cross_scale` integer COMMENT '跨链的最小精度',
     `f_created_at`  timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
     `f_updated_at`  timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */
@@ -206,16 +204,16 @@ values ('bsc', 'biswap', 'bnb', 'usd', true),
        ('polygon', 'solo.top', 'usdt', null, false),
        ('polygon', 'solo.top', 'usdc', null, false);
 
-insert into t_currency(f_name, f_cross_min, f_invest_min, f_cross_scale)
-values ('btc', 0.001, 0.0001, 3),
-       ('bnb', null, 0.01, null),
-       ('cake', null, 0.1, null),
-       ('matic', null, 0.1, null),
-       ('eth', 0.01, 0.01, 2),
-       ('usdt', 10, 1, 0),
-       ('usdc', 10, 1, 0),
-       ('dai', 10, 1, 0),
-       ('usd', 10, 1, 0);
+insert into t_currency(f_name, f_invest_min)
+values ('btc', 0.0001),
+       ('bnb', 0.01),
+       ('cake', 0.1),
+       ('matic', 0.1),
+       ('eth',  0.01),
+       ('usdt', 1),
+       ('usdc', 1),
+       ('dai', 1),
+       ('usd', 1);
 
 
 insert into t_task_switch (f_is_run)
