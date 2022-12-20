@@ -1,6 +1,6 @@
 database:
   #  db: "heco_test:hDyhVaPfwvPzF8ek@tcp(bigdata-tidb-e604534a50b9d35d.elb.ap-northeast-1.amazonaws.com:4000)/chain_test?charset=utf8mb4"
-#  db: "test:123@tcp(127.0.0.1:3306)/rebalance?charset=utf8mb4"
+  #  db: "test:123@tcp(127.0.0.1:3306)/rebalance?charset=utf8mb4"
   db : "root:12345678@tcp(huobichain-dev-01.sinnet.huobiidc.com:3306)/rebalance?charset=utf8mb4"
   block_worker: 5
   tx_worker: 1
@@ -41,7 +41,7 @@ margin:
 alert:
   url: "https://oapi.dingtalk.com/robot/send?access_token=8d1c311ffd2d7a3c84091073e99b4d8e6e3ea888ddede0b55e504823b7434c5e"
   secret: "SECb3a502a0839ce6eae60ce7a4c7c25dbe907c0afdb5926492fa5dbc35c9fee1c8"
-  
+
 log:
   stdout:
     enable: true

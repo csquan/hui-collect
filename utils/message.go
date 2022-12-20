@@ -3,24 +3,13 @@ package utils
 import (
 	"encoding/json"
 
+	"github.com/ethereum/fat-tx/types"
 	"github.com/sirupsen/logrus"
-	"github.com/starslabhq/hermes-rebalance/types"
 )
 
 type message struct {
 	Status  string
 	Content string
-}
-
-func GenFullRebalanceMessage(state int, content string) (string, string) {
-	status := types.FullReBalanceStateName[state]
-
-	return genMessage(status, content), status
-}
-
-func GenPartRebalanceMessage(state int, content string) (string, string) {
-	status := types.PartReBalanceStateName[state]
-	return genMessage(status, content), status
 }
 
 func GenTxMessage(state int, content string) string {

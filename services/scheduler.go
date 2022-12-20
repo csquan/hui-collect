@@ -5,14 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/starslabhq/hermes-rebalance/bridge"
-	"github.com/starslabhq/hermes-rebalance/services/full_rebalance"
-
-	"github.com/starslabhq/hermes-rebalance/services/part_rebalance"
-
+	"github.com/ethereum/fat-tx/config"
+	"github.com/ethereum/fat-tx/types"
 	"github.com/sirupsen/logrus"
-	"github.com/starslabhq/hermes-rebalance/config"
-	"github.com/starslabhq/hermes-rebalance/types"
 )
 
 type ServiceScheduler struct {
@@ -37,36 +32,17 @@ func NewServiceScheduler(conf *config.Config, db types.IDB, closeCh <-chan os.Si
 }
 
 func (t *ServiceScheduler) Start() {
-	partReBalance, err := part_rebalance.NewPartReBalanceService(t.db, t.conf)
-	if err != nil {
-		logrus.Fatalf("new part rebalance service error: %v", err)
-	}
-
-	transaction, err := NewTransactionService(t.db, t.conf)
-	if err != nil {
-		logrus.Fatalf("new transfer service error: %v", err)
-	}
-
-	//create cross service
-	bridgeConf := t.conf.BridgeConf
-	bridgeCli, err := bridge.NewBridge(bridgeConf.URL, bridgeConf.Ak, bridgeConf.Sk, bridgeConf.Timeout)
-	if err != nil {
-		logrus.Fatalf("new bridge cli err:%v", err)
-	}
-	fullReBalance, err := full_rebalance.NewReBalanceService(t.db, t.conf, bridgeCli)
-	if err != nil {
-		logrus.Fatalf("new rebalance service error: %v", err)
-	}
-	crossService := NewCrossService(t.db, bridgeCli, t.conf)
-	crossSubService := NewCrossSubTaskService(t.db, bridgeCli, t.conf)
-	//create cross service
+	//create assembly service
+	assemblyService := NewAssemblyService(t.db, t.conf)
+	//create sign service
+	signService := NewSignService(t.db, t.conf)
+	//create boradcast service
+	boradcastService := NewBoradcastService(t.db, t.conf)
 
 	t.services = []types.IAsyncService{
-		fullReBalance,
-		partReBalance,
-		transaction,
-		crossService,
-		crossSubService,
+		assemblyService,
+		signService,
+		boradcastService,
 	}
 
 	timer := time.NewTimer(t.conf.QueryInterval)

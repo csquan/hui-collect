@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"github.com/ethereum/fat-tx/types"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
-	"github.com/starslabhq/hermes-rebalance/types"
 )
 
 func CommitWithSession(db types.IDB, executeFunc func(*xorm.Session) error) (err error) {

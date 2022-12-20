@@ -3,7 +3,7 @@ package alert
 import (
 	"testing"
 
-	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/ethereum/fat-tx/config"
 )
 
 func TestDing_SendMessage(t *testing.T) {

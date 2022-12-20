@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/ethereum/fat-tx/config"
 
 	"github.com/sirupsen/logrus"
 )
@@ -68,23 +68,11 @@ func getHookLevel(level int) []logrus.Level {
 }
 
 func Init(name string, config config.Log, env string) error {
-	if config.Stdout.Enable {
-		AddConsoleOut(config.Stdout.Level)
-	}
-
 	if config.File.Enable {
 		err := AddFileOut(config.File.Path, config.File.Level, 5)
 		if err != nil {
 			return err
 		}
-	}
-
-	if config.Kafka.Enable {
-		err := AddKafkaHook(config.Kafka.Topic, config.Kafka.Brokers, config.Kafka.Level)
-		if err != nil {
-			return err
-		}
-
 	}
 
 	AddField("app", name)

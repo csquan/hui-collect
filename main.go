@@ -8,19 +8,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/starslabhq/hermes-rebalance/api"
-
-	"github.com/starslabhq/hermes-rebalance/clients"
+	"github.com/ethereum/fat-tx/api"
 
 	"net/http"
 	_ "net/http/pprof"
 
+	"github.com/ethereum/fat-tx/alert"
+	"github.com/ethereum/fat-tx/config"
+	"github.com/ethereum/fat-tx/db"
+	"github.com/ethereum/fat-tx/log"
+	"github.com/ethereum/fat-tx/services"
 	"github.com/sirupsen/logrus"
-	"github.com/starslabhq/hermes-rebalance/alert"
-	"github.com/starslabhq/hermes-rebalance/config"
-	"github.com/starslabhq/hermes-rebalance/db"
-	"github.com/starslabhq/hermes-rebalance/log"
-	"github.com/starslabhq/hermes-rebalance/services"
 )
 
 var (
@@ -35,10 +33,6 @@ func init() {
 func main() {
 	flag.Parse()
 	logrus.Info(confFile)
-
-	if !config.CheckEnv() {
-		logrus.Fatalf("wrong env")
-	}
 
 	conf, err := config.LoadConf(confFile)
 	if err != nil {
@@ -63,7 +57,7 @@ func main() {
 
 	leaseAlive()
 	defer removeFile()
-	logrus.Info("hermes-rebalance started")
+	logrus.Info("fat-tx started")
 
 	//setup alert
 	err = alert.InitDingding(&conf.Alert)
@@ -81,10 +75,7 @@ func main() {
 		logrus.Fatalf("connect to dbConnection error:%v", err)
 	}
 
-	go api.Run(conf.ServerConf, dbConnection)
-
-	//setup rpc clients
-	clients.Init(conf)
+	go api.Run(conf.ServerConf)
 
 	//setup scheduler
 	scheduler, err := services.NewServiceScheduler(conf, dbConnection, sigCh)

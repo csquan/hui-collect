@@ -2,8 +2,8 @@ all: build
 
 CURRENT_DIR=$(pwd)
 
-PROJ = hermes-rebalance
-MODULE = "hermes-rebalance"
+PROJ = fat-tx
+MODULE = "fat-tx"
 
 PKG = `go list ./... | grep -v /vendor/`
 
@@ -31,13 +31,13 @@ clean:
 	rm -rf bin
 
 build:
-	go build ${PKG_TAG} -o bin/hermes-rebalance main.go
+	go build ${PKG_TAG} -o bin/fat-tx main.go
 
 test: style cilint
 	go test -cover ./...
 
 server: clean 
-	${CROSS_COMPILE} go build -o bin/linux-amd64-hermes-rebalance ${PKG_TAG} main.go
+	${CROSS_COMPILE} go build -o bin/linux-amd64-fat-tx ${PKG_TAG} main.go
 
 
 .PHONY: build clean client

@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/starslabhq/hermes-rebalance/utils"
+	"github.com/ethereum/fat-tx/utils"
 
-	"github.com/starslabhq/hermes-rebalance/config"
+	"github.com/ethereum/fat-tx/config"
 )
 
 type Ding struct {
