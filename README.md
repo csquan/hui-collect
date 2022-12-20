@@ -15,8 +15,8 @@ stateDiagram-v2
     state Tx {
         [*] --> Init
         Init --> Assembly
-        Assembled --> Sign
-        Signed --> Broadcast
+        Assembly --> Sign
+        Sign --> Broadcast
         Broadcast --> [*]
     }
    
