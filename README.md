@@ -13,12 +13,11 @@ go route不断的扫，执行。
 ```mermaid
 stateDiagram-v2
     state Tx {
-        [*] --> Inited
-        Init --> Assembled
-        Assembled --> Signed
-        Signed --> Broadcasted
-        Broadcasted --> Confirmed
-        Confirm --> [*]
+        [*] --> Init
+        Init --> Assembly
+        Assembled --> Sign
+        Signed --> Broadcast
+        Broadcast --> [*]
     }
    
 ```
