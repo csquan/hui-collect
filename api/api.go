@@ -3,13 +3,13 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"github.com/ethereum/fat-tx/alert"
 	"github.com/ethereum/fat-tx/config"
 	"github.com/ethereum/fat-tx/types"
 	"github.com/ethereum/fat-tx/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
+	tgbot "github.com/suiguo/hwlib/telegram_bot"
 )
 
 type ApiService struct {
@@ -57,7 +57,7 @@ func (s *ApiService) AddTask(c *gin.Context) {
 			logrus.Errorf("save transaction task error:%v tasks:[%v]", err, task)
 			return
 		}
-		s.dingdingalert(&task)
+		s.tgalert(&task)
 		return
 	})
 	if err != nil {
@@ -69,7 +69,7 @@ func (s *ApiService) AddTask(c *gin.Context) {
 	})
 }
 
-func (c *ApiService) dingdingalert(task *types.TransactionTask) {
+func (c *ApiService) tgalert(task *types.TransactionTask) {
 	var (
 		msg string
 		err error
@@ -78,10 +78,13 @@ func (c *ApiService) dingdingalert(task *types.TransactionTask) {
 	if err != nil {
 		logrus.Errorf("create init msg err:%v,state:%d,tid:%d", err, task.State, task.ID)
 	}
-
-	err = alert.Dingding.SendMessage("交易初始", msg)
+	bot, err := tgbot.NewBot("5985674693:AAF94x_xI2RI69UTP-wt_QThldq-XEKGY8g")
 	if err != nil {
-		logrus.Errorf("send message err:%v,msg:%s", err, msg)
+		logrus.Fatal(err)
+	}
+	err = bot.SendMsg(1762573172, msg)
+	if err != nil {
+		logrus.Fatal(err)
 	}
 }
 

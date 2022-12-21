@@ -24,8 +24,6 @@ func (c *BroadcastService) BroadcastTx(task *types.TransactionTask) (finished bo
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
 		//1.广播交易 2.广播交易后需要根据hash查询receipt，确定查询到结果后再更新状态 3.产生叮叮状态转换消息
 
-		c.dingdingalert(task)
-
 		return nil
 	})
 	if err != nil {
@@ -34,7 +32,7 @@ func (c *BroadcastService) BroadcastTx(task *types.TransactionTask) (finished bo
 	return true, nil
 }
 
-func (c *BroadcastService) dingdingalert(task *types.TransactionTask) {
+func (c *BroadcastService) tgalert(task *types.TransactionTask) {
 
 }
 
@@ -51,7 +49,7 @@ func (c *BroadcastService) Run() error {
 	for _, task := range tasks {
 		_, err := c.BroadcastTx(task)
 		if err == nil {
-			c.dingdingalert(task)
+			c.tgalert(task)
 		}
 	}
 	return nil

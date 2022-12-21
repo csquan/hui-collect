@@ -32,7 +32,7 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 	return true, nil
 }
 
-func (c *SignService) dingdingalert(task *types.TransactionTask) {
+func (c *SignService) tgalert(task *types.TransactionTask) {
 
 }
 
@@ -49,7 +49,7 @@ func (c *SignService) Run() error {
 	for _, task := range tasks {
 		_, err := c.SignTx(task)
 		if err == nil {
-			c.dingdingalert(task)
+			c.tgalert(task)
 		}
 	}
 	return nil
