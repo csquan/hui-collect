@@ -1,19 +1,23 @@
 package services
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"github.com/ethereum/fat-tx/alert"
 	"github.com/ethereum/fat-tx/config"
 	"github.com/ethereum/fat-tx/types"
 	"github.com/ethereum/fat-tx/utils"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 )
 
-//type CrossMsg struct {
-//	Stage    string
-//	Task     *types.CrossTask
-//	SubTasks []*types.CrossSubTask
-//}
+type AssemblyMsg struct {
+	Stage string
+	Task  *types.TransactionTask
+}
 
 type AssemblyService struct {
 	db     types.IDB
@@ -27,11 +31,16 @@ func NewAssemblyService(db types.IDB, c *config.Config) *AssemblyService {
 	}
 }
 
-func (c *AssemblyService) AssemblyTx() (finished bool, err error) {
+func (c *AssemblyService) AssemblyTx(task *types.TransactionTask) (finished bool, err error) {
+	//实际组装tx
+	c.handleAssembly(task)
+
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
-
-		c.stateChanged(types.TxAssmblyState)
-
+		task.State = int(types.TxAssmblyState)
+		if err := c.db.UpdateTransactionTask(s, task); err != nil {
+			logrus.Errorf("update transaction task error:%v tasks:[%v]", err, task)
+			return err
+		}
 		return nil
 	})
 	if err != nil {
@@ -40,21 +49,70 @@ func (c *AssemblyService) AssemblyTx() (finished bool, err error) {
 	return true, nil
 }
 
-func (c *AssemblyService) stateChanged(next types.TransactionState) {
-	//var (
-	//	msg string
-	//	err error
-	//)
-	//msg, err = createCrossMesg("cross_finished", task, subTasks)
-	//if err != nil {
-	//	logrus.Errorf("create subtask_finished msg err:%v,state:%d,tid:%d", err, next, task.ID)
-	//}
-	//
-	//err = alert.Dingding.SendMessage("cross", msg)
-	//if err != nil {
-	//	logrus.Errorf("send message err:%v,msg:%s", err, msg)
-	//}
+func max(nums ...uint64) uint64 {
+	var maxNum uint64 = 0
+	for _, num := range nums {
+		if num > maxNum {
+			maxNum = num
+		}
+	}
+	return maxNum
+}
 
+func (c *AssemblyService) handleAssembly(task *types.TransactionTask) {
+	client, err := ethclient.Dial("http://43.198.66.226:8545")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	//这里nouce逻辑：1.先查询本地db的nouce，条件为 from ==地址为task.from 2.再从链上取 3.取二者的最大值
+	res, err := c.db.GetTaskNonce(task.From)
+	if err != nil {
+		logrus.Fatal("get tasks for from address:%v err:%v", task.From, err)
+	}
+
+	nonce, err := client.PendingNonceAt(context.Background(), common.HexToAddress(task.From))
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	task.Nonce = max(nonce, res.Nonce)
+
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	task.GasPrice = gasPrice.String()
+}
+
+func createAssemblyMsg(task *types.TransactionTask) (string, error) {
+	//告警消息
+	var buffer bytes.Buffer
+	buffer.WriteString(fmt.Sprintf("告警:交易组装完成\n\n"))
+	buffer.WriteString(fmt.Sprintf("UserID: %v\n\n", task.UserID))
+	buffer.WriteString(fmt.Sprintf("From: %v\n\n", task.From))
+	buffer.WriteString(fmt.Sprintf("To: %v\n\n", task.To))
+	buffer.WriteString(fmt.Sprintf("Data: %v\n\n", task.InputData))
+	buffer.WriteString(fmt.Sprintf("Nonce: %v\n\n", task.Nonce))
+	buffer.WriteString(fmt.Sprintf("GasPrice: %v\n\n", task.GasPrice))
+	buffer.WriteString(fmt.Sprintf("State: %v\n\n", task.State))
+
+	return buffer.String(), nil
+}
+
+func (c *AssemblyService) dingdingalert(task *types.TransactionTask) {
+	var (
+		msg string
+		err error
+	)
+	msg, err = createAssemblyMsg(task)
+	if err != nil {
+		logrus.Errorf("create assembly msg err:%v,state:%d,tid:%d", err, task.State, task.ID)
+	}
+
+	err = alert.Dingding.SendMessage("交易组装", msg)
+	if err != nil {
+		logrus.Errorf("send message err:%v,msg:%s", err, msg)
+	}
 }
 
 func (c *AssemblyService) Run() error {
@@ -64,19 +122,13 @@ func (c *AssemblyService) Run() error {
 	}
 
 	if len(tasks) == 0 {
-		logrus.Infof("no tasks for assembly")
 		return nil
 	}
 
 	for _, task := range tasks {
-		switch task.State {
-		case int(types.TxInitState):
-			_, err := c.AssemblyTx()
-			if err == nil {
-				c.stateChanged(types.TxAssmblyState)
-			}
-		default:
-			return fmt.Errorf("state:[%v] unknow:%d", task.State)
+		_, err := c.AssemblyTx(task)
+		if err == nil {
+			c.dingdingalert(task)
 		}
 	}
 	return nil

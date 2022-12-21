@@ -125,15 +125,12 @@ func LoadConf(fpath string) (*Config, error) {
 	vip := viper.New()
 	vip.SetConfigType("yaml")
 
-	if strings.HasPrefix(strings.ToLower(fpath), "remote") {
-		fmt.Println("read configuration from local yaml file :", fpath)
-		err := localConfig(fpath, vip)
-		if err != nil {
-			return nil, err
-		}
-
+	err := localConfig(fpath, vip)
+	if err != nil {
+		return nil, err
 	}
-	err := vip.Unmarshal(conf)
+
+	err = vip.Unmarshal(conf)
 	if err != nil {
 		return nil, err
 	}

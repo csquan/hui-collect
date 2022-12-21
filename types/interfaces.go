@@ -12,11 +12,14 @@ type IReader interface {
 	GetOpenedSignTasks() ([]*TransactionTask, error)
 	//查询可以进行广播的任务--状态为sign
 	GetOpenedBroadcastTasks() ([]*TransactionTask, error)
+	//查询非完成状态的task
+	GetTaskNonce(from string) (*TransactionTask, error)
 }
 
 type IWriter interface {
 	GetSession() *xorm.Session
 	GetEngine() *xorm.Engine
+	SaveTxTask(itf xorm.Interface, task *TransactionTask) (err error)
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
 	UpdateTransactionTaskMessage(taskID uint64, message string) error
 }

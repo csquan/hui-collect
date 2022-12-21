@@ -30,3 +30,15 @@ func (m *Mysql) GetOpenedBroadcastTasks() ([]*types.TransactionTask, error) {
 	}
 	return tasks, err
 }
+
+func (m *Mysql) GetTaskNonce(from string) (*types.TransactionTask, error) {
+	task := &types.TransactionTask{}
+	ok, err := m.engine.Table("t_transaction_task").Where("f_from = ?", from).Desc("f_nonce").Limit(1).Get(task)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	return task, nil
+}

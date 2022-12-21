@@ -74,8 +74,8 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("connect to dbConnection error:%v", err)
 	}
-
-	go api.Run(conf.ServerConf)
+	apiservice := api.NewApiService(dbConnection, conf)
+	go apiservice.Run(conf.ServerConf)
 
 	//setup scheduler
 	scheduler, err := services.NewServiceScheduler(conf, dbConnection, sigCh)
