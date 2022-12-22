@@ -1,11 +1,19 @@
 package services
 
 import (
+	"context"
+	"encoding/hex"
 	"fmt"
 	"github.com/ethereum/fat-tx/config"
 	"github.com/ethereum/fat-tx/types"
 	"github.com/ethereum/fat-tx/utils"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/go-xorm/xorm"
+	"github.com/sirupsen/logrus"
+	"log"
+
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type BroadcastService struct {
@@ -21,15 +29,45 @@ func NewBoradcastService(db types.IDB, c *config.Config) *BroadcastService {
 }
 
 func (c *BroadcastService) BroadcastTx(task *types.TransactionTask) (finished bool, err error) {
+	hash, err := c.handleBroadcastTx(task)
+	if err != nil {
+		return false, err
+	}
+	task.Hash = hash
+	task.State = int(types.TxBroadcastState)
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
-		//1.广播交易 2.广播交易后需要根据hash查询receipt，确定查询到结果后再更新状态 3.产生叮叮状态转换消息
-
+		if err := c.db.UpdateTransactionTask(s, task); err != nil {
+			logrus.Errorf("update transaction task error:%v tasks:[%v]", err, task)
+			return err
+		}
 		return nil
 	})
 	if err != nil {
-		return false, fmt.Errorf("add cross sub tasks err:%v", err)
+		return false, fmt.Errorf(" CommitWithSession in BroadcastTx err:%v", err)
 	}
 	return true, nil
+}
+
+func (c *BroadcastService) handleBroadcastTx(task *types.TransactionTask) (string, error) {
+	rawTxBytes, err := hex.DecodeString(task.SignData)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tx := new(ethtypes.Transaction)
+	rlp.DecodeBytes(rawTxBytes, &tx)
+
+	client, err := ethclient.Dial("http://43.198.66.226:8545")
+	if err != nil {
+		return "", err
+	}
+
+	err = client.SendTransaction(context.Background(), tx)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("tx sent: %s", tx.Hash().Hex())
+	return tx.Hash().Hex(), nil
 }
 
 func (c *BroadcastService) tgalert(task *types.TransactionTask) {

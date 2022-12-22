@@ -10,6 +10,7 @@ CREATE TABLE `t_transaction_task` (
     `f_signed_data`       text COMMENT '签名后数据',
     `f_hash`              char(66)            NOT NULL DEFAULT '' COMMENT 'transaction hash',
     `f_gas_limit`         varchar(255)        NOT NULL DEFAULT '2000000' COMMENT 'gas_price',
+    `f_receipt`           text COMMENT '交易的收据',
     `f_state`             tinyint(4)          NOT NULL DEFAULT '0' COMMENT 'state',
     `f_created_at`        timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
     `f_updated_at`        timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'time',

@@ -31,6 +31,15 @@ func (m *Mysql) GetOpenedBroadcastTasks() ([]*types.TransactionTask, error) {
 	return tasks, err
 }
 
+func (m *Mysql) GetOpenedCheckReceiptTasks() ([]*types.TransactionTask, error) {
+	tasks := make([]*types.TransactionTask, 0)
+	err := m.engine.Table("t_transaction_task").Where("f_state in (?)", types.TxBroadcastState).Find(&tasks)
+	if err != nil {
+		return nil, err
+	}
+	return tasks, err
+}
+
 func (m *Mysql) GetTaskNonce(from string) (*types.TransactionTask, error) {
 	task := &types.TransactionTask{}
 	ok, err := m.engine.Table("t_transaction_task").Where("f_from = ?", from).Desc("f_nonce").Limit(1).Get(task)

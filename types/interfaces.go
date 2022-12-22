@@ -12,6 +12,9 @@ type IReader interface {
 	GetOpenedSignTasks() ([]*TransactionTask, error)
 	//查询可以进行广播的任务--状态为sign
 	GetOpenedBroadcastTasks() ([]*TransactionTask, error)
+	//查询可以进行广播的任务--状态为sign
+	GetOpenedCheckReceiptTasks() ([]*TransactionTask, error)
+
 	//查询非完成状态的task
 	GetTaskNonce(from string) (*TransactionTask, error)
 }
