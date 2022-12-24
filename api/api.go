@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
 	"net/http"
+	"time"
 )
 
 const ADDRLEN = 42
@@ -87,6 +88,7 @@ func (s *ApiService) AddTask(c *gin.Context) {
 
 	//插入task
 	task := types.TransactionTask{
+		UUID:      time.Now().Unix(),
 		UserID:    userID,
 		From:      from,
 		To:        to,

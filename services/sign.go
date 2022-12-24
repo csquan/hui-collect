@@ -19,8 +19,9 @@ import (
 	"math/big"
 	"net/http"
 	"strconv"
-	"unsafe"
 )
+
+const SigLen = 65
 
 type SignService struct {
 	db     types.IDB
@@ -33,16 +34,6 @@ func NewSignService(db types.IDB, c *config.Config) *SignService {
 		config: c,
 	}
 }
-
-//func (c *SignService) WithSignature(tx *ethTypes.Transaction, signer ethTypes.Signer, sig []byte) (*ethTypes.Transaction, error) {
-//	r, s, v, err := signer.SignatureValues(tx, sig)
-//	if err != nil {
-//		return nil, err
-//	}
-//	cpy := tx.inner.copy()
-//	cpy.setSignatureValues(signer.ChainID(), v, r, s)
-//	return &ethTypes.Transaction{inner: cpy, time: tx.time}, nil
-//}
 
 func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err error) {
 	gasLimit, err := strconv.ParseUint(task.GasLimit, 10, 64)
@@ -87,11 +78,17 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 	if err != nil {
 		fmt.Println("Fatal error ", err.Error())
 	}
-	sig := (*string)(unsafe.Pointer(&content)) //转化为string,优化内存
+	sig := string(content)
 
-	//将sig中rsv三个持久化
-	fmt.Println(sig)
+	//32 32 1-->R S V
+	if len(sig) != SigLen { //这里记录错误，更新数据库，也返回true,留待下次扫到这个交易重试签名
+		task.Error = fmt.Sprintf("signature len :%d is error", len(sig))
 
+	} else {
+		task.R = sig[:32]
+		task.S = sig[32:64]
+		task.V = sig[64:65]
+	}
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
 		// 依照结果更新task状态
 		if err := c.db.UpdateTransactionTask(s, task); err != nil {
