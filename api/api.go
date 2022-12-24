@@ -8,9 +8,13 @@ import (
 	"github.com/ethereum/fat-tx/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/go-xorm/xorm"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
+	"net/http"
 )
+
+const ADDRLEN = 42
 
 type ApiService struct {
 	db     types.IDB
@@ -35,6 +39,23 @@ func (s *ApiService) Run(conf config.ServerConf) {
 	}
 }
 
+func checkAddr(addr string) error {
+	if addr[:2] != "0x" {
+		return errors.New("addr must start with 0x")
+	}
+	if len(addr) != ADDRLEN {
+		return errors.New("addr len wrong ,must 40")
+	}
+	return nil
+}
+
+func checkInput(addr string) error {
+	if addr[:2] != "0x" {
+		return errors.New("addr must start with 0x")
+	}
+	return nil
+}
+
 // 接收注册过来的消息，存入db作为tx初始状态
 func (s *ApiService) AddTask(c *gin.Context) {
 	from := c.PostForm("from")
@@ -42,7 +63,29 @@ func (s *ApiService) AddTask(c *gin.Context) {
 	data := c.PostForm("data")
 	userID := c.PostForm("userid")
 
-	//组装task
+	res := types.HttpRes{}
+
+	//check params
+	err := checkAddr(from)
+	if err != nil {
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+	}
+	err = checkAddr(to)
+	if err != nil {
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+	}
+	err = checkInput(data)
+	if err != nil {
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+	}
+
+	//插入task
 	task := types.TransactionTask{
 		UserID:    userID,
 		From:      from,
@@ -51,25 +94,26 @@ func (s *ApiService) AddTask(c *gin.Context) {
 	}
 	task.State = int(types.TxInitState)
 
-	err := utils.CommitWithSession(s.db, func(session *xorm.Session) (execErr error) {
-		//create next state task
+	err = utils.CommitWithSession(s.db, func(session *xorm.Session) (execErr error) {
 		if err := s.db.SaveTxTask(session, &task); err != nil {
 			logrus.Errorf("save transaction task error:%v tasks:[%v]", err, task)
 			return
 		}
-		s.tgalert(&task)
+		s.tgAlert(&task)
 		return
 	})
 	if err != nil {
-		logrus.Fatalf("SaveTxTask CommitWithSession err:%v", err)
+		res.Code = http.StatusInternalServerError
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusInternalServerError, res)
 	}
 
-	c.JSON(200, gin.H{
-		"ok": "ok",
-	})
+	res.Code = http.StatusOK
+	res.Message = "success"
+	c.SecureJSON(http.StatusOK, res)
 }
 
-func (c *ApiService) tgalert(task *types.TransactionTask) {
+func (c *ApiService) tgAlert(task *types.TransactionTask) {
 	var (
 		msg string
 		err error
@@ -91,7 +135,7 @@ func (c *ApiService) tgalert(task *types.TransactionTask) {
 func createInitMsg(task *types.TransactionTask) (string, error) {
 	//告警消息
 	var buffer bytes.Buffer
-	buffer.WriteString(fmt.Sprintf("告警:交易初始\n\n"))
+	buffer.WriteString(fmt.Sprintf("交易状态变化:->交易初始\n\n"))
 	buffer.WriteString(fmt.Sprintf("UserID: %v\n\n", task.UserID))
 	buffer.WriteString(fmt.Sprintf("From: %v\n\n", task.From))
 	buffer.WriteString(fmt.Sprintf("To: %v\n\n", task.To))

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
+	tgbot "github.com/suiguo/hwlib/telegram_bot"
 	"log"
 
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -67,11 +69,48 @@ func (c *BroadcastService) handleBroadcastTx(task *types.TransactionTask) (strin
 	}
 
 	fmt.Printf("tx sent: %s", tx.Hash().Hex())
+
+	//check hash ==?tx.hash
+	if tx.Hash().Hex() != task.Hash {
+		fmt.Printf("tx sent hash : %s is not equal to task.hash : %s", tx.Hash().Hex(), task.Hash)
+	}
+
 	return tx.Hash().Hex(), nil
 }
 
-func (c *BroadcastService) tgalert(task *types.TransactionTask) {
+func (c *BroadcastService) tgAlert(task *types.TransactionTask) {
+	var (
+		msg string
+		err error
+	)
+	msg, err = createBoradcastMsg(task)
+	if err != nil {
+		logrus.Errorf("create assembly msg err:%v,state:%d,tid:%d", err, task.State, task.ID)
+	}
 
+	bot, err := tgbot.NewBot("5985674693:AAF94x_xI2RI69UTP-wt_QThldq-XEKGY8g")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	err = bot.SendMsg(1762573172, msg)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+}
+func createBoradcastMsg(task *types.TransactionTask) (string, error) {
+	//告警消息
+	var buffer bytes.Buffer
+	buffer.WriteString(fmt.Sprintf("交易状态变化->交易广播完成\n\n"))
+	buffer.WriteString(fmt.Sprintf("UserID: %v\n\n", task.UserID))
+	buffer.WriteString(fmt.Sprintf("From: %v\n\n", task.From))
+	buffer.WriteString(fmt.Sprintf("To: %v\n\n", task.To))
+	buffer.WriteString(fmt.Sprintf("Data: %v\n\n", task.InputData))
+	buffer.WriteString(fmt.Sprintf("Nonce: %v\n\n", task.Nonce))
+	buffer.WriteString(fmt.Sprintf("GasPrice: %v\n\n", task.GasPrice))
+	buffer.WriteString(fmt.Sprintf("Hash: %v\n\n", task.Hash))
+	buffer.WriteString(fmt.Sprintf("State: %v\n\n", task.State))
+
+	return buffer.String(), nil
 }
 
 func (c *BroadcastService) Run() error {
@@ -87,7 +126,7 @@ func (c *BroadcastService) Run() error {
 	for _, task := range tasks {
 		_, err := c.BroadcastTx(task)
 		if err == nil {
-			c.tgalert(task)
+			c.tgAlert(task)
 		}
 	}
 	return nil

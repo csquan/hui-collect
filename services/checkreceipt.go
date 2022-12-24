@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -14,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
+	tgbot "github.com/suiguo/hwlib/telegram_bot"
 )
 
 type CheckReceiptService struct {
@@ -73,8 +75,39 @@ func (c *CheckReceiptService) handleCheckReceipt(task *types.TransactionTask) (*
 	return receipt, nil
 }
 
-func (c *CheckReceiptService) tgalert(task *types.TransactionTask) {
+func (c *CheckReceiptService) tgAlert(task *types.TransactionTask) {
+	var (
+		msg string
+		err error
+	)
+	msg, err = createCheckMsg(task)
+	if err != nil {
+		logrus.Errorf("create assembly msg err:%v,state:%d,tid:%d", err, task.State, task.ID)
+	}
 
+	bot, err := tgbot.NewBot("5985674693:AAF94x_xI2RI69UTP-wt_QThldq-XEKGY8g")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	err = bot.SendMsg(1762573172, msg)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+}
+func createCheckMsg(task *types.TransactionTask) (string, error) {
+	var buffer bytes.Buffer
+	buffer.WriteString(fmt.Sprintf("交易状态变化->交易获取收据完成\n\n"))
+	buffer.WriteString(fmt.Sprintf("UserID: %v\n\n", task.UserID))
+	buffer.WriteString(fmt.Sprintf("From: %v\n\n", task.From))
+	buffer.WriteString(fmt.Sprintf("To: %v\n\n", task.To))
+	buffer.WriteString(fmt.Sprintf("Data: %v\n\n", task.InputData))
+	buffer.WriteString(fmt.Sprintf("Nonce: %v\n\n", task.Nonce))
+	buffer.WriteString(fmt.Sprintf("GasPrice: %v\n\n", task.GasPrice))
+	buffer.WriteString(fmt.Sprintf("Hash: %v\n\n", task.Hash))
+	buffer.WriteString(fmt.Sprintf("Receipt: %v\n\n", task.Receipt))
+	buffer.WriteString(fmt.Sprintf("State: %v\n\n", task.State))
+
+	return buffer.String(), nil
 }
 
 func (c *CheckReceiptService) Run() error {
@@ -90,7 +123,7 @@ func (c *CheckReceiptService) Run() error {
 	for _, task := range tasks {
 		_, err := c.CheckReceipt(task)
 		if err == nil {
-			c.tgalert(task)
+			c.tgAlert(task)
 		}
 	}
 	return nil

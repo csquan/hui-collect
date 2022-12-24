@@ -13,7 +13,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/ethereum/fat-tx/alert"
 	"github.com/ethereum/fat-tx/config"
 	"github.com/ethereum/fat-tx/db"
 	"github.com/ethereum/fat-tx/log"
@@ -58,12 +57,6 @@ func main() {
 	leaseAlive()
 	defer removeFile()
 	logrus.Info("fat-tx started")
-
-	//setup alert
-	err = alert.InitDingding(&conf.Alert)
-	if err != nil {
-		logrus.Fatalf("set up alert error:%v", err)
-	}
 
 	//listen kill signal
 	sigCh := make(chan os.Signal, 1)

@@ -30,13 +30,6 @@ type DataBaseConf struct {
 	DB string `mapstructure:"db"` //DB 连接信息
 }
 
-type AlertConf struct {
-	URL         string   `mapstructure:"url"`
-	Mobiles     []string `mapstructure:"mobiles"`
-	Secret      string   `mapstructure:"secret"`
-	MaxWaitTime int64    `mapstructure:"max_wait_time"`
-}
-
 type ServerConf struct {
 	Port  int               `mapstructure:"port"`
 	Users map[string]string `mapstructure:"users"`
@@ -48,7 +41,6 @@ type Config struct {
 	QueryIntervalInt uint64                `mapstructure:"query_interval"` //ms
 	DataBase         DataBaseConf          `mapstructure:"database"`
 	LogConf          Log                   `mapstructure:"log"`
-	Alert            AlertConf             `mapstructure:"alert"`
 	Chains           map[string]*ChainInfo `mapstructure:"chains"`
 	Margin           *Margin               `mapstructure:"margin"`
 	Env              string                `mapstructure:"env"`
@@ -119,7 +111,6 @@ func LoadConf(fpath string) (*Config, error) {
 		LogConf:          DefaultLogConfig,
 		QueryIntervalInt: 3000,
 		ServerConf:       DefaultServerConf,
-		Alert:            DefaultAlertConf,
 	}
 
 	vip := viper.New()

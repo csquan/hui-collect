@@ -11,8 +11,4 @@ var (
 		Port:  8080,
 		Users: map[string]string{},
 	}
-
-	DefaultAlertConf = AlertConf{
-		MaxWaitTime: 10 * 60, // 10 min
-	}
 )

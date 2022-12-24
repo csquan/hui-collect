@@ -87,7 +87,7 @@ func (c *AssemblyService) handleAssembly(task *types.TransactionTask) {
 func createAssemblyMsg(task *types.TransactionTask) (string, error) {
 	//告警消息
 	var buffer bytes.Buffer
-	buffer.WriteString(fmt.Sprintf("告警:交易组装完成\n\n"))
+	buffer.WriteString(fmt.Sprintf("交易状态变化->交易组装完成\n\n"))
 	buffer.WriteString(fmt.Sprintf("UserID: %v\n\n", task.UserID))
 	buffer.WriteString(fmt.Sprintf("From: %v\n\n", task.From))
 	buffer.WriteString(fmt.Sprintf("To: %v\n\n", task.To))
@@ -99,7 +99,7 @@ func createAssemblyMsg(task *types.TransactionTask) (string, error) {
 	return buffer.String(), nil
 }
 
-func (c *AssemblyService) tgalert(task *types.TransactionTask) {
+func (c *AssemblyService) tgAlert(task *types.TransactionTask) {
 	var (
 		msg string
 		err error
@@ -132,7 +132,7 @@ func (c *AssemblyService) Run() error {
 	for _, task := range tasks {
 		_, err := c.AssemblyTx(task)
 		if err == nil {
-			c.tgalert(task)
+			c.tgAlert(task)
 		}
 	}
 	return nil
