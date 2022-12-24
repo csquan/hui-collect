@@ -82,6 +82,12 @@ func (c *AssemblyService) handleAssembly(task *types.TransactionTask) {
 		logrus.Fatal(err)
 	}
 	task.GasPrice = gasPrice.String()
+
+	//gasPrice, err := client.EstimateGas(context.Background())
+	//if err != nil {
+	//	logrus.Fatal(err)
+	//}
+	task.GasLimit = "8000000"
 }
 
 func createAssemblyMsg(task *types.TransactionTask) (string, error) {

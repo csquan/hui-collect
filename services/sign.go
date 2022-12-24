@@ -66,8 +66,10 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 		return false, err
 	}
 
+	//data:--hex.EncodeToString(ct)
+
 	//将ct发送给签名接口
-	res, err := http.Post("http://15.152.203.71:8080/sign",
+	res, err := http.Post("http://15.152.203.71:80/sign",
 		"application/json;charset=utf-8", bytes.NewBuffer(ct))
 	if err != nil {
 		fmt.Println("Fatal error ", err.Error())
