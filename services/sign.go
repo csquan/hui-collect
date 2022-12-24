@@ -5,18 +5,21 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/fat-tx/config"
-	"github.com/ethereum/fat-tx/types"
-	"github.com/ethereum/fat-tx/utils"
+	"github.com/ethereum/Hui-TxState/config"
+	"github.com/ethereum/Hui-TxState/types"
+	"github.com/ethereum/Hui-TxState/utils"
 	"github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/ecies"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
+	"io/ioutil"
 	"math/big"
+	"net/http"
 	"strconv"
+	"unsafe"
 )
 
 type SignService struct {
@@ -31,6 +34,16 @@ func NewSignService(db types.IDB, c *config.Config) *SignService {
 	}
 }
 
+//func (c *SignService) WithSignature(tx *ethTypes.Transaction, signer ethTypes.Signer, sig []byte) (*ethTypes.Transaction, error) {
+//	r, s, v, err := signer.SignatureValues(tx, sig)
+//	if err != nil {
+//		return nil, err
+//	}
+//	cpy := tx.inner.copy()
+//	cpy.setSignatureValues(signer.ChainID(), v, r, s)
+//	return &ethTypes.Transaction{inner: cpy, time: tx.time}, nil
+//}
+
 func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err error) {
 	gasLimit, err := strconv.ParseUint(task.GasLimit, 10, 64)
 	if err != nil {
@@ -41,11 +54,11 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 		return false, err
 	}
 
-	tx := ethtypes.NewTransaction(task.Nonce, common.HexToAddress(task.To), big.NewInt(0), gasLimit, big.NewInt(gasPrice), []byte(task.InputData))
+	tx := ethTypes.NewTransaction(task.Nonce, common.HexToAddress(task.To), big.NewInt(0), gasLimit, big.NewInt(gasPrice), []byte(task.InputData))
 
 	walletPrivateKey, err := crypto.HexToECDSA("35f47c090146782715561fc6df6033167a72660ae1386fab0d0a6f5a1db3d18f")
 
-	task.Hash = tx.Hash().Hex() //这里存储的是计算出来的hash，而不是广播的hash，广播后会有比对
+	task.SignHash = tx.Hash().Hex() //这里存储的是计算出来的签名前的hash
 
 	signData := types.SignData{
 		UID:     task.UserID,
@@ -56,13 +69,28 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 	msg, err := json.Marshal(signData)
 	cipherPubKey := ecies.ImportECDSAPublic(&walletPrivateKey.PublicKey)
 
-	_, err = ecies.Encrypt(rand.Reader, cipherPubKey, msg, nil, nil)
+	ct, err := ecies.Encrypt(rand.Reader, cipherPubKey, msg, nil, nil)
 
 	if err != nil {
 		return false, err
 	}
 
 	//将ct发送给签名接口
+	res, err := http.Post("http://15.152.203.71:8080/sign",
+		"application/json;charset=utf-8", bytes.NewBuffer(ct))
+	if err != nil {
+		fmt.Println("Fatal error ", err.Error())
+	}
+	defer res.Body.Close()
+
+	content, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Fatal error ", err.Error())
+	}
+	sig := (*string)(unsafe.Pointer(&content)) //转化为string,优化内存
+
+	//将sig中rsv三个持久化
+	fmt.Println(sig)
 
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
 		// 依照结果更新task状态
@@ -107,8 +135,11 @@ func createSignMsg(task *types.TransactionTask) (string, error) {
 	buffer.WriteString(fmt.Sprintf("Data: %v\n\n", task.InputData))
 	buffer.WriteString(fmt.Sprintf("Nonce: %v\n\n", task.Nonce))
 	buffer.WriteString(fmt.Sprintf("GasPrice: %v\n\n", task.GasPrice))
-	buffer.WriteString(fmt.Sprintf("Hash: %v\n\n", task.Hash))
-	buffer.WriteString(fmt.Sprintf("SignData: %v\n\n", task.SignData))
+	buffer.WriteString(fmt.Sprintf("SignHash: %v\n\n", task.SignHash))
+	buffer.WriteString(fmt.Sprintf("TxHash: %v\n\n", task.TxHash))
+	buffer.WriteString(fmt.Sprintf("Sign_R: %v\n\n", task.R))
+	buffer.WriteString(fmt.Sprintf("Sign_S: %v\n\n", task.S))
+	buffer.WriteString(fmt.Sprintf("Sign_V: %v\n\n", task.V))
 	buffer.WriteString(fmt.Sprintf("State: %v\n\n", task.State))
 
 	return buffer.String(), nil

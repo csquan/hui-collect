@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/ethereum/fat-tx/types"
+	"github.com/ethereum/Hui-TxState/types"
 )
 
 func (m *Mysql) GetOpenedAssemblyTasks() ([]*types.TransactionTask, error) {

@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/fat-tx/config"
-	"github.com/ethereum/fat-tx/types"
+	"github.com/ethereum/Hui-TxState/config"
+	"github.com/ethereum/Hui-TxState/types"
 	"github.com/sirupsen/logrus"
 )
 

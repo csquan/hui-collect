@@ -3,7 +3,7 @@ package utils
 import (
 	"encoding/json"
 
-	"github.com/ethereum/fat-tx/types"
+	"github.com/ethereum/Hui-TxState/types"
 	"github.com/sirupsen/logrus"
 )
 

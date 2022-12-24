@@ -3,9 +3,9 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"github.com/ethereum/fat-tx/config"
-	"github.com/ethereum/fat-tx/types"
-	"github.com/ethereum/fat-tx/utils"
+	"github.com/ethereum/Hui-TxState/config"
+	"github.com/ethereum/Hui-TxState/types"
+	"github.com/ethereum/Hui-TxState/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/go-xorm/xorm"
 	"github.com/pkg/errors"

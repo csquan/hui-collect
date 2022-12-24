@@ -3,8 +3,8 @@ package db
 import (
 	"time"
 
-	"github.com/ethereum/fat-tx/config"
-	"github.com/ethereum/fat-tx/types"
+	"github.com/ethereum/Hui-TxState/config"
+	"github.com/ethereum/Hui-TxState/types"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"

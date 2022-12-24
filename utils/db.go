@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/ethereum/fat-tx/types"
+	"github.com/ethereum/Hui-TxState/types"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 )

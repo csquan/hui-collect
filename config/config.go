@@ -14,11 +14,7 @@ import (
 var Env string
 
 const (
-	appID           string = "rebalance"
-	apolloSeverDev  string = "http://apollo-config.system-service.huobiapps.com"
-	apolloSeverProd string = "http://apollo-config.system-service.apne-1.huobiapps.com:80" //prod
-	envProd                = "prod"
-	envDev                 = "dev"
+	appID string = "Hui-TxState"
 )
 
 type Conf struct {
@@ -42,14 +38,8 @@ type Config struct {
 	DataBase         DataBaseConf          `mapstructure:"database"`
 	LogConf          Log                   `mapstructure:"log"`
 	Chains           map[string]*ChainInfo `mapstructure:"chains"`
-	Margin           *Margin               `mapstructure:"margin"`
 	Env              string                `mapstructure:"env"`
 	ServerConf       ServerConf            `mapstructure:"server_conf"`
-	IsCheckParams    bool                  `mapstructure:"is_check_params"`
-}
-type Margin struct {
-	AppID     string `mapstructure:"app_id"`
-	SecretKey string `mapstructure:"secret_key"`
 }
 
 type ChainInfo struct {

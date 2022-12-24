@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ethereum/fat-tx/config"
+	"github.com/ethereum/Hui-TxState/config"
 
 	"github.com/sirupsen/logrus"
 )

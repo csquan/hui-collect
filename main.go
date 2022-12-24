@@ -8,15 +8,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ethereum/fat-tx/api"
+	"github.com/ethereum/Hui-TxState/api"
 
 	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/ethereum/fat-tx/config"
-	"github.com/ethereum/fat-tx/db"
-	"github.com/ethereum/fat-tx/log"
-	"github.com/ethereum/fat-tx/services"
+	"github.com/ethereum/Hui-TxState/config"
+	"github.com/ethereum/Hui-TxState/db"
+	"github.com/ethereum/Hui-TxState/log"
+	"github.com/ethereum/Hui-TxState/services"
 	"github.com/sirupsen/logrus"
 )
 
@@ -56,7 +56,7 @@ func main() {
 
 	leaseAlive()
 	defer removeFile()
-	logrus.Info("fat-tx started")
+	logrus.Info("Hui-TxState started")
 
 	//listen kill signal
 	sigCh := make(chan os.Signal, 1)

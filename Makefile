@@ -2,8 +2,8 @@ all: build
 
 CURRENT_DIR=$(pwd)
 
-PROJ = fat-tx
-MODULE = "fat-tx"
+PROJ = Hui-TxState
+MODULE = "Hui-TxState"
 
 PKG = `go list ./... | grep -v /vendor/`
 
@@ -31,13 +31,13 @@ clean:
 	rm -rf bin
 
 build:
-	go build ${PKG_TAG} -o bin/fat-tx main.go
+	go build ${PKG_TAG} -o bin/Hui-TxState main.go
 
 test: style cilint
 	go test -cover ./...
 
 server: clean 
-	${CROSS_COMPILE} go build -o bin/linux-amd64-fat-tx ${PKG_TAG} main.go
+	${CROSS_COMPILE} go build -o bin/linux-amd64-Hui-TxState ${PKG_TAG} main.go
 
 
 .PHONY: build clean client

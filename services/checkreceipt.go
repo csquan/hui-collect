@@ -3,16 +3,14 @@ package services
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/fat-tx/config"
-	"github.com/ethereum/fat-tx/types"
-	"github.com/ethereum/fat-tx/utils"
+	"github.com/ethereum/Hui-TxState/config"
+	"github.com/ethereum/Hui-TxState/types"
+	"github.com/ethereum/Hui-TxState/utils"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
@@ -55,19 +53,12 @@ func (c *CheckReceiptService) CheckReceipt(task *types.TransactionTask) (finishe
 }
 
 func (c *CheckReceiptService) handleCheckReceipt(task *types.TransactionTask) (*ethtypes.Receipt, error) {
-	rawTxBytes, err := hex.DecodeString(task.SignData)
-	if err != nil {
-		return nil, err
-	}
-	tx := new(ethtypes.Transaction)
-	rlp.DecodeBytes(rawTxBytes, &tx)
-
 	client, err := ethclient.Dial("http://43.198.66.226:8545")
 	if err != nil {
 		return nil, err
 	}
 
-	receipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(task.Hash))
+	receipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(task.TxHash))
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +94,8 @@ func createCheckMsg(task *types.TransactionTask) (string, error) {
 	buffer.WriteString(fmt.Sprintf("Data: %v\n\n", task.InputData))
 	buffer.WriteString(fmt.Sprintf("Nonce: %v\n\n", task.Nonce))
 	buffer.WriteString(fmt.Sprintf("GasPrice: %v\n\n", task.GasPrice))
-	buffer.WriteString(fmt.Sprintf("Hash: %v\n\n", task.Hash))
+	buffer.WriteString(fmt.Sprintf("SignHash: %v\n\n", task.SignHash))
+	buffer.WriteString(fmt.Sprintf("TxHash: %v\n\n", task.TxHash))
 	buffer.WriteString(fmt.Sprintf("Receipt: %v\n\n", task.Receipt))
 	buffer.WriteString(fmt.Sprintf("State: %v\n\n", task.State))
 
