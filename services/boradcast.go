@@ -3,6 +3,8 @@ package services
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/Hui-TxState/config"
 	"github.com/ethereum/Hui-TxState/types"
@@ -51,22 +53,36 @@ func (c *BroadcastService) BroadcastTx(task *types.TransactionTask) (finished bo
 
 func (c *BroadcastService) handleBroadcastTx(task *types.TransactionTask) (string, error) {
 	//将签名数据组装
-	gasLimit, err := strconv.ParseUint(task.GasLimit, 10, 64)
-	if err != nil {
-		return "", err
-	}
+	//gasLimit, err := strconv.ParseUint(task.GasLimit, 10, 64)
+	//if err != nil {
+	//	return "", err
+	//}
 	gasPrice, err := strconv.ParseInt(task.GasPrice, 10, 64)
 	if err != nil {
 		return "", err
 	}
 
-	gasLimit = 21000
-	tx := ethTypes.NewTransaction(task.Nonce, common.HexToAddress(task.To), big.NewInt(0), gasLimit, big.NewInt(gasPrice), []byte(task.InputData))
+	//gasLimit = 21000
+	//tx := ethTypes.NewTransaction(task.Nonce, common.HexToAddress(task.To), big.NewInt(0), gasLimit, big.NewInt(gasPrice), []byte(task.InputData))
 
-	signer := ethTypes.LatestSignerForChainID(big.NewInt(int64(task.ChainId)))
-	//signer := ethTypes.NewEIP155Signer(big.NewInt(int64(task.ChainId)))
-	//signer := ethTypes.NewLondonSigner(big.NewInt(int64(task.ChainId)))
-	sigedTx, err := tx.WithSignature(signer, task.Signature)
+	to := common.HexToAddress(task.To)
+
+	tx := ethTypes.NewTx(&ethTypes.LegacyTx{
+		Nonce:    task.Nonce,
+		GasPrice: big.NewInt(gasPrice),
+		Gas:      21000,
+		To:       &to,
+		Value:    big.NewInt(1e16),
+	})
+
+	var sigData types.SigData
+	err = json.Unmarshal([]byte(task.Sig), &sigData)
+
+	remoteSig, err := hex.DecodeString(sigData.Signature)
+
+	signer := ethTypes.NewEIP155Signer(big.NewInt(int64(task.ChainId)))
+	sigedTx, err := tx.WithSignature(signer, remoteSig)
+
 	if err != nil {
 		return "", err
 	}
@@ -77,7 +93,6 @@ func (c *BroadcastService) handleBroadcastTx(task *types.TransactionTask) (strin
 	}
 
 	from, err := ethTypes.Sender(signer, tx)
-	//fmt.Print("from address ：" + from.Hex() + "\n")
 
 	b, err := client.BalanceAt(context.Background(), common.HexToAddress(task.From), big.NewInt(735200))
 	if err != nil {
@@ -91,7 +106,7 @@ func (c *BroadcastService) handleBroadcastTx(task *types.TransactionTask) (strin
 		return "", err
 	}
 
-	fmt.Printf("tx sent: %s", tx.Hash().Hex())
+	fmt.Printf("tx sent: %s", sigedTx.Hash())
 
 	return tx.Hash().Hex(), nil
 }

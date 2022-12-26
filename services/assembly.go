@@ -87,7 +87,6 @@ func (c *AssemblyService) handleAssembly(task *types.TransactionTask) {
 	//if err != nil {
 	//	logrus.Fatal(err)
 	//}
-	task.GasLimit = "8000000"
 }
 
 func createAssemblyMsg(task *types.TransactionTask) (string, error) {

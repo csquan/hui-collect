@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/Hui-TxState/types"
 	"github.com/ethereum/Hui-TxState/utils"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/ecies"
 	"github.com/go-xorm/xorm"
@@ -74,25 +73,36 @@ func UnmarshalP256CompressedPub(hexkey string) (*ecies.PublicKey, error) {
 }
 
 func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err error) {
-	gasLimit, err := strconv.ParseUint(task.GasLimit, 10, 64)
-	if err != nil {
-		return false, err
-	}
+	//gasLimit, err := strconv.ParseUint(task.GasLimit, 10, 64)
+	//if err != nil {
+	//	return false, err
+	//}
 	gasPrice, err := strconv.ParseInt(task.GasPrice, 10, 64)
 	if err != nil {
 		return false, err
 	}
 
-	tx := ethTypes.NewTransaction(task.Nonce, common.HexToAddress(task.To), big.NewInt(0), gasLimit, big.NewInt(gasPrice), []byte(task.InputData))
+	to := common.HexToAddress(task.To)
+
+	tx := ethTypes.NewTx(&ethTypes.LegacyTx{
+		Nonce:    task.Nonce,
+		GasPrice: big.NewInt(gasPrice),
+		Gas:      21000,
+		To:       &to,
+		Value:    big.NewInt(1e16),
+	})
 
 	pubKey, err := UnmarshalP256CompressedPub("0209674d59b772b17524ec19bfc407c66547f8ff332c5e0a2097e8a3c36de09814")
 
-	task.SignHash = tx.Hash().Hex() //这里存储的是计算出来的签名前的hash
+	signer := ethTypes.NewEIP155Signer(big.NewInt(int64(task.ChainId)))
+	signHash := signer.Hash(tx)
+
+	task.SignHash = signHash.Hex() //这里存储的是计算出来的签名前的hash
 
 	signData := types.SignData{
 		UID:     task.UserID,
 		Address: task.From,
-		Hash:    tx.Hash().String(),
+		Hash:    signHash.Hex(),
 	}
 
 	msg, err := json.Marshal(signData)
@@ -102,16 +112,12 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 		return false, err
 	}
 	fmt.Printf(hex.EncodeToString(ct))
-	//data:--hex.EncodeToString(ct)
 
 	signurl := "http://15.152.203.71:8080/sign"
-	//sign_json := fmt.Sprintf("{\"data\":%s}", hex.EncodeToString(ct))
-	//var jsonStr = []byte(sign_json)
 
 	postValue := url.Values{
 		"data": {hex.EncodeToString(ct)},
 	}
-
 	resp, err := http.PostForm(signurl, postValue)
 	resp.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	if err != nil {
@@ -134,19 +140,20 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 	if isValid == false {
 		fmt.Println("Fatal error ", err.Error())
 	}
-	res := gjson.Get(sig, "signature")
-	signature := res.String()
-	//32 32 1-->R S V
-	if len(signature)/2 != SigLen { //这里记录错误，更新数据库，也返回true,留待下次扫到这个交易重试签名
-		task.Error = fmt.Sprintf("signature len :%d is error", len(sig))
-	} else {
-		signature = "0x" + signature
-		b, err := hexutil.Decode(signature)
-		if err != nil {
-			fmt.Println("Fatal error ", err.Error())
-		}
-		task.Signature = b
-	}
+	task.Sig = sig
+	//res := gjson.Get(sig, "signature")
+	//signature := res.String()
+	////32 32 1-->R S V
+	//if len(signature)/2 != SigLen { //这里记录错误，更新数据库，也返回true,留待下次扫到这个交易重试签名
+	//	task.Error = fmt.Sprintf("signature len :%d is error", len(sig))
+	//} else {
+	//	signature = "0x" + signature
+	//	b, err := hexutil.Decode(signature)
+	//	if err != nil {
+	//		fmt.Println("Fatal error ", err.Error())
+	//	}
+	//	task.Signature = b
+	//}
 	task.State = int(types.TxSignState)
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
 		// 依照结果更新task状态
@@ -193,7 +200,7 @@ func createSignMsg(task *types.TransactionTask) (string, error) {
 	buffer.WriteString(fmt.Sprintf("GasPrice: %v\n\n", task.GasPrice))
 	buffer.WriteString(fmt.Sprintf("SignHash: %v\n\n", task.SignHash))
 	buffer.WriteString(fmt.Sprintf("TxHash: %v\n\n", task.TxHash))
-	buffer.WriteString(fmt.Sprintf("Signature: %v\n\n", task.Signature))
+	buffer.WriteString(fmt.Sprintf("Signature: %v\n\n", task.Sig))
 	buffer.WriteString(fmt.Sprintf("State: %v\n\n", task.State))
 
 	return buffer.String(), nil

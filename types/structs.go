@@ -20,7 +20,7 @@ type TransactionTask struct {
 	TxHash    string    `xorm:"f_tx_hash"`
 	State     int       `xorm:"f_state"`
 	Receipt   string    `xorm:"f_receipt"`
-	Signature []byte    `xorm:"f_signature"`
+	Sig       string    `xorm:"f_sig"`
 	Error     string    `xorm:"f_error"`
 	Times     int       `xorm:"f_retry_times"`
 	CreatedAt time.Time `xorm:"created f_created_at"`
@@ -93,6 +93,11 @@ type SignData struct {
 	Address string
 	Hash    string
 }
+
+type SigData struct {
+	Signature string "json:signature"
+}
+
 type HttpRes struct {
 	Code    int
 	Message string

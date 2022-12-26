@@ -93,6 +93,7 @@ func (s *ApiService) AddTask(c *gin.Context) {
 		From:      from,
 		To:        to,
 		InputData: data,
+		ChainId:   8888,
 	}
 	task.State = int(types.TxInitState)
 
