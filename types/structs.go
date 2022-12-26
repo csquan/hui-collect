@@ -20,9 +20,7 @@ type TransactionTask struct {
 	TxHash    string    `xorm:"f_tx_hash"`
 	State     int       `xorm:"f_state"`
 	Receipt   string    `xorm:"f_receipt"`
-	R         string    `xorm:"f_r"`
-	S         string    `xorm:"f_s"`
-	V         string    `xorm:"f_v"`
+	Signature []byte    `xorm:"f_signature"`
 	Error     string    `xorm:"f_error"`
 	Times     int       `xorm:"f_retry_times"`
 	CreatedAt time.Time `xorm:"created f_created_at"`

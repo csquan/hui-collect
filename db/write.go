@@ -31,7 +31,6 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 	}
 	engine.SetTZLocation(location)
 	engine.SetTZDatabase(location)
-
 	m = &Mysql{
 		conf:   conf,
 		engine: engine,

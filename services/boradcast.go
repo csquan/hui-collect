@@ -7,11 +7,14 @@ import (
 	"github.com/ethereum/Hui-TxState/config"
 	"github.com/ethereum/Hui-TxState/types"
 	"github.com/ethereum/Hui-TxState/utils"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/common"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
+	"math/big"
+	"strconv"
 )
 
 type BroadcastService struct {
@@ -48,15 +51,43 @@ func (c *BroadcastService) BroadcastTx(task *types.TransactionTask) (finished bo
 
 func (c *BroadcastService) handleBroadcastTx(task *types.TransactionTask) (string, error) {
 	//将签名数据组装
-	tx := new(ethtypes.Transaction)
+	gasLimit, err := strconv.ParseUint(task.GasLimit, 10, 64)
+	if err != nil {
+		return "", err
+	}
+	gasPrice, err := strconv.ParseInt(task.GasPrice, 10, 64)
+	if err != nil {
+		return "", err
+	}
+
+	gasLimit = 21000
+	tx := ethTypes.NewTransaction(task.Nonce, common.HexToAddress(task.To), big.NewInt(0), gasLimit, big.NewInt(gasPrice), []byte(task.InputData))
+
+	signer := ethTypes.LatestSignerForChainID(big.NewInt(int64(task.ChainId)))
+	//signer := ethTypes.NewEIP155Signer(big.NewInt(int64(task.ChainId)))
+	//signer := ethTypes.NewLondonSigner(big.NewInt(int64(task.ChainId)))
+	sigedTx, err := tx.WithSignature(signer, task.Signature)
+	if err != nil {
+		return "", err
+	}
 
 	client, err := ethclient.Dial("http://43.198.66.226:8545")
 	if err != nil {
 		return "", err
 	}
 
-	err = client.SendTransaction(context.Background(), tx)
+	from, err := ethTypes.Sender(signer, tx)
+	//fmt.Print("from address ：" + from.Hex() + "\n")
+
+	b, err := client.BalanceAt(context.Background(), common.HexToAddress(task.From), big.NewInt(735200))
 	if err != nil {
+		return "", err
+	}
+	fmt.Printf("insert tx from 0xcE81d02D0E10bBba8F063385A5fd5dB3DfEB5A34 balance is %s\n", b.String())
+
+	err = client.SendTransaction(context.Background(), sigedTx)
+	if err != nil {
+		fmt.Printf("signature from address  ：" + from.Hex() + " send err:" + err.Error() + "\n")
 		return "", err
 	}
 
