@@ -16,6 +16,9 @@ chains:
     rpc_url: "http://43.198.66.226:8545"
     fetch_timeout: 3000
 
+callback:
+  url: "http://192.168.31.25:9020"
+
 log:
   stdout:
     enable: true

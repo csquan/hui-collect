@@ -9,12 +9,14 @@ type TransactionTask struct {
 	ID        uint64    `xorm:"f_id not null pk autoincr bigint(20)" gorm:"primary_key"`
 	UserID    string    `xorm:"f_uid"`
 	UUID      int64     `xorm:"f_uuid"`
+	RequestId string    `xorm:"f_request_id"`
 	Nonce     uint64    `xorm:"f_nonce"`
 	GasPrice  string    `xorm:"f_gas_price"`
 	GasLimit  string    `xorm:"f_gas_limit"`
 	ChainId   int       `xorm:"f_chain_id"`
 	From      string    `xorm:"f_from"`
 	To        string    `xorm:"f_to"`
+	Value     string    `xorm:"f_value"`
 	InputData string    `xorm:"f_input_data"`
 	SignHash  string    `xorm:"f_sign_hash"`
 	TxHash    string    `xorm:"f_tx_hash"`
@@ -102,4 +104,9 @@ type HttpRes struct {
 	Code    int
 	Message string
 	Data    string
+}
+
+type CallBackData struct {
+	RequestID string
+	Hash      string
 }

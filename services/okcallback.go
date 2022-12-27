@@ -2,36 +2,37 @@ package services
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"github.com/ethereum/Hui-TxState/config"
 	"github.com/ethereum/Hui-TxState/types"
 	"github.com/ethereum/Hui-TxState/utils"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/go-resty/resty/v2"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
+	"net/http"
 )
 
-type AssemblyService struct {
+type OkCallBackService struct {
 	db     types.IDB
 	config *config.Config
 }
 
-func NewAssemblyService(db types.IDB, c *config.Config) *AssemblyService {
-	return &AssemblyService{
+func NewOkCallBackService(db types.IDB, c *config.Config) *OkCallBackService {
+	return &OkCallBackService{
 		db:     db,
 		config: c,
 	}
 }
 
-func (c *AssemblyService) AssemblyTx(task *types.TransactionTask) (finished bool, err error) {
-	//实际组装tx
-	c.handleAssembly(task)
-
+func (c *OkCallBackService) CallBack(task *types.TransactionTask) (finished bool, err error) {
+	//这里回掉
+	err = c.handleCallBack(task)
+	if err != nil {
+		return false, err
+	}
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
-		task.State = int(types.TxAssmblyState)
+		task.State = int(types.TxSuccessState)
 		if err := c.db.UpdateTransactionTask(s, task); err != nil {
 			logrus.Errorf("update transaction task error:%v tasks:[%v]", err, task)
 			return err
@@ -43,52 +44,41 @@ func (c *AssemblyService) AssemblyTx(task *types.TransactionTask) (finished bool
 	}
 	return true, nil
 }
+func (c *OkCallBackService) handleCallBack(task *types.TransactionTask) error {
+	//定义相关参数
+	url := c.config.CallBack.URL
 
-func max(nums ...uint64) uint64 {
-	var maxNum uint64 = 0
-	for _, num := range nums {
-		if num > maxNum {
-			maxNum = num
-		}
+	cli := resty.New()
+	cli.SetBaseURL(url)
+
+	data := types.CallBackData{
+		RequestID: task.RequestId,
+		Hash:      task.TxHash,
 	}
-	return maxNum
+	var result types.HttpRes
+	resp, err := cli.R().SetBody(data).SetResult(&result).Post("/v1/callback")
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return err
+	}
+	if result.Code != 0 {
+		return err
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
 }
 
-func (c *AssemblyService) handleAssembly(task *types.TransactionTask) {
-	client, err := ethclient.Dial("http://43.198.66.226:8545")
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	//这里nouce逻辑：1.先查询本地db的nouce，条件为 from ==地址为task.from 2.再从链上取 3.取二者的最大值
-	res, err := c.db.GetTaskNonce(task.From)
-	if err != nil {
-		logrus.Fatal("get tasks for from address:%v err:%v", task.From, err)
-	}
-
-	nonce, err := client.PendingNonceAt(context.Background(), common.HexToAddress(task.From))
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	task.Nonce = max(nonce, res.Nonce)
-
-	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	task.GasPrice = gasPrice.String()
-
-	//gasPrice, err := client.EstimateGas(context.Background())
-	//if err != nil {
-	//	logrus.Fatal(err)
-	//}
-	task.GasLimit = "8000000"
-}
-
-func createAssemblyMsg(task *types.TransactionTask) (string, error) {
+func createOkCallBackMsg(task *types.TransactionTask) (string, error) {
 	//告警消息
 	var buffer bytes.Buffer
-	buffer.WriteString(fmt.Sprintf("交易状态变化->交易组装完成\n\n"))
+	buffer.WriteString(fmt.Sprintf("交易状态变化->成功回调完成\n\n"))
 	buffer.WriteString(fmt.Sprintf("UserID: %v\n\n", task.UserID))
 	buffer.WriteString(fmt.Sprintf("From: %v\n\n", task.From))
 	buffer.WriteString(fmt.Sprintf("To: %v\n\n", task.To))
@@ -96,16 +86,17 @@ func createAssemblyMsg(task *types.TransactionTask) (string, error) {
 	buffer.WriteString(fmt.Sprintf("Nonce: %v\n\n", task.Nonce))
 	buffer.WriteString(fmt.Sprintf("GasPrice: %v\n\n", task.GasPrice))
 	buffer.WriteString(fmt.Sprintf("State: %v\n\n", task.State))
+	buffer.WriteString(fmt.Sprintf("TxHash: %v\n\n", task.TxHash))
 
 	return buffer.String(), nil
 }
 
-func (c *AssemblyService) tgAlert(task *types.TransactionTask) {
+func (c *OkCallBackService) tgAlert(task *types.TransactionTask) {
 	var (
 		msg string
 		err error
 	)
-	msg, err = createAssemblyMsg(task)
+	msg, err = createOkCallBackMsg(task)
 	if err != nil {
 		logrus.Errorf("create assembly msg err:%v,state:%d,tid:%d", err, task.State, task.ID)
 	}
@@ -120,8 +111,8 @@ func (c *AssemblyService) tgAlert(task *types.TransactionTask) {
 	}
 }
 
-func (c *AssemblyService) Run() error {
-	tasks, err := c.db.GetOpenedAssemblyTasks()
+func (c *OkCallBackService) Run() error {
+	tasks, err := c.db.GetOpenedCallBackTasks()
 	if err != nil {
 		return fmt.Errorf("get tasks for assembly err:%v", err)
 	}
@@ -131,7 +122,7 @@ func (c *AssemblyService) Run() error {
 	}
 
 	for _, task := range tasks {
-		_, err := c.AssemblyTx(task)
+		_, err := c.CallBack(task)
 		if err == nil {
 			c.tgAlert(task)
 		}
@@ -139,6 +130,6 @@ func (c *AssemblyService) Run() error {
 	return nil
 }
 
-func (c AssemblyService) Name() string {
-	return "Assembly"
+func (c OkCallBackService) Name() string {
+	return "OkCallBack"
 }

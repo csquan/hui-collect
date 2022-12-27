@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
+	"github.com/tidwall/gjson"
 	"net/http"
 	"time"
 )
@@ -59,27 +60,40 @@ func checkInput(addr string) error {
 
 // 接收注册过来的消息，存入db作为tx初始状态
 func (s *ApiService) AddTask(c *gin.Context) {
-	from := c.PostForm("from")
-	to := c.PostForm("to")
-	data := c.PostForm("data")
-	userID := c.PostForm("userid")
+	buf := make([]byte, 1024)
+	n, _ := c.Request.Body.Read(buf)
+	data := string(buf[0:n])
 
+	isValid := gjson.Valid(data)
+	if isValid == false {
+		fmt.Println("Not valid json")
+	}
+
+	from := gjson.Get(data, "from")
+	to := gjson.Get(data, "to")
+	inputData := gjson.Get(data, "data")
+	userID := gjson.Get(data, "uid")
+	requestID := gjson.Get(data, "requestId")
+	chainId := gjson.Get(data, "chainId")
+	value := gjson.Get(data, "value")
+
+	fmt.Println(chainId)
 	res := types.HttpRes{}
 
 	//check params
-	err := checkAddr(from)
+	err := checkAddr(from.String())
 	if err != nil {
 		res.Code = http.StatusBadRequest
 		res.Message = err.Error()
 		c.SecureJSON(http.StatusBadRequest, res)
 	}
-	err = checkAddr(to)
+	err = checkAddr(to.String())
 	if err != nil {
 		res.Code = http.StatusBadRequest
 		res.Message = err.Error()
 		c.SecureJSON(http.StatusBadRequest, res)
 	}
-	err = checkInput(data)
+	err = checkInput(inputData.String())
 	if err != nil {
 		res.Code = http.StatusBadRequest
 		res.Message = err.Error()
@@ -89,11 +103,13 @@ func (s *ApiService) AddTask(c *gin.Context) {
 	//插入task
 	task := types.TransactionTask{
 		UUID:      time.Now().Unix(),
-		UserID:    userID,
-		From:      from,
-		To:        to,
-		InputData: data,
+		UserID:    userID.String(),
+		From:      from.String(),
+		To:        to.String(),
+		Value:     value.String(),
+		InputData: inputData.String(),
 		ChainId:   8888,
+		RequestId: requestID.String(),
 	}
 	task.State = int(types.TxInitState)
 
@@ -111,7 +127,7 @@ func (s *ApiService) AddTask(c *gin.Context) {
 		c.SecureJSON(http.StatusInternalServerError, res)
 	}
 
-	res.Code = http.StatusOK
+	res.Code = 0
 	res.Message = "success"
 	c.SecureJSON(http.StatusOK, res)
 }

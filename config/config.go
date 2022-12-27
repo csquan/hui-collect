@@ -26,6 +26,10 @@ type DataBaseConf struct {
 	DB string `mapstructure:"db"` //DB 连接信息
 }
 
+type CallbackConf struct {
+	URL string `mapstructure:"url"` //发币模块的URL
+}
+
 type ServerConf struct {
 	Port  int               `mapstructure:"port"`
 	Users map[string]string `mapstructure:"users"`
@@ -36,6 +40,7 @@ type Config struct {
 	QueryInterval    time.Duration
 	QueryIntervalInt uint64                `mapstructure:"query_interval"` //ms
 	DataBase         DataBaseConf          `mapstructure:"database"`
+	CallBack         CallbackConf          `mapstructure:"callback"`
 	LogConf          Log                   `mapstructure:"log"`
 	Chains           map[string]*ChainInfo `mapstructure:"chains"`
 	Env              string                `mapstructure:"env"`

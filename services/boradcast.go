@@ -67,12 +67,22 @@ func (c *BroadcastService) handleBroadcastTx(task *types.TransactionTask) (strin
 
 	to := common.HexToAddress(task.To)
 
+	value, err := Hex2Dec(task.Value[2:])
+	if err != nil {
+		return "", err
+	}
+
+	b, err := hex.DecodeString(task.InputData[2:])
+	if err != nil {
+		return "", err
+	}
 	tx := ethTypes.NewTx(&ethTypes.LegacyTx{
 		Nonce:    task.Nonce,
 		GasPrice: big.NewInt(gasPrice),
-		Gas:      21000,
+		Gas:      8000000,
 		To:       &to,
-		Value:    big.NewInt(1e16),
+		Value:    big.NewInt(int64(value)),
+		Data:     b,
 	})
 
 	var sigData types.SigData
@@ -94,11 +104,11 @@ func (c *BroadcastService) handleBroadcastTx(task *types.TransactionTask) (strin
 
 	from, err := ethTypes.Sender(signer, tx)
 
-	b, err := client.BalanceAt(context.Background(), common.HexToAddress(task.From), big.NewInt(735200))
+	balance, err := client.BalanceAt(context.Background(), common.HexToAddress(task.From), big.NewInt(786760))
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("insert tx from 0xcE81d02D0E10bBba8F063385A5fd5dB3DfEB5A34 balance is %s\n", b.String())
+	fmt.Printf("insert tx from balance is %s\n", balance.String())
 
 	err = client.SendTransaction(context.Background(), sigedTx)
 	if err != nil {
@@ -108,7 +118,8 @@ func (c *BroadcastService) handleBroadcastTx(task *types.TransactionTask) (strin
 
 	fmt.Printf("tx sent: %s", sigedTx.Hash())
 
-	return tx.Hash().Hex(), nil
+	return sigedTx.Hash().Hex(), nil
+
 }
 
 func (c *BroadcastService) tgAlert(task *types.TransactionTask) {

@@ -7,6 +7,7 @@ const (
 	TxAssmblyState
 	TxSignState
 	TxBroadcastState
+	TxCheckState
 	TxSuccessState
 	TxFailedState
 )
@@ -15,7 +16,8 @@ var TransactionStateName = map[TransactionState]string{
 	TxInitState:      "Init",
 	TxAssmblyState:   "Assmbly",
 	TxSignState:      "Sign",
-	TxBroadcastState: "Broadcast",
+	TxBroadcastState: "broadcast",
+	TxCheckState:     "check",
 	TxSuccessState:   "Success",
 	TxFailedState:    "Failed",
 }

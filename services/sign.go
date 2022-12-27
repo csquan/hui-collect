@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"unsafe"
 )
 
 const SigLen = 65
@@ -72,6 +73,30 @@ func UnmarshalP256CompressedPub(hexkey string) (*ecies.PublicKey, error) {
 	}, nil
 }
 
+func Hex2Dec(val string) (int, error) {
+	n, err := strconv.ParseUint(val, 16, 32)
+	if err != nil {
+		return 0, err
+	}
+	return int(n), nil
+}
+
+func stringTobyteSlice(s string) []byte {
+	tmp1 := (*[2]uintptr)(unsafe.Pointer(&s))
+	tmp2 := [3]uintptr{tmp1[0], tmp1[1], tmp1[1]}
+	return *(*[]byte)(unsafe.Pointer(&tmp2))
+
+}
+
+func stringTobyteSliceOld(s string) []byte {
+	return []byte(s)
+
+}
+
+func byteSliceToString(bytes []byte) string {
+	return *(*string)(unsafe.Pointer(&bytes))
+}
+
 func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err error) {
 	//gasLimit, err := strconv.ParseUint(task.GasLimit, 10, 64)
 	//if err != nil {
@@ -84,12 +109,23 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 
 	to := common.HexToAddress(task.To)
 
+	value, err := Hex2Dec(task.Value[2:])
+	if err != nil {
+		return false, err
+	}
+
+	b1 := stringTobyteSlice(task.InputData)
+	b2 := stringTobyteSliceOld(task.InputData)
+	b, err := hex.DecodeString(task.InputData[2:])
+
+	fmt.Println(b1, b2)
 	tx := ethTypes.NewTx(&ethTypes.LegacyTx{
 		Nonce:    task.Nonce,
 		GasPrice: big.NewInt(gasPrice),
-		Gas:      21000,
+		Gas:      8000000,
 		To:       &to,
-		Value:    big.NewInt(1e16),
+		Value:    big.NewInt(int64(value)),
+		Data:     b,
 	})
 
 	pubKey, err := UnmarshalP256CompressedPub("0209674d59b772b17524ec19bfc407c66547f8ff332c5e0a2097e8a3c36de09814")

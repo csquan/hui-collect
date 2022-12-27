@@ -38,7 +38,7 @@ func (c *CheckReceiptService) CheckReceipt(task *types.TransactionTask) (finishe
 		return false, err
 	}
 	task.Receipt = string(b)
-	task.State = int(types.TxSuccessState)
+	task.State = int(types.TxCheckState)
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
 		if err := c.db.UpdateTransactionTask(s, task); err != nil {
 			logrus.Errorf("update transaction task error:%v tasks:[%v]", err, task)
@@ -53,7 +53,16 @@ func (c *CheckReceiptService) CheckReceipt(task *types.TransactionTask) (finishe
 }
 
 func (c *CheckReceiptService) handleCheckReceipt(task *types.TransactionTask) (*ethtypes.Receipt, error) {
-	client, err := ethclient.Dial("http://43.198.66.226:8545")
+	url := ""
+	for _, v := range c.config.Chains {
+		if v.ID == task.ChainId {
+			url = v.RpcUrl
+		}
+	}
+	if url == "" {
+		return nil, fmt.Errorf("nor found chain url match to task.ChainId:%d ", task.ChainId)
+	}
+	client, err := ethclient.Dial(url)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +105,6 @@ func createCheckMsg(task *types.TransactionTask) (string, error) {
 	buffer.WriteString(fmt.Sprintf("GasPrice: %v\n\n", task.GasPrice))
 	buffer.WriteString(fmt.Sprintf("SignHash: %v\n\n", task.SignHash))
 	buffer.WriteString(fmt.Sprintf("TxHash: %v\n\n", task.TxHash))
-	buffer.WriteString(fmt.Sprintf("Receipt: %v\n\n", task.Receipt))
 	buffer.WriteString(fmt.Sprintf("State: %v\n\n", task.State))
 
 	return buffer.String(), nil
