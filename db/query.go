@@ -15,7 +15,7 @@ func (m *Mysql) GetOpenedAssemblyTasks() ([]*types.TransactionTask, error) {
 
 func (m *Mysql) GetOpenedSignTasks() ([]*types.TransactionTask, error) {
 	tasks := make([]*types.TransactionTask, 0)
-	err := m.engine.Table("t_transaction_task").Where("f_state in (?)", types.TxAssmblyState).Find(&tasks)
+	err := m.engine.Table("t_transaction_task").Where("f_error = \"\"  and f_state in (?)", types.TxAssmblyState).Find(&tasks)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (m *Mysql) GetOpenedSignTasks() ([]*types.TransactionTask, error) {
 
 func (m *Mysql) GetOpenedBroadcastTasks() ([]*types.TransactionTask, error) {
 	tasks := make([]*types.TransactionTask, 0)
-	err := m.engine.Table("t_transaction_task").Where("f_state in (?)", types.TxSignState).Find(&tasks)
+	err := m.engine.Table("t_transaction_task").Where("f_error = \"\"  and f_state in (?)", types.TxSignState).Find(&tasks)
 	if err != nil {
 		return nil, err
 	}
@@ -33,16 +33,25 @@ func (m *Mysql) GetOpenedBroadcastTasks() ([]*types.TransactionTask, error) {
 
 func (m *Mysql) GetOpenedCheckReceiptTasks() ([]*types.TransactionTask, error) {
 	tasks := make([]*types.TransactionTask, 0)
-	err := m.engine.Table("t_transaction_task").Where("f_state in (?)", types.TxBroadcastState).Find(&tasks)
+	err := m.engine.Table("t_transaction_task").Where("f_error = \"\"  and f_state in (?)", types.TxBroadcastState).Find(&tasks)
 	if err != nil {
 		return nil, err
 	}
 	return tasks, err
 }
 
-func (m *Mysql) GetOpenedCallBackTasks() ([]*types.TransactionTask, error) {
+func (m *Mysql) GetOpenedOkCallBackTasks() ([]*types.TransactionTask, error) {
 	tasks := make([]*types.TransactionTask, 0)
-	err := m.engine.Table("t_transaction_task").Where("f_state in (?)", types.TxCheckState).Find(&tasks)
+	err := m.engine.Table("t_transaction_task").Where("f_error = \"\" and f_state in (?)", types.TxCheckState).Find(&tasks)
+	if err != nil {
+		return nil, err
+	}
+	return tasks, err
+}
+
+func (m *Mysql) GetOpenedFailCallBackTasks() ([]*types.TransactionTask, error) {
+	tasks := make([]*types.TransactionTask, 0)
+	err := m.engine.Table("t_transaction_task").Where("f_error != \"\" and f_state in (?,?)", types.TxSignState, types.TxBroadcastState).Find(&tasks)
 	if err != nil {
 		return nil, err
 	}

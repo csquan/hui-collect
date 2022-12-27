@@ -113,6 +113,7 @@ func (c *BroadcastService) handleBroadcastTx(task *types.TransactionTask) (strin
 	err = client.SendTransaction(context.Background(), sigedTx)
 	if err != nil {
 		fmt.Printf("signature from address  ：" + from.Hex() + " send err:" + err.Error() + "\n")
+		task.Error = err.Error()
 		return "", err
 	}
 

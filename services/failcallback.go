@@ -13,26 +13,26 @@ import (
 	"net/http"
 )
 
-type OkCallBackService struct {
+type FailCallBackService struct {
 	db     types.IDB
 	config *config.Config
 }
 
-func NewOkCallBackService(db types.IDB, c *config.Config) *OkCallBackService {
-	return &OkCallBackService{
+func NewFailCallBackService(db types.IDB, c *config.Config) *FailCallBackService {
+	return &FailCallBackService{
 		db:     db,
 		config: c,
 	}
 }
 
-func (c *OkCallBackService) CallBack(task *types.TransactionTask) (finished bool, err error) {
+func (c *FailCallBackService) CallBack(task *types.TransactionTask) (finished bool, err error) {
 	//这里回掉
 	err = c.handleCallBack(task)
 	if err != nil {
 		return false, err
 	}
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
-		task.State = int(types.TxSuccessState)
+		task.State = int(types.TxFailedState)
 		if err := c.db.UpdateTransactionTask(s, task); err != nil {
 			logrus.Errorf("update transaction task error:%v tasks:[%v]", err, task)
 			return err
@@ -44,7 +44,7 @@ func (c *OkCallBackService) CallBack(task *types.TransactionTask) (finished bool
 	}
 	return true, nil
 }
-func (c *OkCallBackService) handleCallBack(task *types.TransactionTask) error {
+func (c *FailCallBackService) handleCallBack(task *types.TransactionTask) error {
 	//定义相关参数
 	url := c.config.CallBack.URL
 
@@ -54,8 +54,9 @@ func (c *OkCallBackService) handleCallBack(task *types.TransactionTask) error {
 	data := types.HttpRes{
 		RequestId: task.RequestId,
 		Hash:      task.TxHash,
-		Code:      0,
-		Status:    1,
+		Code:      400,
+		Status:    0,
+		Message:   task.Error,
 	}
 
 	var result types.HttpRes
@@ -78,10 +79,10 @@ func (c *OkCallBackService) handleCallBack(task *types.TransactionTask) error {
 	return nil
 }
 
-func createOkCallBackMsg(task *types.TransactionTask) (string, error) {
+func createFailCallBackMsg(task *types.TransactionTask) (string, error) {
 	//告警消息
 	var buffer bytes.Buffer
-	buffer.WriteString(fmt.Sprintf("交易状态变化->成功回调完成\n\n"))
+	buffer.WriteString(fmt.Sprintf("交易状态变化->失败回调完成\n\n"))
 	buffer.WriteString(fmt.Sprintf("UserID: %v\n\n", task.UserID))
 	buffer.WriteString(fmt.Sprintf("From: %v\n\n", task.From))
 	buffer.WriteString(fmt.Sprintf("To: %v\n\n", task.To))
@@ -94,12 +95,12 @@ func createOkCallBackMsg(task *types.TransactionTask) (string, error) {
 	return buffer.String(), nil
 }
 
-func (c *OkCallBackService) tgAlert(task *types.TransactionTask) {
+func (c *FailCallBackService) tgAlert(task *types.TransactionTask) {
 	var (
 		msg string
 		err error
 	)
-	msg, err = createOkCallBackMsg(task)
+	msg, err = createFailCallBackMsg(task)
 	if err != nil {
 		logrus.Errorf("create assembly msg err:%v,state:%d,tid:%d", err, task.State, task.ID)
 	}
@@ -114,8 +115,8 @@ func (c *OkCallBackService) tgAlert(task *types.TransactionTask) {
 	}
 }
 
-func (c *OkCallBackService) Run() error {
-	tasks, err := c.db.GetOpenedOkCallBackTasks()
+func (c *FailCallBackService) Run() error {
+	tasks, err := c.db.GetOpenedFailCallBackTasks()
 	if err != nil {
 		return fmt.Errorf("get tasks for assembly err:%v", err)
 	}
@@ -133,6 +134,6 @@ func (c *OkCallBackService) Run() error {
 	return nil
 }
 
-func (c OkCallBackService) Name() string {
-	return "OkCallBack"
+func (c FailCallBackService) Name() string {
+	return "FailCallBack"
 }

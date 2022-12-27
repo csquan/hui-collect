@@ -14,8 +14,10 @@ type IReader interface {
 	GetOpenedBroadcastTasks() ([]*TransactionTask, error)
 	//查询可以进行广播的任务--状态为boradcast
 	GetOpenedCheckReceiptTasks() ([]*TransactionTask, error)
-	//查询可以进行回掉的任务--状态为checkreceipt
-	GetOpenedCallBackTasks() ([]*TransactionTask, error)
+	//查询可以进行成功回调的任务--状态为checkreceipt
+	GetOpenedOkCallBackTasks() ([]*TransactionTask, error)
+	//查询可以进行失败回调的任务--状态为checkreceipt
+	GetOpenedFailCallBackTasks() ([]*TransactionTask, error)
 
 	//查询非完成状态的task
 	GetTaskNonce(from string) (*TransactionTask, error)

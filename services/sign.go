@@ -177,19 +177,7 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 		fmt.Println("Fatal error ", err.Error())
 	}
 	task.Sig = sig
-	//res := gjson.Get(sig, "signature")
-	//signature := res.String()
-	////32 32 1-->R S V
-	//if len(signature)/2 != SigLen { //这里记录错误，更新数据库，也返回true,留待下次扫到这个交易重试签名
-	//	task.Error = fmt.Sprintf("signature len :%d is error", len(sig))
-	//} else {
-	//	signature = "0x" + signature
-	//	b, err := hexutil.Decode(signature)
-	//	if err != nil {
-	//		fmt.Println("Fatal error ", err.Error())
-	//	}
-	//	task.Signature = b
-	//}
+
 	task.State = int(types.TxSignState)
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
 		// 依照结果更新task状态

@@ -101,9 +101,11 @@ type SigData struct {
 }
 
 type HttpRes struct {
-	Code    int
-	Message string
-	Data    string
+	RequestId string `json:"requestId"`
+	Hash      string `json:"hash"`
+	Code      int    `json:"code"`
+	Message   string `json:"message"`
+	Status    int    `json:"status"`
 }
 
 type CallBackData struct {
