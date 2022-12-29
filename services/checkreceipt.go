@@ -85,11 +85,11 @@ func (c *CheckReceiptService) tgAlert(task *types.TransactionTask) {
 		logrus.Errorf("create assembly msg err:%v,state:%d,tid:%d", err, task.State, task.ID)
 	}
 
-	bot, err := tgbot.NewBot("5985674693:AAF94x_xI2RI69UTP-wt_QThldq-XEKGY8g")
+	bot, err := tgbot.NewBot("5904746042:AAGjBMN_ahQ0uavSCakrEFUN7RV2Q8oDY4I")
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	err = bot.SendMsg(1762573172, msg)
+	err = bot.SendMsg(-1001731474163, msg)
 	if err != nil {
 		logrus.Fatal(err)
 	}

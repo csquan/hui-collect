@@ -69,3 +69,15 @@ func (m *Mysql) GetTaskNonce(from string) (*types.TransactionTask, error) {
 	}
 	return task, nil
 }
+
+func (m *Mysql) GetSpecifyTasks(input_task *types.TransactionTask) (*types.TransactionTask, error) {
+	task := &types.TransactionTask{}
+	ok, err := m.engine.Table("t_transaction_task").Where("f_from = ? and f_uuid = ? and f_request_id = ? and f_state >= 3", input_task.From, input_task.UUID, input_task.RequestId).Limit(1).Get(task)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	return task, nil
+}

@@ -34,6 +34,7 @@ func (s *ApiService) Run(conf config.ServerConf) {
 	r := gin.Default()
 
 	r.POST("/tx/create", s.AddTask)
+	r.POST("/tx/get", s.GetTask)
 
 	err := r.Run(fmt.Sprintf(":%d", conf.Port))
 	if err != nil {
@@ -56,6 +57,52 @@ func checkInput(addr string) error {
 		return errors.New("addr must start with 0x")
 	}
 	return nil
+}
+
+// 查询交易hash
+func (s *ApiService) GetTask(c *gin.Context) {
+	buf := make([]byte, 1024)
+	n, _ := c.Request.Body.Read(buf)
+	data := string(buf[0:n])
+
+	isValid := gjson.Valid(data)
+	if isValid == false {
+		fmt.Println("Not valid json")
+	}
+
+	from := gjson.Get(data, "from")
+	uuid := gjson.Get(data, "uuid")
+	requestID := gjson.Get(data, "requestId")
+
+	res := types.HttpRes{}
+
+	//check params
+	err := checkAddr(from.String())
+	if err != nil {
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	task := types.TransactionTask{
+		UUID:      uuid.Int(),
+		From:      from.String(),
+		ChainId:   8888,
+		RequestId: requestID.String(),
+	}
+
+	task_res, err := s.db.GetSpecifyTasks(&task)
+	if err != nil {
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res.Code = 0
+	res.Message = task_res.TxHash
+	c.SecureJSON(http.StatusOK, res)
 }
 
 // 接收注册过来的消息，存入db作为tx初始状态
