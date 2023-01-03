@@ -63,3 +63,8 @@ func (m *Mysql) UpdateTransactionTaskMessage(taskID uint64, message string) erro
 	_, err := m.engine.Exec("update t_transaction_task set f_message = ? where f_id = ?", message, taskID)
 	return err
 }
+
+func (m *Mysql) UpdateTransactionTaskState(taskID uint64, state int) error {
+	_, err := m.engine.Exec("update t_transaction_task set f_state = ? where f_id = ?", state, taskID)
+	return err
+}

@@ -1,5 +1,5 @@
 database:
-  db : "root:csquan253905@tcp(127.0.0.1:3306)/Hui_TxState1?charset=utf8mb4"
+  db : "root:csquan253905@tcp(127.0.0.1:3306)/HuiCollect?charset=utf8mb4"
   block_worker: 5
   tx_worker: 1d
   sql_batch: 500

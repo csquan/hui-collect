@@ -2,7 +2,7 @@ FROM alpine:latest
 
 WORKDIR /work
 
-ADD ./Hui-TxState /work/main
+ADD ./HuiCollect /work/main
 
 CMD ["./main"]
 

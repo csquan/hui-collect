@@ -32,26 +32,11 @@ func NewServiceScheduler(conf *config.Config, db types.IDB, closeCh <-chan os.Si
 }
 
 func (t *ServiceScheduler) Start() {
-	//create assembly service
-	assemblyService := NewAssemblyService(t.db, t.conf)
 	//create sign service
-	signService := NewSignService(t.db, t.conf)
-	//create boradcast service
-	boradcastService := NewBoradcastService(t.db, t.conf)
-	//create checkreceipt service
-	checkreceiptService := NewCheckReceiptService(t.db, t.conf)
-	//create ok callback service
-	okcallbackService := NewOkCallBackService(t.db, t.conf)
-	//create fail callback service
-	failcallbackService := NewFailCallBackService(t.db, t.conf)
+	collectService := NewCollectService(t.db, t.conf)
 
 	t.services = []types.IAsyncService{
-		assemblyService,
-		signService,
-		boradcastService,
-		checkreceiptService,
-		okcallbackService,
-		failcallbackService,
+		collectService,
 	}
 
 	timer := time.NewTimer(t.conf.QueryInterval)

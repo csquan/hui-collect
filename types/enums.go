@@ -3,21 +3,21 @@ package types
 type TransactionState int
 
 const (
-	TxInitState TransactionState = iota
+	TxCollectingState TransactionState = iota
+	TxInitState
 	TxAssmblyState
 	TxSignState
 	TxBroadcastState
 	TxCheckState
-	TxSuccessState
-	TxFailedState
+	TxCollectedState
 )
 
 var TransactionStateName = map[TransactionState]string{
-	TxInitState:      "Init",
-	TxAssmblyState:   "Assmbly",
-	TxSignState:      "Sign",
-	TxBroadcastState: "broadcast",
-	TxCheckState:     "check",
-	TxSuccessState:   "Success",
-	TxFailedState:    "Failed",
+	TxCollectingState: "collecting",
+	TxInitState:       "Init",
+	TxAssmblyState:    "Assmbly",
+	TxSignState:       "Sign",
+	TxBroadcastState:  "broadcast",
+	TxCheckState:      "check",
+	TxCollectedState:  "collected",
 }

@@ -8,8 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ethereum/Hui-TxState/api"
-
 	"net/http"
 	_ "net/http/pprof"
 
@@ -67,8 +65,6 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("connect to dbConnection error:%v", err)
 	}
-	apiservice := api.NewApiService(dbConnection, conf)
-	go apiservice.Run(conf.ServerConf)
 
 	//setup scheduler
 	scheduler, err := services.NewServiceScheduler(conf, dbConnection, sigCh)
@@ -78,7 +74,7 @@ func main() {
 	scheduler.Start()
 }
 
-var fName = `/tmp/huobi.lock`
+var fName = `/tmp/hui.lock`
 
 func removeFile() {
 	_ = os.Remove(fName)
