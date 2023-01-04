@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -23,6 +24,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 type CollectService struct {
@@ -77,6 +79,64 @@ func getBalance(addr string) (string, error) {
 	return balance.String(), nil
 }
 
+func (c *CollectService) tgAlert(task *types.TransactionTask) {
+	var (
+		msg string
+		err error
+	)
+	msg, err = createInitMsg(task)
+	if err != nil {
+		logrus.Errorf("create init msg err:%v,state:%d,tid:%d", err, task.State, task.ID)
+	}
+	bot, err := tgbot.NewBot("5985674693:AAF94x_xI2RI69UTP-wt_QThldq-XEKGY8g")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	err = bot.SendMsg(1762573172, msg)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+}
+
+func createInitMsg(task *types.TransactionTask) (string, error) {
+	//告警消息
+	var buffer bytes.Buffer
+	buffer.WriteString(fmt.Sprintf("交易状态变化:->交易初始\n\n"))
+	buffer.WriteString(fmt.Sprintf("UserID: %v\n\n", task.UserID))
+	buffer.WriteString(fmt.Sprintf("From: %v\n\n", task.From))
+	buffer.WriteString(fmt.Sprintf("To: %v\n\n", task.To))
+	buffer.WriteString(fmt.Sprintf("Data: %v\n\n", task.InputData))
+	buffer.WriteString(fmt.Sprintf("State: %v\n\n", task.State))
+
+	return buffer.String(), nil
+}
+
+// 接收注册过来的消息，存入db作为tx初始状态
+func (c *CollectService) AddTask(from string, to string, inputData string, userID string, requestID string, chainId string, value string) {
+	//插入task
+	task := types.TransactionTask{
+		UUID:      time.Now().Unix(),
+		UserID:    userID,
+		From:      from,
+		To:        to,
+		Value:     value,
+		ChainId:   8888,
+		RequestId: requestID,
+	}
+	task.State = int(types.TxInitState)
+
+	err := utils.CommitWithSession(c.db, func(session *xorm.Session) (execErr error) {
+		if err := c.db.SaveTxTask(session, &task); err != nil {
+			logrus.Errorf("save transaction task error:%v tasks:[%v]", err, task)
+			return
+		}
+		c.tgAlert(&task)
+		return
+	})
+	if err != nil {
+	}
+
+}
 func (c *CollectService) handleAssembly(task *types.TransactionTask) error {
 	client, err := ethclient.Dial("http://43.198.66.226:8545")
 	if err != nil {
@@ -144,24 +204,27 @@ func createAssemblyMsg(task *types.TransactionTask) (string, error) {
 	return buffer.String(), nil
 }
 
-func (c *CollectService) tgAlert(task *types.TransactionTask) {
-	var (
-		msg string
-		err error
-	)
-	msg, err = createAssemblyMsg(task)
+func Hex2Dec(val string) (int, error) {
+	n, err := strconv.ParseUint(val, 16, 32)
 	if err != nil {
-		logrus.Errorf("create assembly msg err:%v,state:%d,tid:%d", err, task.State, task.ID)
+		return 0, err
+	}
+	return int(n), nil
+}
+
+func UnmarshalP256CompressedPub(hexkey string) (*ecies.PublicKey, error) {
+	pb, err := hex.DecodeString(hexkey)
+	if err != nil {
+		return nil, err
 	}
 
-	bot, err := tgbot.NewBot("5904746042:AAGjBMN_ahQ0uavSCakrEFUN7RV2Q8oDY4I")
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	err = bot.SendMsg(-1001731474163, msg)
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	x, y := elliptic.UnmarshalCompressed(elliptic.P256(), pb)
+	return &ecies.PublicKey{
+		X:      x,
+		Y:      y,
+		Curve:  elliptic.P256(),
+		Params: ecies.ParamsFromCurve(elliptic.P256()),
+	}, nil
 }
 
 func (c *CollectService) handleSign(task *types.TransactionTask) error {
@@ -177,11 +240,8 @@ func (c *CollectService) handleSign(task *types.TransactionTask) error {
 		return err
 	}
 
-	b1 := stringTobyteSlice(task.InputData)
-	b2 := stringTobyteSliceOld(task.InputData)
 	b, err := hex.DecodeString(task.InputData[2:])
 
-	fmt.Println(b1, b2)
 	tx := ethTypes.NewTx(&ethTypes.LegacyTx{
 		Nonce:    task.Nonce,
 		GasPrice: big.NewInt(gasPrice),
@@ -339,6 +399,30 @@ func (c *CollectService) handleBroadcastTx(task *types.TransactionTask) (string,
 
 	return sigedTx.Hash().Hex(), nil
 
+}
+
+func (c *CollectService) handleInsertOrUpdateAccount(task *types.TransactionTask) error {
+	//receipt, err := c.handleCheckReceipt(task)
+	//if err != nil {
+	//	return err
+	//}
+	//b, err := json.Marshal(receipt)
+	//if err != nil {
+	//	return err
+	//}
+	//task.Receipt = string(b)
+	//task.State = int(types.TxCheckState)
+	//err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
+	//	if err := c.db.UpdateTransactionTask(s, task); err != nil {
+	//		logrus.Errorf("update transaction task error:%v tasks:[%v]", err, task)
+	//		return err
+	//	}
+	//	return nil
+	//})
+	//if err != nil {
+	//	return fmt.Errorf(" CommitWithSession in CheckReceipt err:%v", err)
+	//}
+	return nil
 }
 
 func (c *CollectService) handleTransactionCheck(task *types.TransactionTask) error {

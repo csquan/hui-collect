@@ -29,6 +29,34 @@ type TransactionTask struct {
 	UpdatedAt time.Time `xorm:"updated f_updated_at"`
 }
 
+type CollectTxDB struct {
+	Id               uint64 `xorm:"id"`
+	TxType           uint8  `xorm:"tx_type"`
+	AddrTo           string `xorm:"addr_to"`
+	AddrFrom         string `xorm:"addr_from"`
+	Hash             string `xorm:"tx_hash"`
+	Index            int    `xorm:"tx_index"`
+	Value            string `xorm:"tx_value"`
+	Input            string `xorm:"input"`
+	Nonce            uint64 `xorm:"nonce"`
+	GasPrice         string `xorm:"gas_price"`
+	GasLimit         uint64 `xorm:"gas_limit"`
+	GasUsed          uint64 `xorm:"gas_used"`
+	IsContract       bool   `xorm:"is_contract"`
+	IsContractCreate bool   `xorm:"is_contract_create"`
+	BlockNum         uint64 `xorm:"block_num"`
+	BlockHash        string `xorm:"block_hash"`
+	BlockTime        int64  `xorm:"block_time"`
+	ExecStatus       uint64 `xorm:"exec_status"`
+	BlockState       uint8  `xorm:"block_state"`
+	//eip1559
+	BaseFee              string `xorm:"base_fee"`
+	MaxFeePerGas         string `xorm:"max_fee_per_gas"`
+	MaxPriorityFeePerGas string `xorm:"max_priority_fee_per_gas"`
+	BurntFees            string `xorm:"burnt_fees"`
+	State                int    `xorm:"state"`
+}
+
 func (t *TransactionTask) TableName() string {
 	return "t_transaction_task"
 }

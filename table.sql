@@ -26,5 +26,39 @@ CREATE TABLE `t_transaction_task` (
 )
     ENGINE = InnoDB
     DEFAULT CHARSET = utf8mb4
-    COMMENT ='交易';
+    COMMENT ='归集交易表';
 
+DROP TABLE IF EXISTS `t_src_tx`;
+CREATE TABLE `t_src_tx`
+(
+    `id`                       bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `addr_to`                  char(42)       NOT NULL DEFAULT '' COMMENT '接收地址',
+    `addr_from`                char(42)       NOT NULL DEFAULT '' COMMENT '发送地址',
+    `tx_hash`                  char(66)       NOT NULL DEFAULT '' COMMENT 'transaction hash',
+    `tx_index`                 int(11) NOT NULL DEFAULT '0' COMMENT 'transaction index',
+    `tx_value`                 decimal(65, 0)          DEFAULT NULL COMMENT 'transaction value',
+    `input`                    longtext                DEFAULT NULL COMMENT 'transaction input',
+    `nonce`                    int(11) NOT NULL DEFAULT '0',
+    `gas_price`                decimal(65, 0)          DEFAULT NULL COMMENT 'gas price',
+    `gas_limit`                bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'gas limit',
+    `gas_used`                 bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'gas used',
+    `is_contract`              tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否调用合约交易',
+    `is_contract_create`       tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否创建合约交易',
+    `block_time`               int(11) NOT NULL DEFAULT '0' COMMENT '打包时间',
+    `block_num`                bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'block number',
+    `block_hash`               char(66)       NOT NULL DEFAULT '' COMMENT 'block hash',
+    `exec_status`              tinyint(4) NOT NULL DEFAULT '0' COMMENT 'transaction 执行结果',
+    `create_time`              timestamp      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `block_state`              tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:ok 1:fail',
+    `max_fee_per_gas`          decimal(65, 0) NOT NULL DEFAULT '0' COMMENT '最高交易小费',
+    `max_priority_fee_per_gas` decimal(65, 0) NOT NULL DEFAULT '0' COMMENT '最高有限小费',
+    `burnt_fees`               decimal(65, 0) NOT NULL DEFAULT '0' COMMENT 'burnt fees',
+    `base_fee`                 decimal(65, 0) NOT NULL DEFAULT '0' COMMENT 'base fee',
+    `tx_type`                  tinyint(4) NOT NULL DEFAULT '0' COMMENT '交易类型',
+    `f_state`             tinyint(4)          NOT NULL DEFAULT '0' COMMENT 'state',
+    PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
+    KEY                        `idx_txhash_blocknum` (`tx_hash`,`block_num`),
+    KEY                        `idx_addr_to` (`addr_to`),
+    KEY                        `idx_addr_from` (`addr_from`),
+    KEY                        `idx_block_num` (`block_num`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='归集源交易表';

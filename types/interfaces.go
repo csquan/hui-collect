@@ -19,7 +19,7 @@ type IReader interface {
 	//查询可以进行失败回调的任务--状态为checkreceipt
 	GetOpenedFailCallBackTasks() ([]*TransactionTask, error)
 
-	GetOpenedTransactionTask() ([]*TransactionTask, error)
+	GetOpenedTransactionTask() ([]*CollectTxDB, error)
 
 	UpdateTransactionTaskState(taskID uint64, state int) error
 
