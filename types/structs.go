@@ -21,6 +21,7 @@ type TransactionTask struct {
 	SignHash  string    `xorm:"f_sign_hash"`
 	TxHash    string    `xorm:"f_tx_hash"`
 	State     int       `xorm:"f_state"`
+	Type      int       `xorm:"f_type"`
 	Receipt   string    `xorm:"f_receipt"`
 	Sig       string    `xorm:"f_sig"`
 	Error     string    `xorm:"f_error"`

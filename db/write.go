@@ -81,3 +81,13 @@ func (m *Mysql) UpdateCollectTx(itf xorm.Interface, task *types.CollectTxDB) err
 	_, err := itf.Table("t_src_tx").Where("id = ?", task.Id).Update(task)
 	return err
 }
+
+func (m *Mysql) UpdateCollectTxState(taskID uint64, state int) error {
+	_, err := m.engine.Exec("update t_transaction_task set f_state = ? where f_id = ?", state, taskID)
+	return err
+}
+
+func (m *Mysql) UpdateCollectSubTask(itf xorm.Interface, task *types.CollectTxDB) error {
+	_, err := itf.Table("t_src_tx").Where("id = ?", task.Id).Update(task)
+	return err
+}

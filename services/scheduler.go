@@ -41,12 +41,15 @@ func (t *ServiceScheduler) Start() {
 	signService := NewSignService(t.db, t.conf)
 	//create boradcast service
 	boradcastService := NewBoradcastService(t.db, t.conf)
+	//create update service
+	UpdateAccountService := NewUpdateAccountService(t.db, t.conf)
 
 	t.services = []types.IAsyncService{
 		collectService,
 		assemblyService,
 		signService,
 		boradcastService,
+		UpdateAccountService,
 	}
 
 	timer := time.NewTimer(t.conf.QueryInterval)

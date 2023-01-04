@@ -14,6 +14,7 @@ const (
 	TxSignState
 	TxBroadcastState
 	TxCheckState
+	TxEndState
 )
 
 var TransactionStateName = map[TransactionState]string{

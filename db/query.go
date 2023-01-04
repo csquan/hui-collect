@@ -40,7 +40,7 @@ func (m *Mysql) GetOpenedBroadcastTasks() ([]*types.TransactionTask, error) {
 	return tasks, err
 }
 
-func (m *Mysql) GetOpenedCheckReceiptTasks() ([]*types.TransactionTask, error) {
+func (m *Mysql) GetOpenedCheckTasks() ([]*types.TransactionTask, error) {
 	tasks := make([]*types.TransactionTask, 0)
 	err := m.engine.Table("t_transaction_task").Where("f_error = \"\"  and f_state in (?)", types.TxBroadcastState).Find(&tasks)
 	if err != nil {
@@ -49,18 +49,9 @@ func (m *Mysql) GetOpenedCheckReceiptTasks() ([]*types.TransactionTask, error) {
 	return tasks, err
 }
 
-func (m *Mysql) GetOpenedOkCallBackTasks() ([]*types.TransactionTask, error) {
+func (m *Mysql) GetOpenedUpdateAccountTasks() ([]*types.TransactionTask, error) {
 	tasks := make([]*types.TransactionTask, 0)
-	err := m.engine.Table("t_transaction_task").Where("f_error = \"\" and f_state in (?)", types.TxCheckState).Find(&tasks)
-	if err != nil {
-		return nil, err
-	}
-	return tasks, err
-}
-
-func (m *Mysql) GetOpenedFailCallBackTasks() ([]*types.TransactionTask, error) {
-	tasks := make([]*types.TransactionTask, 0)
-	err := m.engine.Table("t_transaction_task").Where("f_error != \"\" and f_state in (?,?)", types.TxSignState, types.TxBroadcastState).Find(&tasks)
+	err := m.engine.Table("t_transaction_task").Where("f_error = \"\" and f_state in (?)", types.TxEndState).Find(&tasks)
 	if err != nil {
 		return nil, err
 	}

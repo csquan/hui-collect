@@ -13,11 +13,9 @@ type IReader interface {
 	//查询可以进行广播的任务--状态为sign
 	GetOpenedBroadcastTasks() ([]*TransactionTask, error)
 	//查询可以进行广播的任务--状态为boradcast
-	GetOpenedCheckReceiptTasks() ([]*TransactionTask, error)
-	//查询可以进行成功回调的任务--状态为checkreceipt
-	GetOpenedOkCallBackTasks() ([]*TransactionTask, error)
-	//查询可以进行失败回调的任务--状态为checkreceipt
-	GetOpenedFailCallBackTasks() ([]*TransactionTask, error)
+	GetOpenedCheckTasks() ([]*TransactionTask, error)
+
+	GetOpenedUpdateAccountTasks() ([]*TransactionTask, error)
 
 	GetOpenedCollectTask() ([]*CollectTxDB, error)
 
@@ -37,7 +35,10 @@ type IWriter interface {
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
 	UpdateTransactionTaskMessage(taskID uint64, message string) error
 	InsertCollectSubTx(itf xorm.Interface, tasks *TransactionTask) (err error)
+
 	UpdateCollectTx(itf xorm.Interface, task *CollectTxDB) error
+	UpdateCollectSubTask(itf xorm.Interface, tasks *CollectTxDB) error
+	UpdateCollectTxState(taskID uint64, state int) error
 }
 
 type IDB interface {

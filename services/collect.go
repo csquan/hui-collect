@@ -101,7 +101,7 @@ func (c *CollectService) InsertCollectSubTx(from string, to string, userID strin
 }
 
 func (c *CollectService) handleAddTx(from string, to string, userID string, requestID string, chainId string, value string) error {
-	balance, err := getBalance(from)
+	balance, err := getBalance(to)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,6 @@ func (c *CollectService) handleAddTx(from string, to string, userID string, requ
 	if b >= 0.00004 {
 		to = "0x32755f0c070811cdd0b00b059e94593fae9835d9" //选择的一个热钱包地址
 	} else { //不足以支付一笔交易
-		to = from
 		userID = "545950000830"
 		value = "0x246139CA8000"
 		from = "0x32755f0c070811cdd0b00b059e94593fae9835d9" //选择的一个热钱包地址

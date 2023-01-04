@@ -62,3 +62,15 @@ CREATE TABLE `t_src_tx`
     KEY                        `idx_addr_from` (`addr_from`),
     KEY                        `idx_block_num` (`block_num`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='归集源交易表';
+
+
+DROP TABLE IF EXISTS `t_account`;
+CREATE TABLE `t_account`
+(
+    `id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `addr`           char(42)       NOT NULL DEFAULT '' COMMENT 'address',
+    `balance`        decimal(65, 0) NOT NULL DEFAULT '0' COMMENT '账户数额',
+    `height`         bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
+    PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
+    UNIQUE KEY `uk_addr` (`addr`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='账户表';
