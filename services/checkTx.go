@@ -2,15 +2,22 @@ package services
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"github.com/ethereum/Hui-TxState/config"
 	"github.com/ethereum/Hui-TxState/types"
 	"github.com/ethereum/Hui-TxState/utils"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
+	"math/big"
+	"strings"
 	"time"
 )
+
+const erc20abi = `[{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"payable":true,"stateMutability":"payable","type":"fallback"},{"anonymous":false,"inputs":[{"indexed":true,"name":"owner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}]`
 
 type CheckService struct {
 	db     types.IDB
@@ -24,15 +31,15 @@ func NewCheckService(db types.IDB, c *config.Config) *CheckService {
 	}
 }
 
-func (c *CheckService) InsertCollectSubTx(from string, to string, userID string, requestID string, chainId string, value string) error {
+func (c *CheckService) InsertCollectSubTx(from string, to string, userID string, requestID string, chainId int, inputdata string) error {
 	//插入sub task
 	task := types.TransactionTask{
 		UUID:      time.Now().Unix(),
 		UserID:    userID,
 		From:      from,
 		To:        to,
-		Value:     value,
-		ChainId:   8888,
+		InputData: inputdata,
+		ChainId:   chainId,
 		RequestId: requestID,
 	}
 	task.State = int(types.TxInitState)
@@ -52,11 +59,25 @@ func (c *CheckService) InsertCollectSubTx(from string, to string, userID string,
 
 // 根据传入的交易，如果是打gas类型的交易，那么再生成一笔TxInitState状态的交易，如果是归集到热钱包的交易，那么进入下一状态，表示可以更新账本
 func (c *CheckService) Check(task *types.TransactionTask) (finished bool, err error) {
-	if task.Type == 0 { //说明是打gas交易，需要在交易表中插入一条交易
+	if task.Tx_type == 0 { //说明是打gas交易，需要在交易表中插入一条交易
 		dest := "0x32f3323a268155160546504c45d0c4a832567159"
-		UID := ""
-		Value := "10000000000000000000"
-		c.InsertCollectSubTx(task.To, dest, UID, "", "8888", Value)
+		UID := "285873622725"
+
+		r := strings.NewReader(erc20abi)
+		erc20ABI, err := abi.JSON(r)
+		if err != nil {
+			return false, err
+		}
+		//得到关联交易的value
+		Amount := &big.Int{}
+		Amount.SetString("100000000000000000000", 10)
+
+		b, err := erc20ABI.Pack("transfer", common.HexToAddress(dest), Amount)
+		if err != nil {
+			return false, err
+		}
+		inputdata := hex.EncodeToString(b)
+		c.InsertCollectSubTx(task.To, dest, UID, "", 8888, inputdata)
 		task.State = int(types.TxEndState)
 	} else { //说明已经是归集交易，进入下一状态
 		task.State = int(types.TxCheckState)

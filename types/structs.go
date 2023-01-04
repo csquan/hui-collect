@@ -21,7 +21,7 @@ type TransactionTask struct {
 	SignHash  string    `xorm:"f_sign_hash"`
 	TxHash    string    `xorm:"f_tx_hash"`
 	State     int       `xorm:"f_state"`
-	Type      int       `xorm:"f_type"`
+	Tx_type   int       `xorm:"f_type"`
 	Receipt   string    `xorm:"f_receipt"`
 	Sig       string    `xorm:"f_sig"`
 	Error     string    `xorm:"f_error"`
@@ -31,31 +31,18 @@ type TransactionTask struct {
 }
 
 type CollectTxDB struct {
-	Id               uint64 `xorm:"id"`
-	TxType           uint8  `xorm:"tx_type"`
-	AddrTo           string `xorm:"addr_to"`
-	AddrFrom         string `xorm:"addr_from"`
-	Hash             string `xorm:"tx_hash"`
-	Index            int    `xorm:"tx_index"`
-	Value            string `xorm:"tx_value"`
-	Input            string `xorm:"input"`
-	Nonce            uint64 `xorm:"nonce"`
-	GasPrice         string `xorm:"gas_price"`
-	GasLimit         uint64 `xorm:"gas_limit"`
-	GasUsed          uint64 `xorm:"gas_used"`
-	IsContract       bool   `xorm:"is_contract"`
-	IsContractCreate bool   `xorm:"is_contract_create"`
-	BlockNum         uint64 `xorm:"block_num"`
-	BlockHash        string `xorm:"block_hash"`
-	BlockTime        int64  `xorm:"block_time"`
-	ExecStatus       uint64 `xorm:"exec_status"`
-	BlockState       uint8  `xorm:"block_state"`
-	//eip1559
-	BaseFee              string `xorm:"base_fee"`
-	MaxFeePerGas         string `xorm:"max_fee_per_gas"`
-	MaxPriorityFeePerGas string `xorm:"max_priority_fee_per_gas"`
-	BurntFees            string `xorm:"burnt_fees"`
-	State                int    `xorm:"collect_state"`
+	Id             uint64 `xorm:"id"`
+	Hash           string `xorm:"tx_hash"`
+	Addr           string `xorm:"addr"`
+	Sender         string `xorm:"sender"`
+	Receiver       string `xorm:"receiver"`
+	TokenCnt       string `xorm:"token_cnt"`
+	TokenCntOrigin string `xorm:"token_cnt_origin"`
+	LogIndex       int    `xorm:"log_index"`
+	BlockState     uint8  `xorm:"block_state"`
+	BlockNum       uint64 `xorm:"block_num"`
+	BlockTime      uint64 `xorm:"block_time"`
+	CollectState   int    `xorm:"collect_state"`
 }
 
 func (t *TransactionTask) TableName() string {

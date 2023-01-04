@@ -42,6 +42,8 @@ func (t *ServiceScheduler) Start() {
 	//create boradcast service
 	boradcastService := NewBoradcastService(t.db, t.conf)
 	//create update service
+	CheckService := NewCheckService(t.db, t.conf)
+	//create update service
 	UpdateAccountService := NewUpdateAccountService(t.db, t.conf)
 
 	t.services = []types.IAsyncService{
@@ -49,6 +51,7 @@ func (t *ServiceScheduler) Start() {
 		assemblyService,
 		signService,
 		boradcastService,
+		CheckService,
 		UpdateAccountService,
 	}
 

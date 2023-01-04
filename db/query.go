@@ -51,7 +51,7 @@ func (m *Mysql) GetOpenedCheckTasks() ([]*types.TransactionTask, error) {
 
 func (m *Mysql) GetOpenedUpdateAccountTasks() ([]*types.TransactionTask, error) {
 	tasks := make([]*types.TransactionTask, 0)
-	err := m.engine.Table("t_transaction_task").Where("f_error = \"\" and f_state in (?)", types.TxEndState).Find(&tasks)
+	err := m.engine.Table("t_transaction_task").Where("f_error = \"\" and f_state in (?)", types.TxCheckState).Find(&tasks)
 	if err != nil {
 		return nil, err
 	}

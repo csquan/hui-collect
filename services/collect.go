@@ -17,6 +17,7 @@ import (
 	"time"
 )
 
+const gas_Fee = 400000000000000 //4*10 14 认为是一笔交易的费用
 type CollectService struct {
 	db     types.IDB
 	config *config.Config
@@ -74,7 +75,7 @@ func createInitMsg(task *types.TransactionTask) (string, error) {
 	return buffer.String(), nil
 }
 
-func (c *CollectService) InsertCollectSubTx(from string, to string, userID string, requestID string, chainId string, value string) error {
+func (c *CollectService) InsertCollectSubTx(from string, to string, userID string, requestID string, chainId string, value string, tx_type int) error {
 	//插入sub task
 	task := types.TransactionTask{
 		UUID:      time.Now().Unix(),
@@ -84,6 +85,7 @@ func (c *CollectService) InsertCollectSubTx(from string, to string, userID strin
 		Value:     value,
 		ChainId:   8888,
 		RequestId: requestID,
+		Tx_type:   tx_type,
 	}
 	task.State = int(types.TxInitState)
 
@@ -111,15 +113,18 @@ func (c *CollectService) handleAddTx(from string, to string, userID string, requ
 		return err
 	}
 
-	if b >= 0.00004 {
+	tx_type := 0
+	if b <= gas_Fee {
 		to = "0x32755f0c070811cdd0b00b059e94593fae9835d9" //选择的一个热钱包地址
+		tx_type = 1
 	} else { //不足以支付一笔交易
 		userID = "545950000830"
 		value = "0x246139CA8000"
 		from = "0x32755f0c070811cdd0b00b059e94593fae9835d9" //选择的一个热钱包地址
+		tx_type = 0
 	}
 
-	c.InsertCollectSubTx(from, to, userID, requestID, chainId, value)
+	c.InsertCollectSubTx(from, to, userID, requestID, chainId, value, tx_type)
 	return nil
 }
 
@@ -136,14 +141,14 @@ func (c *CollectService) Run() (err error) {
 	for _, collectTask := range collectTasks {
 		uid := ""
 		requestID := ""
-		err = c.handleAddTx(collectTask.AddrFrom, collectTask.AddrTo, uid, requestID, "8888", collectTask.Value)
+		err = c.handleAddTx(collectTask.Sender, collectTask.Receiver, uid, requestID, "8888", collectTask.TokenCnt)
 
 		if err != nil {
 			continue
 		}
 
 		err := utils.CommitWithSession(c.db, func(s *xorm.Session) error {
-			collectTask.State = int(types.TxCollectingState)
+			collectTask.CollectState = int(types.TxCollectingState)
 			if err := c.db.UpdateCollectTx(s, collectTask); err != nil {
 				logrus.Errorf("insert colelct transaction task error:%v tasks:[%v]", err, collectTask)
 				return err
