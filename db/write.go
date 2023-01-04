@@ -68,3 +68,16 @@ func (m *Mysql) UpdateTransactionTaskState(taskID uint64, state int) error {
 	_, err := m.engine.Exec("update t_transaction_task set f_state = ? where f_id = ?", state, taskID)
 	return err
 }
+
+func (m *Mysql) InsertCollectSubTx(itf xorm.Interface, tasks *types.TransactionTask) (err error) {
+	_, err = itf.Insert(tasks)
+	if err != nil {
+		logrus.Errorf("insert collect sub task error:%v, tasks:%v", err, tasks)
+	}
+	return
+}
+
+func (m *Mysql) UpdateCollectTx(itf xorm.Interface, task *types.CollectTxDB) error {
+	_, err := itf.Table("t_src_tx").Where("id = ?", task.Id).Update(task)
+	return err
+}

@@ -4,9 +4,9 @@ import (
 	"github.com/ethereum/Hui-TxState/types"
 )
 
-func (m *Mysql) GetOpenedTransactionTask() ([]*types.CollectTxDB, error) {
+func (m *Mysql) GetOpenedCollectTask() ([]*types.CollectTxDB, error) {
 	tasks := make([]*types.CollectTxDB, 0)
-	err := m.engine.Table("t_src_tx").Where("f_state = ?", types.TxCollectingState).Find(&tasks)
+	err := m.engine.Table("t_src_tx").Where("collect_state = ?", types.TxReadyCollectState).Find(&tasks)
 	if err != nil {
 		return nil, err
 	}

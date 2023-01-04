@@ -54,7 +54,7 @@ type CollectTxDB struct {
 	MaxFeePerGas         string `xorm:"max_fee_per_gas"`
 	MaxPriorityFeePerGas string `xorm:"max_priority_fee_per_gas"`
 	BurntFees            string `xorm:"burnt_fees"`
-	State                int    `xorm:"state"`
+	State                int    `xorm:"collect_state"`
 }
 
 func (t *TransactionTask) TableName() string {

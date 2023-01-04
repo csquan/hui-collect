@@ -3,7 +3,8 @@ package types
 type TransactionState int
 
 const (
-	TxCollectingState TransactionState = iota
+	TxReadyCollectState TransactionState = iota
+	TxCollectingState
 	TxCollectedState
 )
 

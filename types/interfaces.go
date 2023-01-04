@@ -19,7 +19,7 @@ type IReader interface {
 	//查询可以进行失败回调的任务--状态为checkreceipt
 	GetOpenedFailCallBackTasks() ([]*TransactionTask, error)
 
-	GetOpenedTransactionTask() ([]*CollectTxDB, error)
+	GetOpenedCollectTask() ([]*CollectTxDB, error)
 
 	UpdateTransactionTaskState(taskID uint64, state int) error
 
@@ -36,6 +36,8 @@ type IWriter interface {
 	SaveTxTask(itf xorm.Interface, task *TransactionTask) (err error)
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
 	UpdateTransactionTaskMessage(taskID uint64, message string) error
+	InsertCollectSubTx(itf xorm.Interface, tasks *TransactionTask) (err error)
+	UpdateCollectTx(itf xorm.Interface, task *CollectTxDB) error
 }
 
 type IDB interface {
