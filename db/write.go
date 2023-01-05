@@ -23,7 +23,7 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 		logrus.Errorf("create engine error: %v", err)
 		return
 	}
-	engine.ShowSQL(true)
+	engine.ShowSQL(false)
 	engine.Logger().SetLevel(core.LOG_DEBUG)
 	location, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {

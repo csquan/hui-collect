@@ -31,9 +31,10 @@ func NewCheckService(db types.IDB, c *config.Config) *CheckService {
 	}
 }
 
-func (c *CheckService) InsertCollectSubTx(from string, to string, userID string, requestID string, chainId int, inputdata string, value string, tx_type int) error {
+func (c *CheckService) InsertCollectSubTx(parentID uint64, from string, to string, userID string, requestID string, chainId int, inputdata string, value string, tx_type int) error {
 	//插入sub task
 	task := types.TransactionTask{
+		ParentID:  parentID,
 		UUID:      time.Now().Unix(),
 		UserID:    userID,
 		From:      from,
@@ -62,25 +63,32 @@ func (c *CheckService) InsertCollectSubTx(from string, to string, userID string,
 // 根据传入的交易，如果是打gas类型的交易，那么再生成一笔TxInitState状态的交易，如果是归集到热钱包的交易，那么进入下一状态，表示可以更新账本
 func (c *CheckService) Check(task *types.TransactionTask) (finished bool, err error) {
 	if task.Tx_type == 0 { //说明是打gas交易，需要在交易表中插入一条归集交易
-		dest := "0x32f3323a268155160546504c45d0c4a832567159"
-		UID := "285873622725"
+		dest := "0x32f3323a268155160546504c45d0c4a832567159" //测试方便，先写死一个归集钱包
+		src_task, err := c.db.GetCollectTask(task.ParentID)
+		if err != nil {
+			return false, err
+		}
+		to := src_task.Addr // "0x99ac689fd1f09ada4c0365e6497b2a824af68557" 这里应该查询这笔源交易对应的合约地址
+		UID := "817583340974"
 
 		r := strings.NewReader(erc20abi)
 		erc20ABI, err := abi.JSON(r)
 		if err != nil {
 			return false, err
 		}
+		//src_task.TokenCnt = "1000000000000000000000"
 		//得到关联交易的value
 		Amount := &big.Int{}
-		Amount.SetString("100000000000000000000", 10)
+		Amount.SetString(src_task.TokenCnt, 10)
 
 		b, err := erc20ABI.Pack("transfer", common.HexToAddress(dest), Amount)
 		if err != nil {
 			return false, err
 		}
 		inputdata := hex.EncodeToString(b)
-		value := "0" //这里应该查询这笔gas交易对应的源交易value是多少
-		c.InsertCollectSubTx(task.To, dest, UID, "", 8888, "0x"+inputdata, value, 1)
+
+		value := "0x0" //这里应该查询这笔gas交易对应的源交易value是多少
+		c.InsertCollectSubTx(task.ParentID, task.To, to, UID, "", 8888, "0x"+inputdata, value, 1)
 		task.State = int(types.TxEndState)
 	} else { //说明已经是归集交易，进入下一状态
 		task.State = int(types.TxCheckState)

@@ -106,12 +106,18 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 		fmt.Println(err)
 	}
 
+	b, err := hex.DecodeString(task.InputData[2:])
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	tx := ethTypes.NewTx(&ethTypes.LegacyTx{
 		Nonce:    task.Nonce,
 		GasPrice: big.NewInt(gasPrice),
 		Gas:      8000000,
 		To:       &to,
 		Value:    value,
+		Data:     b,
 	})
 
 	pubKey, err := UnmarshalP256CompressedPub("0209674d59b772b17524ec19bfc407c66547f8ff332c5e0a2097e8a3c36de09814")

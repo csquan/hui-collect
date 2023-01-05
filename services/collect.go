@@ -78,9 +78,10 @@ func createInitMsg(task *types.TransactionTask) (string, error) {
 	return buffer.String(), nil
 }
 
-func (c *CollectService) InsertCollectSubTx(from string, to string, userID string, requestID string, chainId string, inputdata string, value string, tx_type int) error {
+func (c *CollectService) InsertCollectSubTx(parentID uint64, from string, to string, userID string, requestID string, chainId string, inputdata string, value string, tx_type int) error {
 	//插入sub task
 	task := types.TransactionTask{
+		ParentID:  parentID,
 		UUID:      time.Now().Unix(),
 		UserID:    userID,
 		From:      from,
@@ -106,7 +107,7 @@ func (c *CollectService) InsertCollectSubTx(from string, to string, userID strin
 	return nil
 }
 
-func (c *CollectService) handleAddTx(from string, to string, userID string, requestID string, chainId string, value string) error {
+func (c *CollectService) handleAddTx(parentID uint64, from string, to string, userID string, requestID string, chainId string, value string, contractAddr string) error {
 	balance, err := getBalance(to)
 	if err != nil {
 		return err
@@ -120,7 +121,7 @@ func (c *CollectService) handleAddTx(from string, to string, userID string, requ
 	tx_type := 0
 	inputdata := ""
 	if b >= gas_Fee { //直接插入一笔归集子交易
-		to = "0x32755f0c070811cdd0b00b059e94593fae9835d9" //选择的一个热钱包地址
+		to = contractAddr
 		tx_type = 1
 
 		r := strings.NewReader(erc20abi)
@@ -130,8 +131,8 @@ func (c *CollectService) handleAddTx(from string, to string, userID string, requ
 		}
 		//得到关联交易的value
 		Amount := &big.Int{}
-		Amount.SetString("value", 10)
-		dest := "0x43642d7ebf13d442a1b0065dce8fb27750b92fca"
+		Amount.SetString(value, 10)
+		dest := "0x32f3323a268155160546504c45d0c4a832567159" //测试归集热钱包地址
 		b, err := erc20ABI.Pack("transfer", common.HexToAddress(dest), Amount)
 		if err != nil {
 			return err
@@ -145,7 +146,7 @@ func (c *CollectService) handleAddTx(from string, to string, userID string, requ
 		tx_type = 0
 	}
 
-	c.InsertCollectSubTx(from, to, userID, requestID, chainId, "0x"+inputdata, value, tx_type)
+	c.InsertCollectSubTx(parentID, from, to, userID, requestID, chainId, "0x"+inputdata, value, tx_type)
 	return nil
 }
 
@@ -162,7 +163,8 @@ func (c *CollectService) Run() (err error) {
 	for _, collectTask := range collectTasks {
 		uid := ""
 		requestID := ""
-		err = c.handleAddTx(collectTask.Sender, collectTask.Receiver, uid, requestID, "8888", collectTask.TokenCnt)
+		parentID := collectTask.Id
+		err = c.handleAddTx(parentID, collectTask.Sender, collectTask.Receiver, uid, requestID, "8888", collectTask.TokenCnt, collectTask.Addr)
 
 		if err != nil {
 			continue

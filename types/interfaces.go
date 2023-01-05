@@ -19,6 +19,8 @@ type IReader interface {
 
 	GetOpenedCollectTask() ([]*CollectTxDB, error)
 
+	GetCollectTask(id uint64) (*CollectTxDB, error)
+
 	UpdateTransactionTaskState(taskID uint64, state int) error
 
 	//查询指定的task

@@ -7,6 +7,7 @@ import (
 
 type TransactionTask struct {
 	ID        uint64    `xorm:"f_id not null pk autoincr bigint(20)" gorm:"primary_key"`
+	ParentID  uint64    `xorm:"f_parent_id"`
 	UserID    string    `xorm:"f_uid"`
 	UUID      int64     `xorm:"f_uuid"`
 	RequestId string    `xorm:"f_request_id"`

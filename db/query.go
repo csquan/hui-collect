@@ -13,6 +13,18 @@ func (m *Mysql) GetOpenedCollectTask() ([]*types.CollectTxDB, error) {
 	return tasks, err
 }
 
+func (m *Mysql) GetCollectTask(id uint64) (*types.CollectTxDB, error) {
+	task := &types.CollectTxDB{}
+	ok, err := m.engine.Table("t_src_tx").Where("id = ?", id).Limit(1).Get(task)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	return task, nil
+}
+
 func (m *Mysql) GetOpenedAssemblyTasks() ([]*types.TransactionTask, error) {
 	tasks := make([]*types.TransactionTask, 0)
 	err := m.engine.Table("t_transaction_task").Where("f_state in (?)", types.TxInitState).Find(&tasks)
