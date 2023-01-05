@@ -88,7 +88,14 @@ func (c *MonitorService) InsertCollectTx(parentID uint64, from string, to string
 }
 
 func (c *MonitorService) Run() (err error) {
-	erc20_txs, err := c.block_db.GetMonitorCollectTask("0x206beddf4f9fc55a116890bb74c6b79999b14eb1")
+	targetAddr := "0x206beddf4f9fc55a116890bb74c6b79999b14eb1"
+	//得到上次监控的表高度
+	height, err := c.db.GetMonitorHeightInfo(targetAddr)
+	if err != nil {
+		return
+	}
+
+	erc20_txs, err := c.block_db.GetMonitorCollectTask(targetAddr, height)
 	if err != nil {
 		return
 	}
@@ -109,10 +116,33 @@ func (c *MonitorService) Run() (err error) {
 		collectTask.CollectState = int(types.TxReadyCollectState)
 
 		err := utils.CommitWithSession(c.db, func(s *xorm.Session) error {
-			if err := c.db.InsertCollectTx(s, &collectTask); err != nil {
+			if err := c.db.InsertCollectTx(s, &collectTask); err != nil { //插入归集交易表
 				logrus.Errorf("insert colelct transaction task error:%v tasks:[%v]", err, collectTask)
 				return err
 			}
+			//先看看monitor中有没有该地址，没有插入，有则更新
+
+			count, err := c.db.GetMonitorCountInfo(targetAddr)
+			if err != nil {
+				logrus.Errorf("get monitor info error:%v addr:[%v]", err, targetAddr)
+				return err
+			}
+			if count > 0 {
+				if err := c.db.UpdateMonitor(collectTask.BlockNum, targetAddr); err != nil { //更新monitor
+					logrus.Errorf("insert colelct transaction task error:%v tasks:[%v]", err, collectTask)
+					return err
+				}
+			} else {
+				monitor := types.Monitor{}
+				monitor.Addr = targetAddr
+				monitor.Height = collectTask.BlockNum
+
+				if err := c.db.InsertMonitor(s, &monitor); err != nil { //插入monitor
+					logrus.Errorf("insert colelct transaction task error:%v tasks:[%v]", err, collectTask)
+					return err
+				}
+			}
+
 			return nil
 		})
 		if err != nil {

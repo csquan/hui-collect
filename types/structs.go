@@ -76,6 +76,16 @@ func (c *CollectTxDB) Copy(tx *TxErc20) {
 	c.BlockTime = tx.BlockTime
 }
 
+type Monitor struct {
+	Id     uint64 `xorm:"id"`
+	Addr   string `xorm:"addr"`
+	Height uint64 `xorm:"height"`
+}
+
+func (t *Monitor) TableName() string {
+	return "t_monitor"
+}
+
 func (t *TxErc20) TableName() string {
 	return "tx_erc20"
 }
@@ -85,7 +95,7 @@ func (t *CollectTxDB) TableName() string {
 }
 
 func (t *TransactionTask) TableName() string {
-	return "t_src_tx"
+	return "t_transaction_task"
 }
 
 type Balance_Erc20 struct {

@@ -97,6 +97,19 @@ func (m *Mysql) InsertCollectTx(itf xorm.Interface, task *types.CollectTxDB) (er
 	return
 }
 
+func (m *Mysql) InsertMonitor(itf xorm.Interface, monitor *types.Monitor) (err error) {
+	_, err = itf.Insert(monitor)
+	if err != nil {
+		logrus.Errorf("insert collect task error:%v, monitor:%v", err, monitor)
+	}
+	return
+}
+
+func (m *Mysql) UpdateMonitor(height uint64, addr string) error {
+	_, err := m.engine.Exec("update t_monitor set height = ? where addr = ?", height, addr)
+	return err
+}
+
 func (m *Mysql) InsertCollectSubTx(itf xorm.Interface, task *types.TransactionTask) (err error) {
 	_, err = itf.Insert(task)
 	if err != nil {
@@ -110,8 +123,8 @@ func (m *Mysql) UpdateCollectTx(itf xorm.Interface, task *types.CollectTxDB) err
 	return err
 }
 
-func (m *Mysql) UpdateCollectTxState(taskID uint64, state int) error {
-	_, err := m.engine.Exec("update t_transaction_task set f_state = ? where f_id = ?", state, taskID)
+func (m *Mysql) UpdateCollectTxState(ID uint64, state int) error {
+	_, err := m.engine.Exec("update t_src_tx set collect_state = ? where id = ?", state, ID)
 	return err
 }
 

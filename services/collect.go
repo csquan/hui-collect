@@ -34,12 +34,12 @@ func NewCollectService(db types.IDB, c *config.Config) *CollectService {
 }
 
 func getBalance(addr string) (string, error) {
-	client, err := ethclient.Dial("http://43.198.66.226:8545")
+	client, err := ethclient.Dial("http://54.169.11.46:8545")
 	if err != nil {
 		return "", err
 	}
 
-	balance, err := client.BalanceAt(context.Background(), common.HexToAddress(addr), big.NewInt(786760))
+	balance, err := client.BalanceAt(context.Background(), common.HexToAddress(addr), nil)
 	if err != nil {
 		return "", err
 	}
@@ -107,7 +107,7 @@ func (c *CollectService) InsertCollectSubTx(parentID uint64, from string, to str
 	return nil
 }
 
-func (c *CollectService) handleAddTx(parentID uint64, from string, to string, userID string, requestID string, chainId string, value string, contractAddr string) error {
+func (c *CollectService) handleAddTx(parentID uint64, from string, to string, userID string, requestID string, chainId string, tokencnt string, contractAddr string) error {
 	balance, err := getBalance(to)
 	if err != nil {
 		return err
@@ -120,7 +120,10 @@ func (c *CollectService) handleAddTx(parentID uint64, from string, to string, us
 
 	tx_type := 0
 	inputdata := ""
+	value := "0x0"
 	if b >= max_tx_fee { //插入一笔归集子交易
+		userID = "817583340974" // 0x206beddf4f9fc55a116890bb74c6b79999b14eb1
+		from = to
 		to = contractAddr
 		tx_type = 1
 
@@ -130,7 +133,7 @@ func (c *CollectService) handleAddTx(parentID uint64, from string, to string, us
 			return err
 		}
 		Amount := &big.Int{}
-		Amount.SetString(value, 10)
+		Amount.SetString(tokencnt, 10)
 
 		dest := c.config.Collect.Addr
 		b, err := erc20ABI.Pack("transfer", common.HexToAddress(dest), Amount)

@@ -6,6 +6,10 @@ import (
 
 //go:generate mockgen -source=$GOFILE -destination=./mock/mock_db.go -package=mock
 type IReader interface {
+	//查询指定地址的监控表中的记录数
+	GetMonitorCountInfo(Addr string) (int, error)
+	//查询指定地址的监控表中的高度
+	GetMonitorHeightInfo(Addr string) (int, error)
 	//查询可以进行交易组装的任务--状态为Init
 	GetOpenedAssemblyTasks() ([]*TransactionTask, error)
 	//查询可以进行签名的任务--状态为Assembly
@@ -21,7 +25,7 @@ type IReader interface {
 
 	GetCollectTask(id uint64) (*CollectTxDB, error)
 
-	GetMonitorCollectTask(addr string) ([]*TxErc20, error)
+	GetMonitorCollectTask(addr string, height int) ([]*TxErc20, error)
 
 	UpdateTransactionTaskState(taskID uint64, state int) error
 
@@ -40,6 +44,9 @@ type IWriter interface {
 	UpdateTransactionTaskMessage(taskID uint64, message string) error
 	InsertCollectTx(itf xorm.Interface, task *CollectTxDB) (err error)
 	InsertCollectSubTx(itf xorm.Interface, task *TransactionTask) (err error)
+
+	InsertMonitor(itf xorm.Interface, monitor *Monitor) (err error)
+	UpdateMonitor(height uint64, addr string) error
 
 	UpdateCollectTx(itf xorm.Interface, task *CollectTxDB) error
 	UpdateCollectSubTask(itf xorm.Interface, tasks *CollectTxDB) error
