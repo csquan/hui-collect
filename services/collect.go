@@ -3,10 +3,12 @@ package services
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"github.com/ethereum/Hui-TxState/config"
 	"github.com/ethereum/Hui-TxState/types"
 	"github.com/ethereum/Hui-TxState/utils"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-xorm/xorm"
@@ -14,6 +16,7 @@ import (
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -75,7 +78,7 @@ func createInitMsg(task *types.TransactionTask) (string, error) {
 	return buffer.String(), nil
 }
 
-func (c *CollectService) InsertCollectSubTx(from string, to string, userID string, requestID string, chainId string, value string, tx_type int) error {
+func (c *CollectService) InsertCollectSubTx(from string, to string, userID string, requestID string, chainId string, inputdata string, value string, tx_type int) error {
 	//插入sub task
 	task := types.TransactionTask{
 		UUID:      time.Now().Unix(),
@@ -83,6 +86,7 @@ func (c *CollectService) InsertCollectSubTx(from string, to string, userID strin
 		From:      from,
 		To:        to,
 		Value:     value,
+		InputData: inputdata,
 		ChainId:   8888,
 		RequestId: requestID,
 		Tx_type:   tx_type,
@@ -114,9 +118,26 @@ func (c *CollectService) handleAddTx(from string, to string, userID string, requ
 	}
 
 	tx_type := 0
-	if b <= gas_Fee {
+	inputdata := ""
+	if b >= gas_Fee { //直接插入一笔归集子交易
 		to = "0x32755f0c070811cdd0b00b059e94593fae9835d9" //选择的一个热钱包地址
 		tx_type = 1
+
+		r := strings.NewReader(erc20abi)
+		erc20ABI, err := abi.JSON(r)
+		if err != nil {
+			return err
+		}
+		//得到关联交易的value
+		Amount := &big.Int{}
+		Amount.SetString("value", 10)
+		dest := "0x43642d7ebf13d442a1b0065dce8fb27750b92fca"
+		b, err := erc20ABI.Pack("transfer", common.HexToAddress(dest), Amount)
+		if err != nil {
+			return err
+		}
+		inputdata = hex.EncodeToString(b)
+
 	} else { //不足以支付一笔交易
 		userID = "545950000830"
 		value = "0x246139CA8000"
@@ -124,7 +145,7 @@ func (c *CollectService) handleAddTx(from string, to string, userID string, requ
 		tx_type = 0
 	}
 
-	c.InsertCollectSubTx(from, to, userID, requestID, chainId, value, tx_type)
+	c.InsertCollectSubTx(from, to, userID, requestID, chainId, "0x"+inputdata, value, tx_type)
 	return nil
 }
 
