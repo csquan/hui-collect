@@ -21,6 +21,8 @@ type IReader interface {
 
 	GetCollectTask(id uint64) (*CollectTxDB, error)
 
+	GetMonitorCollectTask(addr string) ([]*TxErc20, error)
+
 	UpdateTransactionTaskState(taskID uint64, state int) error
 
 	//查询指定的task
@@ -36,7 +38,8 @@ type IWriter interface {
 	SaveTxTask(itf xorm.Interface, task *TransactionTask) (err error)
 	UpdateTransactionTask(itf xorm.Interface, task *TransactionTask) error
 	UpdateTransactionTaskMessage(taskID uint64, message string) error
-	InsertCollectSubTx(itf xorm.Interface, tasks *TransactionTask) (err error)
+	InsertCollectTx(itf xorm.Interface, task *CollectTxDB) (err error)
+	InsertCollectSubTx(itf xorm.Interface, task *TransactionTask) (err error)
 
 	UpdateCollectTx(itf xorm.Interface, task *CollectTxDB) error
 	UpdateCollectSubTask(itf xorm.Interface, tasks *CollectTxDB) error

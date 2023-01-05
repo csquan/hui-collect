@@ -30,6 +30,10 @@ type CallbackConf struct {
 	URL string `mapstructure:"url"` //发币模块的URL
 }
 
+type MonitorConf struct {
+	DB string `mapstructure:"db"`
+}
+
 type CollectConf struct {
 	Addr string `mapstructure:"addr"`
 }
@@ -50,6 +54,7 @@ type Config struct {
 	DataBase         DataBaseConf          `mapstructure:"database"`
 	CallBack         CallbackConf          `mapstructure:"callback"`
 	Collect          CollectConf           `mapstructure:"collect"`
+	Monitor          MonitorConf           `mapstructure:"monitor"`
 	Gas              GasConf               `mapstructure:"gas"`
 	LogConf          Log                   `mapstructure:"log"`
 	Chains           map[string]*ChainInfo `mapstructure:"chains"`

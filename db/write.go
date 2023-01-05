@@ -35,7 +35,27 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 		conf:   conf,
 		engine: engine,
 	}
+	return
+}
 
+func NewBlockMysql(conf *config.MonitorConf) (m *Mysql, err error) {
+	//"test:123@/test?charset=utf8"
+	engine, err := xorm.NewEngine("mysql", conf.DB)
+	if err != nil {
+		logrus.Errorf("create engine error: %v", err)
+		return
+	}
+	engine.ShowSQL(false)
+	engine.Logger().SetLevel(core.LOG_DEBUG)
+	location, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		return nil, err
+	}
+	engine.SetTZLocation(location)
+	engine.SetTZDatabase(location)
+	m = &Mysql{
+		engine: engine,
+	}
 	return
 }
 
@@ -69,10 +89,18 @@ func (m *Mysql) UpdateTransactionTaskState(taskID uint64, state int) error {
 	return err
 }
 
-func (m *Mysql) InsertCollectSubTx(itf xorm.Interface, tasks *types.TransactionTask) (err error) {
-	_, err = itf.Insert(tasks)
+func (m *Mysql) InsertCollectTx(itf xorm.Interface, task *types.CollectTxDB) (err error) {
+	_, err = itf.Insert(task)
 	if err != nil {
-		logrus.Errorf("insert collect sub task error:%v, tasks:%v", err, tasks)
+		logrus.Errorf("insert collect task error:%v, tasks:%v", err, task)
+	}
+	return
+}
+
+func (m *Mysql) InsertCollectSubTx(itf xorm.Interface, task *types.TransactionTask) (err error) {
+	_, err = itf.Insert(task)
+	if err != nil {
+		logrus.Errorf("insert collect sub task error:%v, tasks:%v", err, task)
 	}
 	return
 }

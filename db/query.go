@@ -4,6 +4,15 @@ import (
 	"github.com/ethereum/Hui-TxState/types"
 )
 
+func (m *Mysql) GetMonitorCollectTask(addr string) ([]*types.TxErc20, error) {
+	tasks := make([]*types.TxErc20, 0)
+	err := m.engine.Table("tx_erc20").Where("receiver = ?", addr).Limit(1).Find(&tasks)
+	if err != nil {
+		return nil, err
+	}
+	return tasks, err
+}
+
 func (m *Mysql) GetOpenedCollectTask() ([]*types.CollectTxDB, error) {
 	tasks := make([]*types.CollectTxDB, 0)
 	err := m.engine.Table("t_src_tx").Where("collect_state = ?", types.TxReadyCollectState).Find(&tasks)

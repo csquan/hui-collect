@@ -63,4 +63,14 @@ CREATE TABLE `t_account`
     `height`         bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
     PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
     UNIQUE KEY `uk_addr` (`addr`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='账户表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='总账本';
+
+DROP TABLE IF EXISTS `t_monitor`;
+CREATE TABLE `t_monitor`
+(
+    `id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `addr`           char(42)       NOT NULL DEFAULT '' COMMENT 'address',
+    `height`         bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
+    PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
+    UNIQUE KEY `uk_addr` (`addr`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='监控表';

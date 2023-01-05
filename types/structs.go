@@ -46,8 +46,46 @@ type CollectTxDB struct {
 	CollectState   int    `xorm:"collect_state"`
 }
 
+type TxErc20 struct {
+	Id             uint64 `xorm:"id"`
+	Hash           string `xorm:"tx_hash"`
+	Addr           string `xorm:"addr"`
+	Sender         string `xorm:"sender"`
+	Receiver       string `xorm:"receiver"`
+	TokenCnt       string `xorm:"token_cnt"`
+	TokenCntOrigin string `xorm:"token_cnt_origin"`
+	LogIndex       int    `xorm:"log_index"`
+	BlockState     uint8  `xorm:"block_state"`
+	BlockNum       uint64 `xorm:"block_num"`
+	BlockTime      uint64 `xorm:"block_time"`
+}
+
+func (c *CollectTxDB) Copy(tx *TxErc20) {
+	c.Id = tx.Id
+	c.Hash = tx.Hash
+	c.Addr = tx.Addr
+	c.Sender = tx.Sender
+	c.Receiver = tx.Receiver
+
+	c.TokenCnt = tx.TokenCnt
+	c.TokenCntOrigin = tx.TokenCntOrigin
+	c.LogIndex = tx.LogIndex
+	c.BlockState = tx.BlockState
+	c.BlockNum = tx.BlockNum
+
+	c.BlockTime = tx.BlockTime
+}
+
+func (t *TxErc20) TableName() string {
+	return "tx_erc20"
+}
+
+func (t *CollectTxDB) TableName() string {
+	return "t_src_tx"
+}
+
 func (t *TransactionTask) TableName() string {
-	return "t_transaction_task"
+	return "t_src_tx"
 }
 
 type Balance_Erc20 struct {
