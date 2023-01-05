@@ -147,10 +147,10 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 		"data": {hex.EncodeToString(ct)},
 	}
 	resp, err := http.PostForm(signurl, postValue)
-	resp.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	if err != nil {
 		fmt.Println(err)
 	}
+	resp.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	if err != nil {
 		fmt.Println("Fatal error ", err.Error())

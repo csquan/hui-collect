@@ -24,7 +24,7 @@ func NewUpdateAccountService(db types.IDB, c *config.Config) *UpdateAccountServi
 }
 
 func (c *UpdateAccountService) UpdateAccount(task *types.TransactionTask) (finished bool, err error) {
-	task.State = int(types.TxCheckState)
+	task.State = int(types.TxEndState)
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
 		if err := c.db.UpdateTransactionTask(s, task); err != nil { //更新源归集子交易的状态
 			logrus.Errorf("update transaction task error:%v tasks:[%v]", err, task)

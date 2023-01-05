@@ -99,13 +99,9 @@ func (c *MonitorService) Run() (err error) {
 	if err != nil {
 		return
 	}
+
 	if len(erc20_txs) == 0 {
 		logrus.Infof("no tx of target addr.")
-		return
-	}
-
-	if len(erc20_txs) != 1 { // 先测试一次取出一条
-		logrus.Infof("test:only one tx one time!")
 		return
 	}
 
@@ -121,7 +117,6 @@ func (c *MonitorService) Run() (err error) {
 				return err
 			}
 			//先看看monitor中有没有该地址，没有插入，有则更新
-
 			count, err := c.db.GetMonitorCountInfo(targetAddr)
 			if err != nil {
 				logrus.Errorf("get monitor info error:%v addr:[%v]", err, targetAddr)

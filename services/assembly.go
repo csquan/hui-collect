@@ -64,13 +64,15 @@ func (c *AssemblyService) handleAssembly(task *types.TransactionTask) {
 	if err != nil {
 		logrus.Fatal("get tasks for from address:%v err:%v", task.From, err)
 	}
-
-	nonce, err := client.PendingNonceAt(context.Background(), common.HexToAddress(task.From))
-	if err != nil {
-		logrus.Fatal(err)
+	if res == nil { //本地db不存在记录
+		nonce, err := client.PendingNonceAt(context.Background(), common.HexToAddress(task.From))
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		task.Nonce = nonce
+	} else {
+		task.Nonce = res.Nonce + 1
 	}
-
-	task.Nonce = max(nonce, res.Nonce)
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {

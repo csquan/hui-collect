@@ -35,7 +35,7 @@ func (m *Mysql) GetMonitorHeightInfo(Addr string) (int, error) {
 
 func (m *Mysql) GetMonitorCollectTask(addr string, height int) ([]*types.TxErc20, error) {
 	tasks := make([]*types.TxErc20, 0)
-	err := m.engine.Table("tx_erc20").Where("receiver = ? and block_num > ?", addr, height).Limit(1).Find(&tasks)
+	err := m.engine.Table("tx_erc20").Where("receiver = ? and block_num > ?", addr, height).OrderBy("block_num").Find(&tasks)
 	if err != nil {
 		return nil, err
 	}
