@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-const gas_Fee = 400000000000000 //4*10 14 认为是一笔交易的费用
+const max_tx_fee = 400000000000000 //4*10 14 认为是一笔交易的费用
 type CollectService struct {
 	db     types.IDB
 	config *config.Config
@@ -120,7 +120,7 @@ func (c *CollectService) handleAddTx(parentID uint64, from string, to string, us
 
 	tx_type := 0
 	inputdata := ""
-	if b >= gas_Fee { //直接插入一笔归集子交易
+	if b >= max_tx_fee { //插入一笔归集子交易
 		to = contractAddr
 		tx_type = 1
 
@@ -129,10 +129,10 @@ func (c *CollectService) handleAddTx(parentID uint64, from string, to string, us
 		if err != nil {
 			return err
 		}
-		//得到关联交易的value
 		Amount := &big.Int{}
 		Amount.SetString(value, 10)
-		dest := "0x32f3323a268155160546504c45d0c4a832567159" //测试归集热钱包地址
+
+		dest := c.config.Collect.Addr
 		b, err := erc20ABI.Pack("transfer", common.HexToAddress(dest), Amount)
 		if err != nil {
 			return err
@@ -142,7 +142,7 @@ func (c *CollectService) handleAddTx(parentID uint64, from string, to string, us
 	} else { //不足以支付一笔交易
 		userID = "545950000830"
 		value = "0x246139CA8000"
-		from = "0x32755f0c070811cdd0b00b059e94593fae9835d9" //选择的一个热钱包地址
+		from = c.config.Gas.Addr //"0x32755f0c070811cdd0b00b059e94593fae9835d9"
 		tx_type = 0
 	}
 

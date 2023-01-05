@@ -30,6 +30,14 @@ type CallbackConf struct {
 	URL string `mapstructure:"url"` //发币模块的URL
 }
 
+type CollectConf struct {
+	Addr string `mapstructure:"addr"`
+}
+
+type GasConf struct {
+	Addr string `mapstructure:"addr"`
+}
+
 type ServerConf struct {
 	Port  int               `mapstructure:"port"`
 	Users map[string]string `mapstructure:"users"`
@@ -41,6 +49,8 @@ type Config struct {
 	QueryIntervalInt uint64                `mapstructure:"query_interval"` //ms
 	DataBase         DataBaseConf          `mapstructure:"database"`
 	CallBack         CallbackConf          `mapstructure:"callback"`
+	Collect          CollectConf           `mapstructure:"collect"`
+	Gas              GasConf               `mapstructure:"gas"`
 	LogConf          Log                   `mapstructure:"log"`
 	Chains           map[string]*ChainInfo `mapstructure:"chains"`
 	Env              string                `mapstructure:"env"`

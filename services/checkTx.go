@@ -63,12 +63,12 @@ func (c *CheckService) InsertCollectSubTx(parentID uint64, from string, to strin
 // 根据传入的交易，如果是打gas类型的交易，那么再生成一笔TxInitState状态的交易，如果是归集到热钱包的交易，那么进入下一状态，表示可以更新账本
 func (c *CheckService) Check(task *types.TransactionTask) (finished bool, err error) {
 	if task.Tx_type == 0 { //说明是打gas交易，需要在交易表中插入一条归集交易
-		dest := "0x32f3323a268155160546504c45d0c4a832567159" //测试方便，先写死一个归集钱包
+		dest := c.config.Collect.Addr //"0x32f3323a268155160546504c45d0c4a832567159"
 		src_task, err := c.db.GetCollectTask(task.ParentID)
 		if err != nil {
 			return false, err
 		}
-		to := src_task.Addr // "0x99ac689fd1f09ada4c0365e6497b2a824af68557" 这里应该查询这笔源交易对应的合约地址
+		to := src_task.Addr // "0x99ac689fd1f09ada4c0365e6497b2a824af68557" 这笔源交易对应的合约地址
 		UID := "817583340974"
 
 		r := strings.NewReader(erc20abi)

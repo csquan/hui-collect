@@ -6,6 +6,12 @@ database:
   retry_times: 5
   retry_interval: 300
 
+collect:
+  addr: "0x32f3323a268155160546504c45d0c4a832567159"
+
+gas:
+  addr: "0x32755f0c070811cdd0b00b059e94593fae9835d9"
+
 server_conf:
   users:
     admin: "10244201"
