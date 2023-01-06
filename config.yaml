@@ -27,7 +27,7 @@ chains:
 
 UserInfo:
   KycPubKey: "026a38b8aa47f2af2d2163253ff5385cd059f90476990c7e3ee84bca0ead322241"
-  url: "http://192.168.31.25:9020"
+  url: "https://fat.huiwang.io/registrar"
 
 log:
   stdout:

@@ -3,10 +3,11 @@ package services
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"github.com/ethereum/HuiCollect/config"
-	"github.com/ethereum/HuiCollect/ecies"
+	"github.com/ethereum/HuiCollect/pkg/util/ecies"
 	"github.com/ethereum/HuiCollect/types"
 	"github.com/ethereum/HuiCollect/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -110,38 +111,37 @@ func (c *CollectService) InsertCollectSubTx(parentID uint64, from string, to str
 	return nil
 }
 
-func getUIDfromAddr() {
-	pubKey, err := ecies.PublicFromString(KycPubKey)
-	if err != nil {
+func (c *CollectService) getUidFromAddr(address string) (uid string, err error) {
+	pubKey, err1 := ecies.PublicFromString(c.config.UserInfo.KycPubKey)
+	if err1 != nil {
+		logrus.Println(err)
 	}
 
 	cli := resty.New()
-	cli.SetBaseURL("http://localhost:8000")
+	cli.SetBaseURL(c.config.UserInfo.URL)
 
 	nowStr := time.Now().UTC().Format(http.TimeFormat)
-	ct, err := ecies.Encrypt(rand.Reader, pubKey, []byte(nowStr), nil, nil)
-	if err != nil {
-		t.Fatal(err)
+	ct, err1 := ecies.Encrypt(rand.Reader, pubKey, []byte(nowStr), nil, nil)
+	if err1 != nil {
+		logrus.Println(err1)
 	}
 	data := map[string]interface{}{
 		"verified": hex.EncodeToString(ct),
-		"start":    time.Now().AddDate(0, 0, -100).Unix(),
-		"end":      time.Now().Unix(),
-		"page":     2,
-		"limit":    11,
+		"addr":     address,
 	}
-	var result HttpData
+	var result types.HttpData
 	resp, er := cli.R().SetBody(data).SetResult(&result).Post("/api/v1/pub/kyc-user-list")
 	if er != nil {
-		t.Fatal(er)
+		logrus.Println(err)
 	}
 	if resp.StatusCode() != http.StatusOK {
-		t.Fatal("not 200")
+		logrus.Println(err)
 	}
 	if result.Code != 0 {
-		t.Fatal(result)
+		logrus.Println(err)
 	}
-	fmt.Println(result.Data)
+	fmt.Println(result)
+	return result.Data, nil
 }
 
 func (c *CollectService) handleAddTx(parentID uint64, from string, to string, userID string, requestID string, chainId string, tokencnt string, contractAddr string) error {
@@ -159,7 +159,11 @@ func (c *CollectService) handleAddTx(parentID uint64, from string, to string, us
 	inputdata := ""
 	value := "0x0"
 	if b >= max_tx_fee { //插入一笔归集子交易
-		userID = "817583340974" // 0x206beddf4f9fc55a116890bb74c6b79999b14eb1
+		uid, err := c.getUidFromAddr(to)
+		if err != nil {
+
+		}
+		userID = uid //"817583340974" // 0x206beddf4f9fc55a116890bb74c6b79999b14eb1
 		from = to
 		to = contractAddr
 		tx_type = 1

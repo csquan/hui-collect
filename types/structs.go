@@ -98,6 +98,19 @@ func (t *TransactionTask) TableName() string {
 	return "t_transaction_task"
 }
 
+type HttpRes struct {
+	RequestId string `json:"requestId"`
+	Hash      string `json:"hash"`
+	Code      int    `json:"code"`
+	Message   string `json:"message"`
+	Status    int    `json:"status"`
+}
+
+// HttpData success data
+type HttpData struct {
+	Code int         `json:"code" example:"0"`
+	Data interface{} `json:"data"`
+}
 type Balance_Erc20 struct {
 	Id             string `xorm:"id"`
 	Addr           string `xorm:"addr"`
@@ -163,14 +176,6 @@ type SignData struct {
 
 type SigData struct {
 	Signature string "json:signature"
-}
-
-type HttpRes struct {
-	RequestId string `json:"requestId"`
-	Hash      string `json:"hash"`
-	Code      int    `json:"code"`
-	Message   string `json:"message"`
-	Status    int    `json:"status"`
 }
 
 type CallBackData struct {
