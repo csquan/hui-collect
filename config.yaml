@@ -25,7 +25,7 @@ chains:
     rpc_url: "http://43.198.66.226:8545"
     fetch_timeout: 3000
 
-callback:
+UserInfo:
   url: "http://192.168.31.25:9020"
 
 log:
@@ -34,13 +34,13 @@ log:
     level: 5
   file:
     enable: true
-    path: "/tmp/hermes-rebalance/app.log"
+    path: "/tmp/app.log"
     level: 4
   kafka:
     enable: false
-    topic: "huobi-test"
+    topic: "Hui-test"
     kafka_servers:
-      - "kafka-1.huobidev.com:9092"
-      - "kafka-2.huobidev.com:9092"
-      - "kafka-3.huobidev.com:9092"
+      - "kafka-1.Hui.com:9092"
+      - "kafka-2.Hui.com:9092"
+      - "kafka-3.Hui.com:9092"
     level: 3

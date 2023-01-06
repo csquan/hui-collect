@@ -8,13 +8,16 @@ import (
 	"github.com/ethereum/Hui-TxState/config"
 	"github.com/ethereum/Hui-TxState/types"
 	"github.com/ethereum/Hui-TxState/utils"
+	"github.com/ethereum/HuiCollect/ecies"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/go-resty/resty/v2"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
 	"math/big"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -105,6 +108,40 @@ func (c *CollectService) InsertCollectSubTx(parentID uint64, from string, to str
 		return fmt.Errorf("insert colelct sub transaction task error:%v", err)
 	}
 	return nil
+}
+
+func getUIDfromAddr() {
+	pubKey, err := ecies.PublicFromString(KycPubKey)
+	if err != nil {
+	}
+
+	cli := resty.New()
+	cli.SetBaseURL("http://localhost:8000")
+
+	nowStr := time.Now().UTC().Format(http.TimeFormat)
+	ct, err := ecies.Encrypt(rand.Reader, pubKey, []byte(nowStr), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := map[string]interface{}{
+		"verified": hex.EncodeToString(ct),
+		"start":    time.Now().AddDate(0, 0, -100).Unix(),
+		"end":      time.Now().Unix(),
+		"page":     2,
+		"limit":    11,
+	}
+	var result HttpData
+	resp, er := cli.R().SetBody(data).SetResult(&result).Post("/api/v1/pub/kyc-user-list")
+	if er != nil {
+		t.Fatal(er)
+	}
+	if resp.StatusCode() != http.StatusOK {
+		t.Fatal("not 200")
+	}
+	if result.Code != 0 {
+		t.Fatal(result)
+	}
+	fmt.Println(result.Data)
 }
 
 func (c *CollectService) handleAddTx(parentID uint64, from string, to string, userID string, requestID string, chainId string, tokencnt string, contractAddr string) error {

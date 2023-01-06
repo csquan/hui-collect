@@ -26,8 +26,8 @@ type DataBaseConf struct {
 	DB string `mapstructure:"db"` //DB 连接信息
 }
 
-type CallbackConf struct {
-	URL string `mapstructure:"url"` //发币模块的URL
+type UserInfoConf struct {
+	URL string `mapstructure:"url"` //获取用户信息的URL
 }
 
 type MonitorConf struct {
@@ -50,9 +50,9 @@ type Config struct {
 	AppName          string `mapstructure:"app_name"`
 	ProfPort         int    `mapstructure:"prof_port"`
 	QueryInterval    time.Duration
-	QueryIntervalInt uint64                `mapstructure:"query_interval"` //ms
+	QueryIntervalInt uint64                `mapstructure:"query_interval"`
 	DataBase         DataBaseConf          `mapstructure:"database"`
-	CallBack         CallbackConf          `mapstructure:"callback"`
+	UserInfo         UserInfoConf          `mapstructure:"userInfo"`
 	Collect          CollectConf           `mapstructure:"collect"`
 	Monitor          MonitorConf           `mapstructure:"monitor"`
 	Gas              GasConf               `mapstructure:"gas"`
