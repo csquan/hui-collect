@@ -106,11 +106,20 @@ type HttpRes struct {
 	Status    int    `json:"status"`
 }
 
+type Data1 struct {
+	UID string `json:"uid" `
+}
+
 // HttpData success data
 type HttpData struct {
-	Code int         `json:"code" example:"0"`
-	Data interface{} `json:"data"`
+	Code int `json:"code" example:"0"`
+	Data Data1
 }
+
+type Data struct {
+	UID string `json:"uid" `
+}
+
 type Balance_Erc20 struct {
 	Id             string `xorm:"id"`
 	Addr           string `xorm:"addr"`

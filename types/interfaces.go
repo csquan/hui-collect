@@ -51,6 +51,9 @@ type IWriter interface {
 	UpdateCollectTx(itf xorm.Interface, task *CollectTxDB) error
 	UpdateCollectSubTask(itf xorm.Interface, tasks *CollectTxDB) error
 	UpdateCollectTxState(taskID uint64, state int) error
+
+	SaveMonitorTask(itf xorm.Interface, monitor *Monitor) (err error)
+	RemoveMonitorTask(addr string) error
 }
 
 type IDB interface {

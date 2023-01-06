@@ -130,7 +130,7 @@ func (c *CollectService) getUidFromAddr(address string) (uid string, err error) 
 		"addr":     address,
 	}
 	var result types.HttpData
-	resp, er := cli.R().SetBody(data).SetResult(&result).Post("/api/v1/pub/kyc-user-list")
+	resp, er := cli.R().SetBody(data).SetResult(&result).Post("/api/v1/pub/i-q-user-by-addr")
 	if er != nil {
 		logrus.Println(err)
 	}
@@ -141,7 +141,8 @@ func (c *CollectService) getUidFromAddr(address string) (uid string, err error) 
 		logrus.Println(err)
 	}
 	fmt.Println(result)
-	return result.Data, nil
+
+	return result.Data.UID, nil
 }
 
 func (c *CollectService) handleAddTx(parentID uint64, from string, to string, userID string, requestID string, chainId string, tokencnt string, contractAddr string) error {
