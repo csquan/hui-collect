@@ -2,7 +2,7 @@ package db
 
 import (
 	"fmt"
-	"github.com/ethereum/Hui-TxState/types"
+	"github.com/ethereum/HuiCollect/types"
 )
 
 func (m *Mysql) GetMonitorCountInfo(Addr string) (int, error) {

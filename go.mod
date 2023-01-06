@@ -1,4 +1,4 @@
-module github.com/ethereum/Hui-TxState
+module github.com/ethereum/HuiCollect
 
 go 1.19
 

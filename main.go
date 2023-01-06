@@ -11,10 +11,10 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/ethereum/Hui-TxState/config"
-	"github.com/ethereum/Hui-TxState/db"
-	"github.com/ethereum/Hui-TxState/log"
-	"github.com/ethereum/Hui-TxState/services"
+	"github.com/ethereum/HuiCollect/config"
+	"github.com/ethereum/HuiCollect/db"
+	"github.com/ethereum/HuiCollect/log"
+	"github.com/ethereum/HuiCollect/services"
 	"github.com/sirupsen/logrus"
 )
 

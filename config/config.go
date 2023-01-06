@@ -27,7 +27,8 @@ type DataBaseConf struct {
 }
 
 type UserInfoConf struct {
-	URL string `mapstructure:"url"` //获取用户信息的URL
+	KycPubKey string `mapstructure:"kycPubKey"`
+	URL       string `mapstructure:"url"` //获取用户信息的URL
 }
 
 type MonitorConf struct {

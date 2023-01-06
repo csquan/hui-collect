@@ -3,9 +3,9 @@ package services
 import (
 	"bytes"
 	"fmt"
-	"github.com/ethereum/Hui-TxState/config"
-	"github.com/ethereum/Hui-TxState/types"
-	"github.com/ethereum/Hui-TxState/utils"
+	"github.com/ethereum/HuiCollect/config"
+	"github.com/ethereum/HuiCollect/types"
+	"github.com/ethereum/HuiCollect/utils"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"

@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ethereum/Hui-TxState/config"
+	"github.com/ethereum/HuiCollect/config"
 
 	"github.com/sirupsen/logrus"
 )
