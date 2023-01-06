@@ -89,6 +89,11 @@ func (m *Mysql) UpdateTransactionTaskState(taskID uint64, state int) error {
 	return err
 }
 
+func (m *Mysql) UpdateAccount(amount string, receiver string, contractAddr string) error {
+	_, err := m.engine.Exec("update t_account set balance = ? where addr = ? and contractAddr = ?", amount, receiver, contractAddr)
+	return err
+}
+
 func (m *Mysql) InsertCollectTx(itf xorm.Interface, task *types.CollectTxDB) (err error) {
 	_, err = itf.Insert(task)
 	if err != nil {
@@ -118,4 +123,13 @@ func (m *Mysql) UpdateCollectTxState(ID uint64, state int) error {
 func (m *Mysql) UpdateCollectSubTask(itf xorm.Interface, task *types.CollectTxDB) error {
 	_, err := itf.Table("t_src_tx").Where("id = ?", task.Id).Update(task)
 	return err
+}
+
+func (m *Mysql) SaveAccount(itf xorm.Interface, account *types.Account) error {
+	_, err := itf.Insert(account)
+	if err != nil {
+		logrus.Errorf("insert account task error:%v, tasks:%v", err, account)
+		return err
+	}
+	return nil
 }

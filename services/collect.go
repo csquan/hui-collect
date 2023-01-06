@@ -82,19 +82,22 @@ func createInitMsg(task *types.TransactionTask) (string, error) {
 	return buffer.String(), nil
 }
 
-func (c *CollectService) InsertCollectSubTx(parentID uint64, from string, to string, userID string, requestID string, chainId string, inputdata string, value string, tx_type int) error {
+func (c *CollectService) InsertCollectSubTx(parentID uint64, from string, to string, userID string, requestID string, chainId string, inputdata string, value string, tx_type int, receiver string, amount string, contractAddr string) error {
 	//插入sub task
 	task := types.TransactionTask{
-		ParentID:  parentID,
-		UUID:      time.Now().Unix(),
-		UserID:    userID,
-		From:      from,
-		To:        to,
-		Value:     value,
-		InputData: inputdata,
-		ChainId:   8888,
-		RequestId: requestID,
-		Tx_type:   tx_type,
+		ParentID:     parentID,
+		UUID:         time.Now().Unix(),
+		UserID:       userID,
+		From:         from,
+		To:           to,
+		ContractAddr: contractAddr,
+		Value:        value,
+		InputData:    inputdata,
+		ChainId:      8888,
+		RequestId:    requestID,
+		Tx_type:      tx_type,
+		Receiver:     receiver,
+		Amount:       amount,
 	}
 	task.State = int(types.TxInitState)
 
@@ -159,6 +162,8 @@ func (c *CollectService) handleAddTx(parentID uint64, from string, to string, us
 	tx_type := 0
 	inputdata := ""
 	value := "0x0"
+	receiver := ""
+	amount := ""
 	if b >= max_tx_fee { //插入一笔归集子交易
 		uid, err := c.getUidFromAddr(to)
 		if err != nil {
@@ -177,21 +182,29 @@ func (c *CollectService) handleAddTx(parentID uint64, from string, to string, us
 		Amount := &big.Int{}
 		Amount.SetString(tokencnt, 10)
 
-		dest := c.config.Collect.Addr
-		b, err := erc20ABI.Pack("transfer", common.HexToAddress(dest), Amount)
+		receiver = c.config.Collect.Addr //receiver 就是归集地址
+		amount = Amount.String()
+
+		b, err := erc20ABI.Pack("transfer", common.HexToAddress(receiver), Amount)
 		if err != nil {
 			return err
 		}
 		inputdata = hex.EncodeToString(b)
 
 	} else { //不足以支付一笔交易
-		userID = "545950000830"
+		//userID = "545950000830"
 		value = "0x246139CA8000"
 		from = c.config.Gas.Addr //"0x32755f0c070811cdd0b00b059e94593fae9835d9"
+		receiver = to            //receiver 就是源to地址，这里先给它打gas
+		amount = value
+		userID, err = c.getUidFromAddr(from)
+		if err != nil {
+
+		}
 		tx_type = 0
 	}
 
-	c.InsertCollectSubTx(parentID, from, to, userID, requestID, chainId, "0x"+inputdata, value, tx_type)
+	c.InsertCollectSubTx(parentID, from, to, userID, requestID, chainId, "0x"+inputdata, value, tx_type, receiver, amount, contractAddr)
 	return nil
 }
 

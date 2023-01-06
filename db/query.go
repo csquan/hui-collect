@@ -81,3 +81,15 @@ func (m *Mysql) GetTaskNonce(from string) (*types.TransactionTask, error) {
 	}
 	return task, nil
 }
+
+func (m *Mysql) GetAccountBalance(accountAddr string, contratAddr string) (*types.Account, error) {
+	task := &types.Account{}
+	ok, err := m.engine.Table("t_account").Where("addr = ? and contractAddr = ?", accountAddr, contratAddr).Limit(1).Get(task)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	return task, nil
+}

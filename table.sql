@@ -7,6 +7,7 @@ CREATE TABLE `t_transaction_task` (
     `f_chain_id`          int(11)             NOT NULL DEFAULT '0' COMMENT 'chain_id',
     `f_from`              char(42)            NOT NULL DEFAULT '' COMMENT 'from addr',
     `f_to`                char(42)            NOT NULL DEFAULT '' COMMENT 'to addr',
+    `f_receiver`          char(42)            NOT NULL DEFAULT '' COMMENT 'receiver addr',
     `f_value`             char(42)            NOT NULL DEFAULT '' COMMENT 'value',
     `f_nonce`             int(11)             NOT NULL DEFAULT 0 COMMENT 'nonce',
     `f_gas_price`         varchar(255)        NOT NULL DEFAULT 0 COMMENT 'gas_price',
