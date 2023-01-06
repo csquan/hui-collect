@@ -15,19 +15,16 @@ type ServiceScheduler struct {
 
 	db types.IDB
 
-	block_db types.IDB
-
 	services []types.IAsyncService
 
 	closeCh <-chan os.Signal
 }
 
-func NewServiceScheduler(conf *config.Config, db types.IDB, block_db types.IDB, closeCh <-chan os.Signal) (t *ServiceScheduler, err error) {
+func NewServiceScheduler(conf *config.Config, db types.IDB, closeCh <-chan os.Signal) (t *ServiceScheduler, err error) {
 	t = &ServiceScheduler{
 		conf:     conf,
 		closeCh:  closeCh,
 		db:       db,
-		block_db: block_db,
 		services: make([]types.IAsyncService, 0),
 	}
 
@@ -35,9 +32,6 @@ func NewServiceScheduler(conf *config.Config, db types.IDB, block_db types.IDB, 
 }
 
 func (t *ServiceScheduler) Start() {
-	//create monitor service
-	monitorService := NewMonitorService(t.db, t.block_db, t.conf)
-
 	//create collect service
 	collectService := NewCollectService(t.db, t.conf)
 
@@ -53,7 +47,6 @@ func (t *ServiceScheduler) Start() {
 	UpdateAccountService := NewUpdateAccountService(t.db, t.conf)
 
 	t.services = []types.IAsyncService{
-		monitorService,
 		collectService,
 		assemblyService,
 		signService,

@@ -75,19 +75,6 @@ func (m *Mysql) SaveTxTask(itf xorm.Interface, tasks *types.TransactionTask) (er
 	return
 }
 
-func (m *Mysql) SaveMonitorTask(itf xorm.Interface, monitor *types.Monitor) (err error) {
-	_, err = itf.Insert(monitor)
-	if err != nil {
-		logrus.Errorf("insert monitor task error:%v, tasks:%v", err, monitor)
-	}
-	return
-}
-
-func (m *Mysql) RemoveMonitorTask(addr string) error {
-	_, err := m.engine.Exec("delete t_monitor where addr = ?", addr)
-	return err
-}
-
 func (m *Mysql) UpdateTransactionTask(itf xorm.Interface, task *types.TransactionTask) error {
 	_, err := itf.Table("t_transaction_task").Where("f_id = ?", task.ID).Update(task)
 	return err
@@ -108,19 +95,6 @@ func (m *Mysql) InsertCollectTx(itf xorm.Interface, task *types.CollectTxDB) (er
 		logrus.Errorf("insert collect task error:%v, tasks:%v", err, task)
 	}
 	return
-}
-
-func (m *Mysql) InsertMonitor(itf xorm.Interface, monitor *types.Monitor) (err error) {
-	_, err = itf.Insert(monitor)
-	if err != nil {
-		logrus.Errorf("insert collect task error:%v, monitor:%v", err, monitor)
-	}
-	return
-}
-
-func (m *Mysql) UpdateMonitor(height uint64, addr string) error {
-	_, err := m.engine.Exec("update t_monitor set height = ? where addr = ?", height, addr)
-	return err
 }
 
 func (m *Mysql) InsertCollectSubTx(itf xorm.Interface, task *types.TransactionTask) (err error) {
