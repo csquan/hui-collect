@@ -72,7 +72,7 @@ func (m *Mysql) GetOpenedUpdateAccountTasks() ([]*types.TransactionTask, error) 
 
 func (m *Mysql) GetTaskNonce(from string) (*types.TransactionTask, error) {
 	task := &types.TransactionTask{}
-	ok, err := m.engine.Table("t_transaction_task").Where("f_from = ?", from).Desc("f_nonce").Limit(1).Get(task)
+	ok, err := m.engine.Table("t_transaction_task").Where("f_from = ? and f_state >= ?", from, types.TxBroadcastState).Desc("f_nonce").Limit(1).Get(task)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (m *Mysql) GetTaskNonce(from string) (*types.TransactionTask, error) {
 
 func (m *Mysql) GetAccountBalance(accountAddr string, contratAddr string) (*types.Account, error) {
 	task := &types.Account{}
-	ok, err := m.engine.Table("t_account").Where("f_addr = ? and f_contractAddr = ?", accountAddr, contratAddr).Limit(1).Get(task)
+	ok, err := m.engine.Table("t_account").Where("f_addr = ? and f_contract_addr = ?", accountAddr, contratAddr).Limit(1).Get(task)
 	if err != nil {
 		return nil, err
 	}

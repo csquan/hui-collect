@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS `t_transaction_task`;
 CREATE TABLE `t_transaction_task` (
     `f_id`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `f_parent_id`         char(42)            NOT NULL DEFAULT '0' COMMENT 'parent_id',
+    `f_parent_ids`        text                NOT NULL DEFAULT '0' COMMENT 'parent_ids',
     `f_uuid`              char(42)            NOT NULL DEFAULT '' COMMENT 'uuid-唯一业务流水号',
     `f_uid`               char(42)            NOT NULL DEFAULT '' COMMENT 'user id-同一用户uid相同',
     `f_request_id`        varchar(255)        NOT NULL DEFAULT '' COMMENT 'request id',
@@ -66,9 +66,10 @@ DROP TABLE IF EXISTS `t_account`;
 CREATE TABLE `t_account`
 (
     `f_id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `f_addr`           char(42)       NOT NULL DEFAULT '' COMMENT 'address',
+    `f_addr`           char(42)       NOT NULL DEFAULT '' COMMENT 'account address',
+    `f_contract_addr`  char(42)       NOT NULL DEFAULT '' COMMENT 'contract address',
     `f_balance`        decimal(65, 0) NOT NULL DEFAULT '0' COMMENT '账户数额',
-    `f_height`         bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
+    `f_last_check`      bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
     `f_created_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
     `f_updated_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,

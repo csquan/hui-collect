@@ -82,10 +82,10 @@ func createInitMsg(task *types.TransactionTask) (string, error) {
 	return buffer.String(), nil
 }
 
-func (c *CollectService) InsertCollectSubTx(parentID uint64, from string, to string, userID string, requestID string, chainId string, inputdata string, value string, tx_type int, receiver string, amount string, contractAddr string) error {
+func (c *CollectService) InsertCollectSubTx(parentIDs string, from string, to string, userID string, requestID string, chainId string, inputdata string, value string, tx_type int, receiver string, amount string, contractAddr string) error {
 	//插入sub task
 	task := types.TransactionTask{
-		ParentID:     parentID,
+		ParentIDs:    parentIDs,
 		UUID:         time.Now().Unix(),
 		UserID:       userID,
 		From:         from,
@@ -143,12 +143,11 @@ func (c *CollectService) getUidFromAddr(address string) (uid string, err error) 
 	if result.Code != 0 {
 		logrus.Println(err)
 	}
-	fmt.Println(result)
 
 	return result.Data.UID, nil
 }
 
-func (c *CollectService) handleAddTx(parentID uint64, from string, to string, userID string, requestID string, chainId string, tokencnt string, contractAddr string) error {
+func (c *CollectService) handleAddTx(parentIDs string, from string, to string, userID string, requestID string, chainId string, tokencnt string, contractAddr string) error {
 	balance, err := getBalance(to)
 	if err != nil {
 		return err
@@ -203,8 +202,7 @@ func (c *CollectService) handleAddTx(parentID uint64, from string, to string, us
 		}
 		tx_type = 0
 	}
-
-	c.InsertCollectSubTx(parentID, from, to, userID, requestID, chainId, "0x"+inputdata, value, tx_type, receiver, amount, contractAddr)
+	c.InsertCollectSubTx(parentIDs, from, to, userID, requestID, chainId, "0x"+inputdata, value, tx_type, receiver, amount, contractAddr)
 	return nil
 }
 
@@ -221,6 +219,8 @@ func (c *CollectService) Run() (err error) {
 	merge_tasks := make([]*types.CollectTxDB, 0)     //多条相同的交易合并（相同的接收地址和相同的合约地址）
 	threshold_tasks := make([]*types.CollectTxDB, 0) //交易是否满足门槛
 
+	merge_ids := make(map[uint64]uint64) //存放合并的交易ID
+
 	//这里如果有多条collectTask，那么需要归并到一起，依据规则：将相同合约地址且相同receiver的 tokencnt累加
 	for _, task := range collectTasks {
 		found := false
@@ -231,6 +231,10 @@ func (c *CollectService) Run() (err error) {
 
 				res := big.NewInt(0).Add(cnt1, cnt2)
 				filter_task.TokenCnt = res.String()
+
+				merge_ids[filter_task.Base.ID] = 1
+				merge_ids[task.Base.ID] = 1
+
 				found = true
 			}
 		}
@@ -238,6 +242,7 @@ func (c *CollectService) Run() (err error) {
 			merge_tasks = append(merge_tasks, task)
 		}
 	}
+
 	//这里归并后，应该看相同地址的是否大于对应币种的门槛
 	for _, merge_task := range merge_tasks {
 		token, err := c.db.GetTokenInfo(merge_task.Addr, merge_task.Chain)
@@ -256,11 +261,17 @@ func (c *CollectService) Run() (err error) {
 		}
 	}
 
+	parentIDs := ""
+	for id, _ := range merge_ids {
+		if parentIDs != "" {
+			parentIDs = strconv.Itoa(int(id)) + "," + parentIDs
+		}
+	}
+
 	for _, collectTask := range threshold_tasks {
 		uid := "" //这个后面填入，根据不同的交易
 		requestID := ""
-		parentID := collectTask.Id
-		err = c.handleAddTx(parentID, collectTask.Sender, collectTask.Receiver, uid, requestID, "8888", collectTask.TokenCnt, collectTask.Addr)
+		err = c.handleAddTx(parentIDs, collectTask.Sender, collectTask.Receiver, uid, requestID, "8888", collectTask.TokenCnt, collectTask.Addr)
 
 		if err != nil {
 			continue

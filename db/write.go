@@ -90,7 +90,7 @@ func (m *Mysql) UpdateTransactionTaskState(taskID uint64, state int) error {
 }
 
 func (m *Mysql) UpdateAccount(amount string, receiver string, contractAddr string) error {
-	_, err := m.engine.Exec("update t_account set balance = ? where addr = ? and contractAddr = ?", amount, receiver, contractAddr)
+	_, err := m.engine.Exec("update t_account set f_balance = ? where f_addr = ? and f_contractAddr = ?", amount, receiver, contractAddr)
 	return err
 }
 
@@ -111,17 +111,17 @@ func (m *Mysql) InsertCollectSubTx(itf xorm.Interface, task *types.TransactionTa
 }
 
 func (m *Mysql) UpdateCollectTx(itf xorm.Interface, task *types.CollectTxDB) error {
-	_, err := itf.Table("t_src_tx").Where("id = ?", task.Id).Update(task)
+	_, err := itf.Table("t_src_tx").Where("f_id = ?", task.Base.ID).Update(task)
 	return err
 }
 
 func (m *Mysql) UpdateCollectTxState(ID uint64, state int) error {
-	_, err := m.engine.Exec("update t_src_tx set collect_state = ? where id = ?", state, ID)
+	_, err := m.engine.Exec("update t_src_tx set f_collect_state = ? where f_id = ?", state, ID)
 	return err
 }
 
 func (m *Mysql) UpdateCollectSubTask(itf xorm.Interface, task *types.CollectTxDB) error {
-	_, err := itf.Table("t_src_tx").Where("id = ?", task.Id).Update(task)
+	_, err := itf.Table("t_src_tx").Where("f_id = ?", task.Base.ID).Update(task)
 	return err
 }
 

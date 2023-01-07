@@ -34,7 +34,7 @@ func NewCheckService(db types.IDB, c *config.Config) *CheckService {
 func (c *CheckService) InsertCollectSubTx(parentID uint64, from string, to string, userID string, requestID string, chainId int, inputdata string, value string, tx_type int) error {
 	//插入sub task
 	task := types.TransactionTask{
-		ParentID:  parentID,
+		ParentIDs: "",
 		UUID:      time.Now().Unix(),
 		UserID:    userID,
 		From:      from,
@@ -63,8 +63,8 @@ func (c *CheckService) InsertCollectSubTx(parentID uint64, from string, to strin
 // 根据传入的交易，如果是打gas类型的交易，那么再生成一笔TxInitState状态的交易，如果是归集到热钱包的交易，那么进入下一状态，表示可以更新账本
 func (c *CheckService) Check(task *types.TransactionTask) (finished bool, err error) {
 	if task.Tx_type == 0 { //说明是打gas交易，需要在交易表中插入一条归集交易
-		dest := c.config.Collect.Addr //"0x32f3323a268155160546504c45d0c4a832567159"
-		src_task, err := c.db.GetCollectTask(task.ParentID)
+		dest := c.config.Collect.Addr           //"0x32f3323a268155160546504c45d0c4a832567159"
+		src_task, err := c.db.GetCollectTask(1) //task.ParentIDs
 		if err != nil {
 			return false, err
 		}
@@ -88,7 +88,8 @@ func (c *CheckService) Check(task *types.TransactionTask) (finished bool, err er
 		inputdata := hex.EncodeToString(b)
 
 		value := "0x0" //这里应该查询这笔gas交易对应的源交易value是多少
-		c.InsertCollectSubTx(task.ParentID, task.To, to, UID, "", 8888, "0x"+inputdata, value, 1)
+		//c.InsertCollectSubTx(task.ParentID, task.To, to, UID, "", 8888, "0x"+inputdata, value, 1)
+		c.InsertCollectSubTx(1, task.To, to, UID, "", 8888, "0x"+inputdata, value, 1)
 		task.State = int(types.TxEndState)
 	} else { //说明已经是归集交易，进入下一状态
 		task.State = int(types.TxCheckState)

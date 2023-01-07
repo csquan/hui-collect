@@ -10,6 +10,8 @@ import (
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
 	"math/big"
+	"strconv"
+	"strings"
 )
 
 type UpdateAccountService struct {
@@ -26,14 +28,23 @@ func NewUpdateAccountService(db types.IDB, c *config.Config) *UpdateAccountServi
 
 func (c *UpdateAccountService) UpdateAccount(task *types.TransactionTask) (finished bool, err error) {
 	task.State = int(types.TxEndState)
+
 	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
 		if err := c.db.UpdateTransactionTask(s, task); err != nil { //更新源归集子交易的状态
 			logrus.Errorf("update transaction task error:%v tasks:[%v]", err, task)
 			return err
 		}
-		if err := c.db.UpdateCollectTxState(uint64(task.ParentID), int(types.TxCollectedState)); err != nil { //更新归集源交易的状态
-			logrus.Errorf("update transaction task error:%v tasks:[%v]", err, task)
-			return err
+		ids := strings.Split(task.ParentIDs, ",")
+
+		for _, id := range ids {
+			parseID, err := strconv.ParseUint(id, 10, 64)
+			if err != nil {
+				logrus.Error(err)
+			}
+			if err := c.db.UpdateCollectTxState(parseID, int(types.TxCollectedState)); err != nil { //更新归集源交易的状态
+				logrus.Errorf("update transaction task error:%v tasks:[%v]", err, task)
+				return err
+			}
 		}
 
 		//这里先取出余额，累加task.Amount

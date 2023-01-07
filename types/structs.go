@@ -13,37 +13,34 @@ type Base struct {
 
 type TransactionTask struct {
 	*Base        `xorm:"extends"`
-	ID           uint64    `xorm:"f_id not null pk autoincr bigint(20)" gorm:"primary_key"`
-	ParentID     uint64    `xorm:"f_parent_id"`
-	UserID       string    `xorm:"f_uid"`
-	UUID         int64     `xorm:"f_uuid"`
-	RequestId    string    `xorm:"f_request_id"`
-	Nonce        uint64    `xorm:"f_nonce"`
-	GasPrice     string    `xorm:"f_gas_price"`
-	GasLimit     string    `xorm:"f_gas_limit"`
-	ChainId      int       `xorm:"f_chain_id"`
-	From         string    `xorm:"f_from"`
-	To           string    `xorm:"f_to"`
-	ContractAddr string    `xorm:"f_contract_addr"`
-	Receiver     string    `xorm:"f_receiver"`
-	Amount       string    `xorm:"f_amount"`
-	Value        string    `xorm:"f_value"`
-	InputData    string    `xorm:"f_input_data"`
-	SignHash     string    `xorm:"f_sign_hash"`
-	TxHash       string    `xorm:"f_tx_hash"`
-	State        int       `xorm:"f_state"`
-	Tx_type      int       `xorm:"f_type"`
-	Receipt      string    `xorm:"f_receipt"`
-	Sig          string    `xorm:"f_sig"`
-	Error        string    `xorm:"f_error"`
-	Times        int       `xorm:"f_retry_times"`
-	CreatedAt    time.Time `xorm:"created f_created_at"`
-	UpdatedAt    time.Time `xorm:"updated f_updated_at"`
+	ID           uint64 `xorm:"f_id not null pk autoincr bigint(20)" gorm:"primary_key"`
+	ParentIDs    string `xorm:"f_parent_ids"`
+	UserID       string `xorm:"f_uid"`
+	UUID         int64  `xorm:"f_uuid"`
+	RequestId    string `xorm:"f_request_id"`
+	Nonce        uint64 `xorm:"f_nonce"`
+	GasPrice     string `xorm:"f_gas_price"`
+	GasLimit     string `xorm:"f_gas_limit"`
+	ChainId      int    `xorm:"f_chain_id"`
+	From         string `xorm:"f_from"`
+	To           string `xorm:"f_to"`
+	ContractAddr string `xorm:"f_contract_addr"`
+	Receiver     string `xorm:"f_receiver"`
+	Amount       string `xorm:"f_amount"`
+	Value        string `xorm:"f_value"`
+	InputData    string `xorm:"f_input_data"`
+	SignHash     string `xorm:"f_sign_hash"`
+	TxHash       string `xorm:"f_tx_hash"`
+	State        int    `xorm:"f_state"`
+	Tx_type      int    `xorm:"f_type"`
+	Receipt      string `xorm:"f_receipt"`
+	Sig          string `xorm:"f_sig"`
+	Error        string `xorm:"f_error"`
+	Times        int    `xorm:"f_retry_times"`
 }
 
 type CollectTxDB struct {
 	*Base          `xorm:"extends"`
-	Id             uint64 `xorm:"f_id"`
 	Hash           string `xorm:"f_tx_hash"`
 	Addr           string `xorm:"f_addr"`
 	Sender         string `xorm:"f_sender"`
@@ -60,12 +57,11 @@ type CollectTxDB struct {
 
 type Account struct {
 	*Base        `xorm:"extends"`
-	Id           uint64    `xorm:"f_id"`
-	Addr         string    `xorm:"f_addr"`
-	Balance      string    `xorm:"f_balance"`
-	UpdatedAt    time.Time `xorm:"updated f_updated_at"`
-	Lastcheck    string    `xorm:"f_lastcheck"`
-	ContractAddr string    `xorm:"f_contractAddr"`
+	Id           uint64 `xorm:"f_id"`
+	Addr         string `xorm:"f_addr"`
+	Balance      string `xorm:"f_balance"`
+	Lastcheck    string `xorm:"f_last_check"`
+	ContractAddr string `xorm:"f_contract_addr"`
 }
 
 type Monitor struct {
