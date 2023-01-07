@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `t_transaction_task`;
 CREATE TABLE `t_transaction_task` (
     `f_id`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `f_parent_id`         char(42)            NOT NULL DEFAULT '0' COMMENT 'parent_id',
@@ -7,8 +8,10 @@ CREATE TABLE `t_transaction_task` (
     `f_chain_id`          int(11)             NOT NULL DEFAULT '0' COMMENT 'chain_id',
     `f_from`              char(42)            NOT NULL DEFAULT '' COMMENT 'from addr',
     `f_to`                char(42)            NOT NULL DEFAULT '' COMMENT 'to addr',
+    `f_contract_addr`     char(42)            NOT NULL DEFAULT '' COMMENT 'contract addr',
     `f_receiver`          char(42)            NOT NULL DEFAULT '' COMMENT 'receiver addr',
     `f_value`             char(42)            NOT NULL DEFAULT '' COMMENT 'value',
+    `f_amount`            char(42)            NOT NULL DEFAULT '' COMMENT 'amount',
     `f_nonce`             int(11)             NOT NULL DEFAULT 0 COMMENT 'nonce',
     `f_gas_price`         varchar(255)        NOT NULL DEFAULT 0 COMMENT 'gas_price',
     `f_input_data`        text COMMENT '合约的input data',
@@ -34,46 +37,73 @@ CREATE TABLE `t_transaction_task` (
 DROP TABLE IF EXISTS `t_src_tx`;
 CREATE TABLE `t_src_tx`
 (
-    `id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `tx_hash`          char(66)       NOT NULL DEFAULT '' COMMENT 'transaction hash',
-    `addr`             char(42)       NOT NULL DEFAULT '' COMMENT '合约地址',
-    `sender`           char(42)       NOT NULL DEFAULT '' COMMENT '发送地址',
-    `receiver`         char(42)       NOT NULL DEFAULT '' COMMENT '接收地址',
-    `token_cnt`        decimal(65, 0) NOT NULL DEFAULT '0' COMMENT 'token 个数',
-    `log_index`        int(11) DEFAULT NULL COMMENT 'transaction log index',
-    `token_cnt_origin` varchar(78)    NOT NULL DEFAULT '' COMMENT 'token cnt origin value',
-    `create_time`      timestamp      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `block_state`      tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:ok 1:rollback',
-    `collect_state`    tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:ready 1:ing 2:ed',
-    `block_num`        bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'block number',
-    `block_time`       int(11) NOT NULL DEFAULT '0' COMMENT '打包时间',
-    `type`             tinyint(4) NOT NULL DEFAULT '0' COMMENT '交易类型-0-打gas交易 1-可以直接归集',
-    PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
-    KEY                `idx_txhash` (`tx_hash`),
-    KEY                `idx_addr` (`addr`),
-    KEY                `idx_sender` (`sender`),
-    KEY                `idx_receiver` (`receiver`),
-    KEY                `idx_block_num` (`block_num`)
+    `f_id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `f_tx_hash`          char(66)       NOT NULL DEFAULT '' COMMENT 'transaction hash',
+    `f_addr`             char(42)       NOT NULL DEFAULT '' COMMENT '合约地址',
+    `f_sender`           char(42)       NOT NULL DEFAULT '' COMMENT '发送地址',
+    `f_receiver`         char(42)       NOT NULL DEFAULT '' COMMENT '接收地址',
+    `f_token_cnt`        decimal(65, 0) NOT NULL DEFAULT '0' COMMENT 'token 个数',
+    `f_log_index`        int(11) DEFAULT NULL COMMENT 'transaction log index',
+    `f_token_cnt_origin` varchar(78)    NOT NULL DEFAULT '' COMMENT 'token cnt origin value',
+    `f_block_state`      tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:ok 1:rollback',
+    `f_collect_state`    tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:ready 1:ing 2:ed',
+    `f_block_num`        bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'block number',
+    `f_block_time`       int(11) NOT NULL DEFAULT '0' COMMENT '打包时间',
+    `f_type`             tinyint(4) NOT NULL DEFAULT '0' COMMENT '交易类型-0-打gas交易 1-可以直接归集',
+    `f_chain`            char(42)       NOT NULL DEFAULT '' COMMENT '链名称',
+    `f_created_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
+    `f_updated_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
+    PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
+    KEY                `idx_txhash` (`f_tx_hash`),
+    KEY                `idx_addr` (`f_addr`),
+    KEY                `idx_sender` (`f_sender`),
+    KEY                `idx_receiver` (`f_receiver`),
+    KEY                `idx_block_num` (`f_block_num`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='归集源交易表';
 
 
 DROP TABLE IF EXISTS `t_account`;
 CREATE TABLE `t_account`
 (
-    `id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `addr`           char(42)       NOT NULL DEFAULT '' COMMENT 'address',
-    `balance`        decimal(65, 0) NOT NULL DEFAULT '0' COMMENT '账户数额',
-    `height`         bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
-    PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
-    UNIQUE KEY `uk_addr` (`addr`)
+    `f_id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `f_addr`           char(42)       NOT NULL DEFAULT '' COMMENT 'address',
+    `f_balance`        decimal(65, 0) NOT NULL DEFAULT '0' COMMENT '账户数额',
+    `f_height`         bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
+    `f_created_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
+    `f_updated_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
+    PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
+    UNIQUE KEY `uk_addr` (`f_addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='总账本';
 
 DROP TABLE IF EXISTS `t_monitor`;
 CREATE TABLE `t_monitor`
 (
-    `id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `addr`           char(42)       NOT NULL DEFAULT '' COMMENT 'address',
-    `height`         bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
-    PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
-    UNIQUE KEY `uk_addr` (`addr`)
+    `f_id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `f_addr`           char(42)       NOT NULL DEFAULT '' COMMENT 'address',
+    `f_height`         bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
+    `f_created_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
+    `f_updated_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
+    PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
+    UNIQUE KEY `uk_addr` (`f_addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='监控表';
+
+DROP TABLE IF EXISTS `t_token`;
+create TABLE `t_token` (
+    `f_id`           bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `f_threshold`    varchar(255)        NOT NULL COMMENT '归集门槛',
+    `f_chain`        varchar(255)        NOT NULL COMMENT '链',
+    `f_symbol`       varchar(255)        NOT NULL COMMENT 'token symbol',
+    `f_address`      varchar(255)        NOT NULL COMMENT 'token contract address',
+    `f_decimal`      integer             NOT NULL COMMENT '精度',
+    `f_created_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
+    `f_updated_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
+    PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */
+)
+ENGINE = InnoDB
+DEFAULT CHARSET = utf8mb4
+COMMENT ='监控币种表';
+
+INSERT INTO t_token (f_id,f_threshold,f_chain,f_symbol,f_address,f_decimal,f_created_at,f_updated_at) VALUES
+            (1,'10000000000000000000','HUI','TSC','0x99Ac689Fd1f09AdA4c0365E6497B2A824Af68557',18,'2023-01-07 10:51:17','2023-01-07 10:56:05'),
+            (2,'10000000000000000000','HUI','TSC1','0xe7df395C170973654A2B054115146f02eE6DfbA5',18,'2023-01-07 10:52:17','2023-01-07 10:56:05'),
+            (3,'10000000000','HUI','TSC111','0x6B98aaa1f8A92ceCA108A49CFe7ee4081B7aF8F8',9,'2023-01-07 10:53:32','2023-01-07 10:56:05');

@@ -218,12 +218,13 @@ func (c *CollectService) Run() (err error) {
 		return
 	}
 
-	filter_tasks := make([]*types.CollectTxDB, 0)
+	merge_tasks := make([]*types.CollectTxDB, 0)     //多条相同的交易合并（相同的接收地址和相同的合约地址）
+	threshold_tasks := make([]*types.CollectTxDB, 0) //交易是否满足门槛
 
 	//这里如果有多条collectTask，那么需要归并到一起，依据规则：将相同合约地址且相同receiver的 tokencnt累加
 	for _, task := range collectTasks {
 		found := false
-		for _, filter_task := range filter_tasks {
+		for _, filter_task := range merge_tasks {
 			if filter_task.Addr == task.Addr && filter_task.Receiver == task.Receiver {
 				cnt1, _ := big.NewInt(0).SetString(task.TokenCnt, 10)
 				cnt2, _ := big.NewInt(0).SetString(filter_task.TokenCnt, 10)
@@ -234,11 +235,28 @@ func (c *CollectService) Run() (err error) {
 			}
 		}
 		if found == false {
-			filter_tasks = append(filter_tasks, task)
+			merge_tasks = append(merge_tasks, task)
+		}
+	}
+	//这里归并后，应该看相同地址的是否大于对应币种的门槛
+	for _, merge_task := range merge_tasks {
+		token, err := c.db.GetTokenInfo(merge_task.Addr, merge_task.Chain)
+
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		cnt1, _ := big.NewInt(0).SetString(merge_task.TokenCnt, 10)
+		cnt2, _ := big.NewInt(0).SetString(token.Threshold, 10)
+
+		enough := cnt1.Cmp(cnt2)
+
+		if enough >= 0 {
+			threshold_tasks = append(threshold_tasks, merge_task)
 		}
 	}
 
-	for _, collectTask := range filter_tasks {
+	for _, collectTask := range threshold_tasks {
 		uid := "" //这个后面填入，根据不同的交易
 		requestID := ""
 		parentID := collectTask.Id

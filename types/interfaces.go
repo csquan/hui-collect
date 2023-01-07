@@ -27,6 +27,8 @@ type IReader interface {
 	GetTaskNonce(from string) (*TransactionTask, error)
 
 	GetAccountBalance(accountAddr string, contratAddr string) (*Account, error)
+
+	GetTokenInfo(contratAddr string, chain string) (*Token, error)
 }
 
 type IWriter interface {

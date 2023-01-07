@@ -5,7 +5,14 @@ import (
 	"time"
 )
 
+type Base struct {
+	ID        uint64    `xorm:"f_id not null pk autoincr bigint(20)" gorm:"primary_key"`
+	CreatedAt time.Time `xorm:"created f_created_at"`
+	UpdatedAt time.Time `xorm:"updated f_updated_at"`
+}
+
 type TransactionTask struct {
+	*Base        `xorm:"extends"`
 	ID           uint64    `xorm:"f_id not null pk autoincr bigint(20)" gorm:"primary_key"`
 	ParentID     uint64    `xorm:"f_parent_id"`
 	UserID       string    `xorm:"f_uid"`
@@ -35,63 +42,50 @@ type TransactionTask struct {
 }
 
 type CollectTxDB struct {
-	Id             uint64 `xorm:"id"`
-	Hash           string `xorm:"tx_hash"`
-	Addr           string `xorm:"addr"`
-	Sender         string `xorm:"sender"`
-	Receiver       string `xorm:"receiver"`
-	TokenCnt       string `xorm:"token_cnt"`
-	TokenCntOrigin string `xorm:"token_cnt_origin"`
-	LogIndex       int    `xorm:"log_index"`
-	BlockState     uint8  `xorm:"block_state"`
-	BlockNum       uint64 `xorm:"block_num"`
-	BlockTime      uint64 `xorm:"block_time"`
-	CollectState   int    `xorm:"collect_state"`
-}
-
-type TxErc20 struct {
-	Id             uint64 `xorm:"id"`
-	Hash           string `xorm:"tx_hash"`
-	Addr           string `xorm:"addr"`
-	Sender         string `xorm:"sender"`
-	Receiver       string `xorm:"receiver"`
-	TokenCnt       string `xorm:"token_cnt"`
-	TokenCntOrigin string `xorm:"token_cnt_origin"`
-	LogIndex       int    `xorm:"log_index"`
-	BlockState     uint8  `xorm:"block_state"`
-	BlockNum       uint64 `xorm:"block_num"`
-	BlockTime      uint64 `xorm:"block_time"`
-}
-
-func (c *CollectTxDB) Copy(tx *TxErc20) {
-	c.Id = tx.Id
-	c.Hash = tx.Hash
-	c.Addr = tx.Addr
-	c.Sender = tx.Sender
-	c.Receiver = tx.Receiver
-
-	c.TokenCnt = tx.TokenCnt
-	c.TokenCntOrigin = tx.TokenCntOrigin
-	c.LogIndex = tx.LogIndex
-	c.BlockState = tx.BlockState
-	c.BlockNum = tx.BlockNum
-
-	c.BlockTime = tx.BlockTime
+	*Base          `xorm:"extends"`
+	Id             uint64 `xorm:"f_id"`
+	Hash           string `xorm:"f_tx_hash"`
+	Addr           string `xorm:"f_addr"`
+	Sender         string `xorm:"f_sender"`
+	Receiver       string `xorm:"f_receiver"`
+	TokenCnt       string `xorm:"f_token_cnt"`
+	TokenCntOrigin string `xorm:"f_token_cnt_origin"`
+	LogIndex       int    `xorm:"f_log_index"`
+	BlockState     uint8  `xorm:"f_block_state"`
+	BlockNum       uint64 `xorm:"f_block_num"`
+	BlockTime      uint64 `xorm:"f_block_time"`
+	CollectState   int    `xorm:"f_collect_state"`
+	Chain          string `xorm:"f_chain"`
 }
 
 type Account struct {
-	Id           uint64    `xorm:"id"`
-	Addr         string    `xorm:"addr"`
-	Balance      string    `xorm:"balance"`
-	UpdatedAt    time.Time `xorm:"updated updated_at"`
-	Lastcheck    string    `xorm:"lastcheck"`
-	ContractAddr string    `xorm:"contractAddr"`
+	*Base        `xorm:"extends"`
+	Id           uint64    `xorm:"f_id"`
+	Addr         string    `xorm:"f_addr"`
+	Balance      string    `xorm:"f_balance"`
+	UpdatedAt    time.Time `xorm:"updated f_updated_at"`
+	Lastcheck    string    `xorm:"f_lastcheck"`
+	ContractAddr string    `xorm:"f_contractAddr"`
 }
 
 type Monitor struct {
-	Id     uint64 `xorm:"id"`
-	Addr   string `xorm:"addr"`
-	Height uint64 `xorm:"height"`
+	*Base  `xorm:"extends"`
+	Id     uint64 `xorm:"f_id"`
+	Addr   string `xorm:"f_addr"`
+	Height uint64 `xorm:"f_height"`
+}
+
+type Token struct {
+	*Base     `xorm:"extends"`
+	Threshold string `xorm:"f_threshold"`
+	Chain     string `xorm:"f_chain"`
+	Symbol    string `xorm:"f_symbol"`
+	Address   string `xorm:"f_address"`
+	Decimal   int    `xorm:"f_decimal"`
+}
+
+func (t *Token) TableName() string {
+	return "t_token"
 }
 
 func (t *Account) TableName() string {
@@ -100,10 +94,6 @@ func (t *Account) TableName() string {
 
 func (t *Monitor) TableName() string {
 	return "t_monitor"
-}
-
-func (t *TxErc20) TableName() string {
-	return "tx_erc20"
 }
 
 func (t *CollectTxDB) TableName() string {
@@ -183,14 +173,14 @@ type Erc20Transfer struct {
 }
 
 type Erc20Info struct {
-	Id                   string `xorm:"id"`
-	Addr                 string `xorm:"addr"`
-	Name                 string `xorm:"name"`
-	Symbol               string `xorm:"symbol"`
-	Decimals             string `xorm:"decimals"`
-	Totoal_Supply        string `xorm:"total_supply"`
-	Totoal_Supply_Origin string `xorm:"total_supply_origin"`
-	Create_Time          string `xorm:"create_time"`
+	Id                   string `xorm:"f_id"`
+	Addr                 string `xorm:"f_addr"`
+	Name                 string `xorm:"f_name"`
+	Symbol               string `xorm:"f_symbol"`
+	Decimals             string `xorm:"f_decimals"`
+	Totoal_Supply        string `xorm:"f_total_supply"`
+	Totoal_Supply_Origin string `xorm:"f_total_supply_origin"`
+	Create_Time          string `xorm:"f_create_time"`
 }
 
 type SignData struct {
