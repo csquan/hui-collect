@@ -1,10 +1,5 @@
 database:
   db : "root:csquan253905@tcp(127.0.0.1:3306)/HuiCollect?charset=utf8mb4"
-  block_worker: 5
-  tx_worker: 1d
-  sql_batch: 500
-  retry_times: 5
-  retry_interval: 300
 
 monitor:
   db : "root:csquan253905@tcp(127.0.0.1:3306)/block_data_test?charset=utf8mb4"
@@ -14,10 +9,6 @@ collect:
 
 gas:
   addr: "0x32755f0c070811cdd0b00b059e94593fae9835d9"
-
-server_conf:
-  users:
-    admin: "10244201"
 
 chains:
   Hui:
