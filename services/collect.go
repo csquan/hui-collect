@@ -263,11 +263,11 @@ func (c *CollectService) Run() (err error) {
 
 	parentIDs := ""
 	for id, _ := range merge_ids {
-		if parentIDs != "" {
-			parentIDs = strconv.Itoa(int(id)) + "," + parentIDs
-		}
+		parentIDs = parentIDs + "," + strconv.Itoa(int(id))
 	}
-
+	if parentIDs[0] == 44 { //去除前面的逗号，ASCII值为44
+		parentIDs = parentIDs[1:]
+	}
 	for _, collectTask := range threshold_tasks {
 		uid := "" //这个后面填入，根据不同的交易
 		requestID := ""
