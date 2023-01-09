@@ -128,6 +128,7 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 	task.SignHash = signHash.Hex() //这里存储的是计算出来的签名前的hash
 
 	signData := types.SignData{
+		Chain:   "eth",
 		UID:     task.UserID,
 		Address: task.From,
 		Hash:    signHash.Hex(),

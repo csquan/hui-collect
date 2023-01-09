@@ -180,6 +180,7 @@ type Erc20Info struct {
 }
 
 type SignData struct {
+	Chain   string
 	UID     string
 	Address string
 	Hash    string

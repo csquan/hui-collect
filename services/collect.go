@@ -219,8 +219,6 @@ func (c *CollectService) Run() (err error) {
 	merge_tasks := make([]*types.CollectTxDB, 0)     //多条相同的交易合并（相同的接收地址和相同的合约地址）
 	threshold_tasks := make([]*types.CollectTxDB, 0) //交易是否满足门槛
 
-	merge_ids := make(map[uint64]uint64) //存放合并的交易ID
-
 	//这里如果有多条collectTask，那么需要归并到一起，依据规则：将相同合约地址且相同receiver的 tokencnt累加
 	for _, task := range collectTasks {
 		found := false
@@ -231,9 +229,6 @@ func (c *CollectService) Run() (err error) {
 
 				res := big.NewInt(0).Add(cnt1, cnt2)
 				filter_task.TokenCnt = res.String()
-
-				merge_ids[filter_task.Base.ID] = 1
-				merge_ids[task.Base.ID] = 1
 
 				found = true
 			}
@@ -262,12 +257,18 @@ func (c *CollectService) Run() (err error) {
 	}
 
 	parentIDs := ""
-	for id, _ := range merge_ids {
-		parentIDs = parentIDs + "," + strconv.Itoa(int(id))
+
+	for _, threshold_task := range threshold_tasks {
+		parentIDs = parentIDs + "," + strconv.Itoa(int(threshold_task.ID))
 	}
-	if parentIDs[0] == 44 { //去除前面的逗号，ASCII值为44
-		parentIDs = parentIDs[1:]
+	logrus.Info("\n parentIDs:", parentIDs)
+
+	if len(parentIDs) > 1 {
+		if parentIDs[0] == 44 { //去除前面的逗号，ASCII值为44
+			parentIDs = parentIDs[1:]
+		}
 	}
+
 	for _, collectTask := range threshold_tasks {
 		uid := "" //这个后面填入，根据不同的交易
 		requestID := ""
