@@ -2,8 +2,8 @@ all: build
 
 CURRENT_DIR=$(pwd)
 
-PROJ = HuiCollect
-MODULE = "HuiCollect"
+PROJ = hui-collect
+MODULE = "hui-collect"
 
 PKG = `go list ./... | grep -v /vendor/`
 
@@ -31,13 +31,13 @@ clean:
 	rm -rf bin
 
 build:
-	go build ${PKG_TAG} -o bin/HuiCollect main.go
+	go build ${PKG_TAG} -o bin/hui-collect main.go
 
 test: style cilint
 	go test -cover ./...
 
 server: clean 
-	${CROSS_COMPILE} go build -o bin/linux-amd64-HuiCollect ${PKG_TAG} main.go
+	${CROSS_COMPILE} go build -o bin/linux-amd64-hui-collect ${PKG_TAG} main.go
 
 
 .PHONY: build clean client
