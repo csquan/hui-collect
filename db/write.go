@@ -38,27 +38,6 @@ func NewMysql(conf *config.DataBaseConf) (m *Mysql, err error) {
 	return
 }
 
-func NewBlockMysql(conf *config.MonitorConf) (m *Mysql, err error) {
-	//"test:123@/test?charset=utf8"
-	engine, err := xorm.NewEngine("mysql", conf.DB)
-	if err != nil {
-		logrus.Errorf("create engine error: %v", err)
-		return
-	}
-	engine.ShowSQL(false)
-	engine.Logger().SetLevel(core.LOG_DEBUG)
-	location, err := time.LoadLocation("UTC")
-	if err != nil {
-		return nil, err
-	}
-	engine.SetTZLocation(location)
-	engine.SetTZDatabase(location)
-	m = &Mysql{
-		engine: engine,
-	}
-	return
-}
-
 func (m *Mysql) GetEngine() *xorm.Engine {
 	return m.engine
 }

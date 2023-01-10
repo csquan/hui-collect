@@ -219,11 +219,11 @@ func (c *CollectService) Run() (err error) {
 	merge_tasks := make([]*types.CollectTxDB, 0)     //多条相同的交易合并（相同的接收地址和相同的合约地址）
 	threshold_tasks := make([]*types.CollectTxDB, 0) //交易是否满足门槛
 
-	//这里如果有多条collectTask，那么需要归并到一起，依据规则：将相同合约地址且相同receiver的 tokencnt累加
+	//这里如果有多条collectTask，那么需要归并到一起，依据规则：将相同合约地址,相同receiver,相同chain的 tokencnt累加
 	for _, task := range collectTasks {
 		found := false
 		for _, filter_task := range merge_tasks {
-			if filter_task.Addr == task.Addr && filter_task.Receiver == task.Receiver {
+			if filter_task.Addr == task.Addr && filter_task.Receiver == task.Receiver && filter_task.Chain == task.Chain {
 				cnt1, _ := big.NewInt(0).SetString(task.TokenCnt, 10)
 				cnt2, _ := big.NewInt(0).SetString(filter_task.TokenCnt, 10)
 

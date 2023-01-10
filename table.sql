@@ -81,6 +81,7 @@ CREATE TABLE `t_monitor`
 (
     `f_id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `f_addr`           char(42)       NOT NULL DEFAULT '' COMMENT 'address',
+    `f_chain`          char(42)       NOT NULL DEFAULT '' COMMENT 'chain',
     `f_height`         bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
     `f_created_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
     `f_updated_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',

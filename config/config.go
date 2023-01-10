@@ -31,10 +31,6 @@ type UserInfoConf struct {
 	URL       string `mapstructure:"url"` //获取用户信息的URL
 }
 
-type MonitorConf struct {
-	DB string `mapstructure:"db"`
-}
-
 type CollectConf struct {
 	Addr string `mapstructure:"addr"`
 }
@@ -55,7 +51,6 @@ type Config struct {
 	DataBase         DataBaseConf          `mapstructure:"database"`
 	UserInfo         UserInfoConf          `mapstructure:"userInfo"`
 	Collect          CollectConf           `mapstructure:"collect"`
-	Monitor          MonitorConf           `mapstructure:"monitor"`
 	Gas              GasConf               `mapstructure:"gas"`
 	LogConf          Log                   `mapstructure:"log"`
 	Chains           map[string]*ChainInfo `mapstructure:"chains"`

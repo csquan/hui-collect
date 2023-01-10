@@ -64,13 +64,6 @@ type Account struct {
 	ContractAddr string `xorm:"f_contract_addr"`
 }
 
-type Monitor struct {
-	*Base  `xorm:"extends"`
-	Id     uint64 `xorm:"f_id"`
-	Addr   string `xorm:"f_addr"`
-	Height uint64 `xorm:"f_height"`
-}
-
 type Token struct {
 	*Base     `xorm:"extends"`
 	Threshold string `xorm:"f_threshold"`
@@ -86,10 +79,6 @@ func (t *Token) TableName() string {
 
 func (t *Account) TableName() string {
 	return "t_account"
-}
-
-func (t *Monitor) TableName() string {
-	return "t_monitor"
 }
 
 func (t *CollectTxDB) TableName() string {
