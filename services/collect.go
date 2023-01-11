@@ -37,8 +37,8 @@ func NewCollectService(db types.IDB, c *config.Config) *CollectService {
 	}
 }
 
-func getBalance(addr string) (string, error) {
-	client, err := ethclient.Dial("http://54.169.11.46:8545")
+func (c *CollectService) getBalance(addr string, chainName string) (string, error) {
+	client, err := ethclient.Dial(c.config.Chains[chainName].RpcUrl)
 	if err != nil {
 		return "", err
 	}
@@ -82,7 +82,7 @@ func createInitMsg(task *types.TransactionTask) (string, error) {
 	return buffer.String(), nil
 }
 
-func (c *CollectService) InsertCollectSubTx(parentIDs string, from string, to string, userID string, requestID string, chainId string, inputdata string, value string, tx_type int, receiver string, amount string, contractAddr string) error {
+func (c *CollectService) InsertCollectSubTx(parentIDs string, from string, to string, userID string, requestID string, chainName string, inputdata string, value string, tx_type int, receiver string, amount string, contractAddr string) error {
 	//插入sub task
 	task := types.TransactionTask{
 		ParentIDs:    parentIDs,
@@ -93,7 +93,7 @@ func (c *CollectService) InsertCollectSubTx(parentIDs string, from string, to st
 		ContractAddr: contractAddr,
 		Value:        value,
 		InputData:    inputdata,
-		ChainId:      8888,
+		Chain:        chainName,
 		RequestId:    requestID,
 		Tx_type:      tx_type,
 		Receiver:     receiver,
@@ -147,8 +147,8 @@ func (c *CollectService) getUidFromAddr(address string) (uid string, err error) 
 	return result.Data.UID, nil
 }
 
-func (c *CollectService) handleAddTx(parentIDs string, from string, to string, userID string, requestID string, chainId string, tokencnt string, contractAddr string) error {
-	balance, err := getBalance(to)
+func (c *CollectService) handleAddTx(parentIDs string, from string, to string, userID string, requestID string, chainName string, tokencnt string, contractAddr string) error {
+	balance, err := c.getBalance(to, chainName)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func (c *CollectService) handleAddTx(parentIDs string, from string, to string, u
 	if b >= max_tx_fee { //插入一笔归集子交易
 		uid, err := c.getUidFromAddr(to)
 		if err != nil {
-
+			logrus.Info("empty get!")
 		}
 		userID = uid //"817583340974" // 0x206beddf4f9fc55a116890bb74c6b79999b14eb1
 		from = to
@@ -202,7 +202,7 @@ func (c *CollectService) handleAddTx(parentIDs string, from string, to string, u
 		}
 		tx_type = 0
 	}
-	c.InsertCollectSubTx(parentIDs, from, to, userID, requestID, chainId, "0x"+inputdata, value, tx_type, receiver, amount, contractAddr)
+	c.InsertCollectSubTx(parentIDs, from, to, userID, requestID, chainName, "0x"+inputdata, value, tx_type, receiver, amount, contractAddr)
 	return nil
 }
 
@@ -272,7 +272,7 @@ func (c *CollectService) Run() (err error) {
 	for _, collectTask := range threshold_tasks {
 		uid := "" //这个后面填入，根据不同的交易
 		requestID := ""
-		err = c.handleAddTx(parentIDs, collectTask.Sender, collectTask.Receiver, uid, requestID, "8888", collectTask.TokenCnt, collectTask.Addr)
+		err = c.handleAddTx(parentIDs, collectTask.Sender, collectTask.Receiver, uid, requestID, collectTask.Chain, collectTask.TokenCnt, collectTask.Addr)
 
 		if err != nil {
 			continue

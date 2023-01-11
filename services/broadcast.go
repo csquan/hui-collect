@@ -87,14 +87,14 @@ func (c *BroadcastService) handleBroadcastTx(task *types.TransactionTask) (strin
 
 	remoteSig, err := hex.DecodeString(sigData.Signature)
 
-	signer := ethTypes.NewEIP155Signer(big.NewInt(int64(task.ChainId)))
+	signer := ethTypes.NewEIP155Signer(big.NewInt(int64(c.config.Chains[task.Chain].ID)))
 	sigedTx, err := tx.WithSignature(signer, remoteSig)
 
 	if err != nil {
 		return "", err
 	}
 
-	client, err := ethclient.Dial("http://43.198.66.226:8545")
+	client, err := ethclient.Dial(c.config.Chains[task.Chain].RpcUrl)
 	if err != nil {
 		return "", err
 	}

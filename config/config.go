@@ -59,11 +59,9 @@ type Config struct {
 }
 
 type ChainInfo struct {
-	ID            int    `mapstructure:"id"`
-	RpcUrl        string `mapstructure:"rpc_url"`
-	Timeout       int    `mapstructure:"timeout"`
-	BridgeAddress string `mapstructure:"bridge_address"`
-	BlockSafe     uint   `mapstructure:"block_safe"`
+	ID      int    `mapstructure:"id"`
+	RpcUrl  string `mapstructure:"rpc_url"`
+	Timeout int    `mapstructure:"timeout"`
 }
 
 func (c *Config) MustGetChainInfo(chain string) *ChainInfo {

@@ -11,9 +11,13 @@ gas:
   addr: "0x32755f0c070811cdd0b00b059e94593fae9835d9"
 
 chains:
-  Hui:
+  hui:
     id: 8888
     rpc_url: "http://43.198.66.226:8545"
+    fetch_timeout: 3000
+  eth:
+    id: 5
+    rpc_url: "https://rpc.ankr.com/eth_goerli"
     fetch_timeout: 3000
 
 UserInfo:

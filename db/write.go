@@ -103,12 +103,3 @@ func (m *Mysql) UpdateCollectSubTask(itf xorm.Interface, task *types.CollectTxDB
 	_, err := itf.Table("t_src_tx").Where("f_id = ?", task.Base.ID).Update(task)
 	return err
 }
-
-func (m *Mysql) SaveAccount(itf xorm.Interface, account *types.Account) error {
-	_, err := itf.Insert(account)
-	if err != nil {
-		logrus.Errorf("insert account task error:%v, tasks:%v", err, account)
-		return err
-	}
-	return nil
-}

@@ -21,7 +21,7 @@ type TransactionTask struct {
 	Nonce        uint64 `xorm:"f_nonce"`
 	GasPrice     string `xorm:"f_gas_price"`
 	GasLimit     string `xorm:"f_gas_limit"`
-	ChainId      int    `xorm:"f_chain_id"`
+	Chain        string `xorm:"f_chain"`
 	From         string `xorm:"f_from"`
 	To           string `xorm:"f_to"`
 	ContractAddr string `xorm:"f_contract_addr"`
@@ -55,15 +55,6 @@ type CollectTxDB struct {
 	Chain          string `xorm:"f_chain"`
 }
 
-type Account struct {
-	*Base        `xorm:"extends"`
-	Id           uint64 `xorm:"f_id"`
-	Addr         string `xorm:"f_addr"`
-	Balance      string `xorm:"f_balance"`
-	Lastcheck    string `xorm:"f_last_check"`
-	ContractAddr string `xorm:"f_contract_addr"`
-}
-
 type Token struct {
 	*Base     `xorm:"extends"`
 	Threshold string `xorm:"f_threshold"`
@@ -75,10 +66,6 @@ type Token struct {
 
 func (t *Token) TableName() string {
 	return "t_token"
-}
-
-func (t *Account) TableName() string {
-	return "t_account"
 }
 
 func (t *CollectTxDB) TableName() string {

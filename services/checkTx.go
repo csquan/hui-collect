@@ -31,7 +31,7 @@ func NewCheckService(db types.IDB, c *config.Config) *CheckService {
 	}
 }
 
-func (c *CheckService) InsertCollectSubTx(parentID uint64, from string, to string, userID string, requestID string, chainId int, inputdata string, value string, tx_type int) error {
+func (c *CheckService) InsertCollectSubTx(parentID uint64, from string, to string, userID string, requestID string, chain string, inputdata string, value string, tx_type int) error {
 	//插入sub task
 	task := types.TransactionTask{
 		ParentIDs: "",
@@ -40,7 +40,7 @@ func (c *CheckService) InsertCollectSubTx(parentID uint64, from string, to strin
 		From:      from,
 		To:        to,
 		InputData: inputdata,
-		ChainId:   chainId,
+		Chain:     chain,
 		RequestId: requestID,
 		Tx_type:   tx_type,
 		Value:     value,
@@ -89,7 +89,7 @@ func (c *CheckService) Check(task *types.TransactionTask) (finished bool, err er
 
 		value := "0x0" //这里应该查询这笔gas交易对应的源交易value是多少
 		//c.InsertCollectSubTx(task.ParentID, task.To, to, UID, "", 8888, "0x"+inputdata, value, 1)
-		c.InsertCollectSubTx(1, task.To, to, UID, "", 8888, "0x"+inputdata, value, 1)
+		c.InsertCollectSubTx(1, task.To, to, UID, "", task.Chain, "0x"+inputdata, value, 1)
 		task.State = int(types.TxEndState)
 	} else { //说明已经是归集交易，进入下一状态
 		task.State = int(types.TxCheckState)

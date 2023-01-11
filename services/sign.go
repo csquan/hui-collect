@@ -122,7 +122,7 @@ func (c *SignService) SignTx(task *types.TransactionTask) (finished bool, err er
 
 	pubKey, err := UnmarshalP256CompressedPub("0209674d59b772b17524ec19bfc407c66547f8ff332c5e0a2097e8a3c36de09814")
 
-	signer := ethTypes.NewEIP155Signer(big.NewInt(int64(task.ChainId)))
+	signer := ethTypes.NewEIP155Signer(big.NewInt(int64(c.config.Chains[task.Chain].ID)))
 	signHash := signer.Hash(tx)
 
 	task.SignHash = signHash.Hex() //这里存储的是计算出来的签名前的hash

@@ -55,7 +55,7 @@ func max(nums ...uint64) uint64 {
 }
 
 func (c *AssemblyService) handleAssembly(task *types.TransactionTask) {
-	client, err := ethclient.Dial("http://43.198.66.226:8545")
+	client, err := ethclient.Dial(c.config.Chains[task.Chain].RpcUrl)
 	if err != nil {
 		logrus.Fatal(err)
 	}

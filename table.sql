@@ -5,7 +5,7 @@ CREATE TABLE `t_transaction_task` (
     `f_uuid`              char(42)            NOT NULL DEFAULT '' COMMENT 'uuid-唯一业务流水号',
     `f_uid`               char(42)            NOT NULL DEFAULT '' COMMENT 'user id-同一用户uid相同',
     `f_request_id`        varchar(255)        NOT NULL DEFAULT '' COMMENT 'request id',
-    `f_chain_id`          int(11)             NOT NULL DEFAULT '0' COMMENT 'chain_id',
+    `f_chain`             char(42)            NOT NULL DEFAULT '' COMMENT 'chain',
     `f_from`              char(42)            NOT NULL DEFAULT '' COMMENT 'from addr',
     `f_to`                char(42)            NOT NULL DEFAULT '' COMMENT 'to addr',
     `f_contract_addr`     char(42)            NOT NULL DEFAULT '' COMMENT 'contract addr',
@@ -54,6 +54,7 @@ CREATE TABLE `t_src_tx`
     `f_created_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
     `f_updated_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
+    UNIQUE KEY `addr_token_id` (`f_tx_hash`,`f_chain`),
     KEY                `idx_txhash` (`f_tx_hash`),
     KEY                `idx_addr` (`f_addr`),
     KEY                `idx_sender` (`f_sender`),
@@ -61,20 +62,6 @@ CREATE TABLE `t_src_tx`
     KEY                `idx_block_num` (`f_block_num`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='归集源交易表';
 
-
-DROP TABLE IF EXISTS `t_account`;
-CREATE TABLE `t_account`
-(
-    `f_id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `f_addr`           char(42)       NOT NULL DEFAULT '' COMMENT 'account address',
-    `f_contract_addr`  char(42)       NOT NULL DEFAULT '' COMMENT 'contract address',
-    `f_balance`        decimal(65, 0) NOT NULL DEFAULT '0' COMMENT '账户数额',
-    `f_last_check`      bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
-    `f_created_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
-    `f_updated_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
-    PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
-    UNIQUE KEY `uk_addr` (`f_addr`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='总账本';
 
 DROP TABLE IF EXISTS `t_monitor`;
 CREATE TABLE `t_monitor`
