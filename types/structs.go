@@ -40,19 +40,17 @@ type TransactionTask struct {
 }
 
 type CollectTxDB struct {
-	*Base          `xorm:"extends"`
-	Hash           string `xorm:"f_tx_hash"`
-	Addr           string `xorm:"f_addr"`
-	Sender         string `xorm:"f_sender"`
-	Receiver       string `xorm:"f_receiver"`
-	TokenCnt       string `xorm:"f_token_cnt"`
-	TokenCntOrigin string `xorm:"f_token_cnt_origin"`
-	LogIndex       int    `xorm:"f_log_index"`
-	BlockState     uint8  `xorm:"f_block_state"`
-	BlockNum       uint64 `xorm:"f_block_num"`
-	BlockTime      uint64 `xorm:"f_block_time"`
-	CollectState   int    `xorm:"f_collect_state"`
-	Chain          string `xorm:"f_chain"`
+	*Base                    `xorm:"extends"`
+	Chain                    string `xorm:"chain"`
+	Symbol                   string `xorm:"symbol"`
+	Address                  string `xorm:"address"`
+	Balance                  string `xorm:"balance"`
+	PendingCollectBalance    string `xorm:"pendingCollectBalance"`
+	PendingWithdrawalBalance string `xorm:"pendingWithdrawalBalance"`
+	Status                   int    `xorm:"status"`
+	OwnerType                int    `xorm:"ownerType"`
+	Extension                string `xorm:"extension"`
+	UsedFee                  string `xorm:"usedFee"`
 }
 
 type Token struct {

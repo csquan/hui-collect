@@ -206,6 +206,21 @@ func (c *CollectService) handleAddTx(parentIDs string, from string, to string, u
 	return nil
 }
 
+//
+//type CollectTxDB struct {
+//	*Base                    `xorm:"extends"`
+//	Chain                    string `xorm:"chain"`
+//	Symbol                   string `xorm:"symbol"`
+//	Address                  string `xorm:"address"`
+//	Balance                  string `xorm:"balance"`
+//	PendingCollectBalance    string `xorm:"pendingCollectBalance"`
+//	PendingWithdrawalBalance string `xorm:"pendingWithdrawalBalance"`
+//	Status                   int    `xorm:"status"`
+//	OwnerType                int    `xorm:"ownerType"`
+//	Extension                string `xorm:"extension"`
+//	UsedFee                  string `xorm:"usedFee"`
+//}
+
 func (c *CollectService) Run() (err error) {
 	collectTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
@@ -223,12 +238,12 @@ func (c *CollectService) Run() (err error) {
 	for _, task := range collectTasks {
 		found := false
 		for _, filter_task := range merge_tasks {
-			if filter_task.Addr == task.Addr && filter_task.Receiver == task.Receiver && filter_task.Chain == task.Chain {
-				cnt1, _ := big.NewInt(0).SetString(task.TokenCnt, 10)
-				cnt2, _ := big.NewInt(0).SetString(filter_task.TokenCnt, 10)
+			if filter_task.Address == task.Address && filter_task.Symbol == task.Symbol && filter_task.Chain == task.Chain {
+				cnt1, _ := big.NewInt(0).SetString(task.Balance, 10)
+				cnt2, _ := big.NewInt(0).SetString(filter_task.Balance, 10)
 
 				res := big.NewInt(0).Add(cnt1, cnt2)
-				filter_task.TokenCnt = res.String()
+				filter_task.Balance = res.String()
 
 				found = true
 			}
@@ -246,7 +261,7 @@ func (c *CollectService) Run() (err error) {
 			logrus.Fatal(err)
 		}
 
-		cnt1, _ := big.NewInt(0).SetString(merge_task.TokenCnt, 10)
+		cnt1, _ := big.NewInt(0).SetString(merge_task.Balance, 10)
 		cnt2, _ := big.NewInt(0).SetString(token.Threshold, 10)
 
 		enough := cnt1.Cmp(cnt2)
