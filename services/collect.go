@@ -25,6 +25,7 @@ import (
 )
 
 const max_tx_fee = 400000000000000 //4*10 14 认为是一笔交易的费用
+
 type CollectService struct {
 	db     types.IDB
 	config *config.Config
@@ -255,7 +256,7 @@ func (c *CollectService) Run() (err error) {
 
 	//这里归并后，应该看相同地址的是否大于对应币种的门槛
 	for _, merge_task := range merge_tasks {
-		token, err := c.db.GetTokenInfo(merge_task.Addr, merge_task.Chain)
+		token, err := c.db.GetTokenInfo(merge_task.Address, merge_task.Chain)
 
 		if err != nil {
 			logrus.Fatal(err)
@@ -285,24 +286,30 @@ func (c *CollectService) Run() (err error) {
 	}
 
 	for _, collectTask := range threshold_tasks {
-		uid := "" //这个后面填入，根据不同的交易
-		requestID := ""
-		err = c.handleAddTx(parentIDs, collectTask.Sender, collectTask.Receiver, uid, requestID, collectTask.Chain, collectTask.TokenCnt, collectTask.Addr)
+		if collectTask.RemainedFee < max_tx_fee { //反向打gas
+
+		} else { //直接归集个人地址--订单ID，插入DB中，目前仅仅是查看标志状态用
+			collectTask.OrderId = string(time.Now().Unix())
+
+			err := utils.CommitWithSession(c.db, func(s *xorm.Session) error {
+				//这里调用keep的归集交易接口
+				if err := c.db.UpdateCollectTx(s, collectTask); err != nil {
+					logrus.Errorf("update colelct transaction task error:%v tasks:[%v]", err, collectTask)
+					return err
+				}
+				return nil
+			})
+			if err != nil {
+				return fmt.Errorf("insert colelct sub transaction task error:%v", err)
+			}
+		}
+
+		//uid := "" //这个后面填入，根据不同的交易
+		//requestID := ""
+		//err = c.handleAddTx(parentIDs, collectTask.Sender, collectTask.Receiver, uid, requestID, collectTask.Chain, collectTask.TokenCnt, collectTask.Addr)
 
 		if err != nil {
 			continue
-		}
-
-		err := utils.CommitWithSession(c.db, func(s *xorm.Session) error {
-			collectTask.CollectState = int(types.TxCollectingState)
-			if err := c.db.UpdateCollectTx(s, collectTask); err != nil {
-				logrus.Errorf("insert colelct transaction task error:%v tasks:[%v]", err, collectTask)
-				return err
-			}
-			return nil
-		})
-		if err != nil {
-			return fmt.Errorf("insert colelct sub transactidon task error:%v", err)
 		}
 
 	}

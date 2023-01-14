@@ -2,18 +2,13 @@ package services
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"github.com/ethereum/HuiCollect/config"
 	"github.com/ethereum/HuiCollect/types"
 	"github.com/ethereum/HuiCollect/utils"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-xorm/xorm"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
-	"math/big"
-	"strings"
 	"time"
 )
 
@@ -62,49 +57,6 @@ func (c *CheckService) InsertCollectSubTx(parentID uint64, from string, to strin
 
 // 根据传入的交易，如果是打gas类型的交易，那么再生成一笔TxInitState状态的交易，如果是归集到热钱包的交易，那么进入下一状态，表示可以更新账本
 func (c *CheckService) Check(task *types.TransactionTask) (finished bool, err error) {
-	if task.Tx_type == 0 { //说明是打gas交易，需要在交易表中插入一条归集交易
-		dest := c.config.Collect.Addr           //"0x32f3323a268155160546504c45d0c4a832567159"
-		src_task, err := c.db.GetCollectTask(1) //task.ParentIDs
-		if err != nil {
-			return false, err
-		}
-		to := src_task.Addr // "0x99ac689fd1f09ada4c0365e6497b2a824af68557" 这笔源交易对应的合约地址
-		UID := "817583340974"
-
-		r := strings.NewReader(erc20abi)
-		erc20ABI, err := abi.JSON(r)
-		if err != nil {
-			return false, err
-		}
-		//src_task.TokenCnt = "1000000000000000000000"
-		//得到关联交易的value
-		Amount := &big.Int{}
-		Amount.SetString(src_task.TokenCnt, 10)
-
-		b, err := erc20ABI.Pack("transfer", common.HexToAddress(dest), Amount)
-		if err != nil {
-			return false, err
-		}
-		inputdata := hex.EncodeToString(b)
-
-		value := "0x0" //这里应该查询这笔gas交易对应的源交易value是多少
-		//c.InsertCollectSubTx(task.ParentID, task.To, to, UID, "", 8888, "0x"+inputdata, value, 1)
-		c.InsertCollectSubTx(1, task.To, to, UID, "", task.Chain, "0x"+inputdata, value, 1)
-		task.State = int(types.TxEndState)
-	} else { //说明已经是归集交易，进入下一状态
-		task.State = int(types.TxCheckState)
-	}
-
-	err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
-		if err := c.db.UpdateTransactionTask(s, task); err != nil {
-			logrus.Errorf("update transaction task error:%v tasks:[%v]", err, task)
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return false, fmt.Errorf(" CommitWithSession in Check err:%v", err)
-	}
 
 	return true, nil
 }
