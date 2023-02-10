@@ -100,7 +100,7 @@ CREATE TABLE `t_monitor_hash`
     `f_id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `f_hash`           char(66)            NOT NULL DEFAULT '' COMMENT 'tx hash--交易广播的hash',
     `f_chain`          char(42)            NOT NULL DEFAULT '' COMMENT '链名称',
-    `f_bck`            text COMMENT '回调地址',
+    `f_order_id`            text COMMENT '回调地址',
     `f_created_at`     timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
     `f_updated_at`     timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
