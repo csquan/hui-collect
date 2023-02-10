@@ -67,6 +67,8 @@ DROP TABLE IF EXISTS `t_monitor`;
 CREATE TABLE `t_monitor`
 (
     `f_id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `f_uid`            text COMMENT 'uid',
+    `f_appid`          text COMMENT 'appid',
     `f_addr`           char(42)       NOT NULL DEFAULT '' COMMENT 'address',
     `f_chain`          char(42)       NOT NULL DEFAULT '' COMMENT 'chain',
     `f_height`         bigint(20) NOT NULL DEFAULT '0' COMMENT '更新时区块高度',
@@ -91,6 +93,19 @@ create TABLE `t_token` (
 ENGINE = InnoDB
 DEFAULT CHARSET = utf8mb4
 COMMENT ='监控币种表';
+
+DROP TABLE IF EXISTS `t_monitor_hash`;
+CREATE TABLE `t_monitor_hash`
+(
+    `f_id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `f_hash`           char(66)            NOT NULL DEFAULT '' COMMENT 'tx hash--交易广播的hash',
+    `f_chain`          char(42)            NOT NULL DEFAULT '' COMMENT '链名称',
+    `f_bck`            text COMMENT '回调地址',
+    `f_created_at`     timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
+    `f_updated_at`     timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
+    PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */,
+    UNIQUE KEY `uk_addr` (`f_hash`,`f_chain`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='监控表';
 
 INSERT INTO t_token (f_id,f_threshold,f_chain,f_symbol,f_address,f_decimal,f_created_at,f_updated_at) VALUES
             (1,'10000000000000000000','HUI','TSC','0x99Ac689Fd1f09AdA4c0365E6497B2A824Af68557',18,'2023-01-07 10:51:17','2023-01-07 10:56:05'),

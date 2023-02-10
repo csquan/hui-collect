@@ -45,12 +45,14 @@ type CollectTxDB struct {
 	Symbol                   string `xorm:"symbol"`
 	Address                  string `xorm:"address"`
 	Balance                  string `xorm:"balance"`
+	OrderId                  string `xorm:"orderID"`
 	PendingCollectBalance    string `xorm:"pendingCollectBalance"`
 	PendingWithdrawalBalance string `xorm:"pendingWithdrawalBalance"`
 	Status                   int    `xorm:"status"`
 	OwnerType                int    `xorm:"ownerType"`
 	Extension                string `xorm:"extension"`
 	UsedFee                  string `xorm:"usedFee"`
+	RemainedFee              int    `xorm:"remainedFee"`
 }
 
 type Token struct {
