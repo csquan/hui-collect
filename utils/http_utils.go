@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/HuiCollect/config"
 	"io/ioutil"
 	"net/http"
 	"time"
+	"unsafe"
 
 	"github.com/sirupsen/logrus"
 )
@@ -49,4 +51,27 @@ func DoRequestWithHeaders(url string, method string, reqData []byte, headers map
 	}
 	logrus.Infof("DoRequestWithHeaders host:%s path:%s, input:%s, response:%v", req.Host, req.URL.Path, string(reqData), string(data))
 	return
+}
+
+func Post(requestUrl string, bytesData []byte) (ret string, err error) {
+	res, err := http.Post(requestUrl,
+		"application/json;charset=utf-8", bytes.NewBuffer([]byte(bytesData)))
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	}
+
+	defer res.Body.Close()
+
+	content, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	}
+	str := (*string)(unsafe.Pointer(&content)) //转化为string,优化内存
+	return *str, nil
+}
+
+func GetHotAddress(hotwallet []config.HotWalletConf) (addr string, err error) {
+	return "test", nil
 }

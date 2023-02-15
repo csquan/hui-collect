@@ -44,6 +44,7 @@ type CollectTxDB struct {
 	Chain                    string `xorm:"chain"`
 	Symbol                   string `xorm:"symbol"`
 	Address                  string `xorm:"address"`
+	Uid                      string `xorm:"uid"`
 	Balance                  string `xorm:"balance"`
 	OrderId                  string `xorm:"orderID"`
 	PendingCollectBalance    string `xorm:"pendingCollectBalance"`
@@ -169,4 +170,35 @@ type SigData struct {
 type CallBackData struct {
 	RequestID string
 	Hash      string
+}
+
+type Fund struct {
+	AppId     string `json:"app_id"` // 发起提现请求的appid
+	OrderId   string `json:"order_id"`
+	AccountId string `json:"accoount_id"`
+	Chain     string `json:"chain"`  // 链, btc, eth
+	Symbol    string `json:"symbol"` // 币种:btc, eth, usdt
+	From      string `json:"from"`   // hotwallet 地址
+	To        string `json:"to"`     // hotwallet 地址
+	Amount    string `json:"amount"` // 提现金额
+	Memo      string `json:"memo"`   //memo
+	Extension string `json:"extension"`
+}
+
+type TokenParam struct {
+	Chain  string "json:chain"
+	Symbol string "json:symbol"
+}
+
+type Collect struct {
+	AppId     string `json:"app_id"` // 发起提现请求的appid
+	OrderId   string `json:"order_id"`
+	AccountId string `json:"accoount_id"`
+	Chain     string `json:"chain"`  // 链, btc, eth
+	Symbol    string `json:"symbol"` // 币种:btc, eth, usdt
+	From      string `json:"from"`   // hotwallet 地址
+	To        string `json:"to"`     // hotwallet 地址
+	Amount    string `json:"amount"` // 提现金额
+	Memo      string `json:"memo"`   //memo
+	Extension string `json:"extension"`
 }
