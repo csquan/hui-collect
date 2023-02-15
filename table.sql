@@ -41,6 +41,7 @@ CREATE TABLE `t_src_tx`
     `f_chain`                    char(66)  NOT NULL DEFAULT '' COMMENT '链名称',
     `f_symbol`                   char(42)  NOT NULL DEFAULT '' COMMENT '代币符号',
     `f_address`                  char(42)  NOT NULL DEFAULT '' COMMENT '账户地址',
+    `f_uid`                      char(42)  NOT NULL DEFAULT '' COMMENT '账户uid',
     `f_balance`                  char(42)  NOT NULL DEFAULT '' COMMENT '代币余额',
     `f_pendingCollectBalance`    char(42)  NOT NULL DEFAULT '0' COMMENT '进行中的归集余额',
     `f_pendingWithdrawalBalance` char(42)           DEFAULT NULL COMMENT '进行中的提现余额',

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ethereum/HuiCollect/config"
 	"github.com/ethereum/HuiCollect/types"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -74,25 +75,25 @@ func Post(requestUrl string, bytesData []byte) (ret string, err error) {
 }
 
 // 目前暂定策略：取出每个热钱包的地址
-func GetHotAddress(collectTx *types.CollectTxDB, hotwallet []config.HotWalletConf) (addr string, err error) {
-	//param := types.AssetInParam{
-	//	Symbol:  collectTx.Symbol,
-	//	Chain:   collectTx.Chain,
-	//	Address: "",
-	//}
-	//msg, err := json.Marshal(param)
-	//if err != nil {
-	//	logrus.Error(err)
-	//	return "", err
-	//}
-	//url := c.config.Wallet.Url + "/" + "getAsset"
-	//str, err := utils.Post(url, msg)
-	//
-	//assetStatus := gjson.Get(str, "status")
-	//pendingBalance := gjson.Get(str, "pending_withdrawal_balance")
-	//
-	//if assetStatus.Int() == 0 && pendingBalance.Int() == 0 {
-	//
-	//}
+func GetHotAddress(collectTx *types.CollectTxDB, hotwallet []config.HotWalletConf, url string) (addr string, err error) {
+	param := types.AssetInParam{
+		Symbol:  collectTx.Symbol,
+		Chain:   collectTx.Chain,
+		Address: collectTx.Address,
+	}
+	msg, err := json.Marshal(param)
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	}
+	url = url + "/" + "getAsset"
+	str, err := Post(url, msg)
+
+	assetStatus := gjson.Get(str, "status")
+	pendingBalance := gjson.Get(str, "pending_withdrawal_balance")
+
+	if assetStatus.Int() == 0 && pendingBalance.Int() == 0 {
+
+	}
 	return "test", nil
 }
