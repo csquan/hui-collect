@@ -34,13 +34,8 @@ func NewServiceScheduler(conf *config.Config, db types.IDB, closeCh <-chan os.Si
 func (t *ServiceScheduler) Start() {
 	//create collect service
 	collectService := NewCollectService(t.db, t.conf)
-
-	//create update service
-	CheckService := NewCheckService(t.db, t.conf)
-
 	t.services = []types.IAsyncService{
 		collectService,
-		CheckService,
 	}
 
 	timer := time.NewTimer(t.conf.QueryInterval)

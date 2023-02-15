@@ -39,21 +39,21 @@ type TransactionTask struct {
 	Times        int    `xorm:"f_retry_times"`
 }
 
+// 资产表,归集源交易表
 type CollectTxDB struct {
-	*Base                    `xorm:"extends"`
-	Chain                    string `xorm:"chain"`
-	Symbol                   string `xorm:"symbol"`
-	Address                  string `xorm:"address"`
-	Uid                      string `xorm:"uid"`
-	Balance                  string `xorm:"balance"`
-	OrderId                  string `xorm:"orderID"`
-	PendingCollectBalance    string `xorm:"pendingCollectBalance"`
-	PendingWithdrawalBalance string `xorm:"pendingWithdrawalBalance"`
-	Status                   int    `xorm:"status"`
-	OwnerType                int    `xorm:"ownerType"`
-	Extension                string `xorm:"extension"`
-	UsedFee                  string `xorm:"usedFee"`
-	RemainedFee              int    `xorm:"remainedFee"`
+	Base                     `xorm:"extends"`
+	Chain                    string `xorm:"f_chain"`
+	Symbol                   string `xorm:"f_symbol"`
+	Address                  string `xorm:"f_address"`
+	Uid                      string `xorm:"f_uid"`
+	Balance                  string `xorm:"f_balance"`
+	PendingCollectBalance    string `xorm:"f_pendingCollectBalance"`
+	PendingWithdrawalBalance string `xorm:"f_pendingWithdrawalBalance"`
+	Status                   int    `xorm:"f_status"`
+	CollectState             int    `xorm:"f_collect_state"`
+	OwnerType                int    `xorm:"f_ownerType"`
+	Extension                string `xorm:"f_extension"`
+	UsedFee                  int    `xorm:"f_usedFee"`
 }
 
 type Token struct {
@@ -201,4 +201,10 @@ type Collect struct {
 	Amount    string `json:"amount"` // 提现金额
 	Memo      string `json:"memo"`   //memo
 	Extension string `json:"extension"`
+}
+
+type AssetInParam struct {
+	Symbol  string `json:"symbol"`
+	Chain   string `json:"chain"`
+	Address string `json:"address"`
 }

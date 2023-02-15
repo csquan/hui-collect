@@ -286,7 +286,7 @@ func (c *CollectService) Run() (err error) {
 	}
 
 	for _, collectTask := range threshold_tasks {
-		if collectTask.RemainedFee < max_tx_fee { //反向打gas--fundFee 钱包模块
+		if collectTask.UsedFee < max_tx_fee { //反向打gas--fundFee 钱包模块
 			//gas--getToken token模块
 			tokenParam := types.TokenParam{
 				Chain:  collectTask.Chain,
@@ -328,11 +328,9 @@ func (c *CollectService) Run() (err error) {
 			}
 			//返回200
 		} else { //直接归集个人地址--订单ID，插入DB中，目前仅仅是查看标志状态用
-			collectTask.OrderId = string(time.Now().Unix())
-
 			err := utils.CommitWithSession(c.db, func(s *xorm.Session) error {
 				//这里要按照一定策略选择热钱包目标地址
-				to, err := utils.GetHotAddress(c.config.HotWallet)
+				to, err := utils.GetHotAddress(collectTask, c.config.HotWallet)
 				if err != nil {
 					logrus.Error(err)
 					return err
