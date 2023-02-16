@@ -43,13 +43,9 @@ CREATE TABLE `t_src_tx`
     `f_address`                  char(42)  NOT NULL DEFAULT '' COMMENT '账户地址',
     `f_uid`                      char(42)  NOT NULL DEFAULT '' COMMENT '账户uid',
     `f_balance`                  char(42)  NOT NULL DEFAULT '' COMMENT '代币余额',
-    `f_pendingCollectBalance`    char(42)  NOT NULL DEFAULT '0' COMMENT '进行中的归集余额',
-    `f_pendingWithdrawalBalance` char(42)           DEFAULT NULL COMMENT '进行中的提现余额',
     `f_status`                   tinyint(4) NOT NULL COMMENT '状态',
     `f_ownerType`                tinyint(4) NOT NULL COMMENT '账户类型',
     `f_collect_state`            tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:ready 1:ing 2:ed',
-    `f_extension`                bigint(20) unsigned NOT NULL COMMENT '扩展字段',
-    `f_usedFee`                  int(11) NOT NULL DEFAULT '0' COMMENT '使用的Fee',
     `f_created_at`               timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
     `f_updated_at`               timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */

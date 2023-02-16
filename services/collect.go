@@ -148,80 +148,6 @@ func (c *CollectService) getUidFromAddr(address string) (uid string, err error) 
 	return result.Data.UID, nil
 }
 
-//func (c *CollectService) handleAddTx(parentIDs string, from string, to string, userID string, requestID string, chainName string, tokencnt string, contractAddr string) error {
-//	balance, err := c.getBalance(to, chainName)
-//	if err != nil {
-//		return err
-//	}
-//
-//	b, err := strconv.ParseFloat(balance, 10)
-//	if err != nil {
-//		return err
-//	}
-//
-//	tx_type := 0
-//	inputdata := ""
-//	value := "0x0"
-//	receiver := ""
-//	amount := ""
-//	if b >= max_tx_fee { //插入一笔归集子交易
-//		uid, err := c.getUidFromAddr(to)
-//		if err != nil {
-//			logrus.Info("empty get!")
-//		}
-//		userID = uid //"817583340974" // 0x206beddf4f9fc55a116890bb74c6b79999b14eb1
-//		from = to
-//		to = contractAddr
-//		tx_type = 1
-//
-//		r := strings.NewReader(erc20abi)
-//		erc20ABI, err := abi.JSON(r)
-//		if err != nil {
-//			return err
-//		}
-//		Amount := &big.Int{}
-//		Amount.SetString(tokencnt, 10)
-//
-//		receiver = c.config.Collect.Addr //receiver 就是归集地址
-//		amount = Amount.String()
-//
-//		b, err := erc20ABI.Pack("transfer", common.HexToAddress(receiver), Amount)
-//		if err != nil {
-//			return err
-//		}
-//		inputdata = hex.EncodeToString(b)
-//
-//	} else { //不足以支付一笔交易
-//		//userID = "545950000830"
-//		value = "0x246139CA8000"
-//		from = c.config.Gas.Addr //"0x32755f0c070811cdd0b00b059e94593fae9835d9"
-//		receiver = to            //receiver 就是源to地址，这里先给它打gas
-//		amount = value
-//		userID, err = c.getUidFromAddr(from)
-//		if err != nil {
-//
-//		}
-//		tx_type = 0
-//	}
-//	c.InsertCollectSubTx(parentIDs, from, to, userID, requestID, chainName, "0x"+inputdata, value, tx_type, receiver, amount, contractAddr)
-//	return nil
-//}
-
-//
-//type CollectTxDB struct {
-//	*Base                    `xorm:"extends"`
-//	Chain                    string `xorm:"chain"`
-//	Symbol                   string `xorm:"symbol"`
-//	Address                  string `xorm:"address"`
-//	Balance                  string `xorm:"balance"`
-//	PendingCollectBalance    string `xorm:"pendingCollectBalance"`
-//	PendingWithdrawalBalance string `xorm:"pendingWithdrawalBalance"`
-//	Status                   int    `xorm:"status"`
-//	OwnerType                int    `xorm:"ownerType"`
-//	Extension                string `xorm:"extension"`
-//	UsedFee                  string `xorm:"usedFee"`
-//}
-
 func (c *CollectService) Run() (err error) {
 	collectTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
@@ -286,8 +212,11 @@ func (c *CollectService) Run() (err error) {
 	}
 
 	for _, collectTask := range threshold_tasks {
-		//这里将字符串转化为UINT
-		if collectTask.Symbol == "hui" && collectTask.Balance < max_tx_fee { //反向打gas--fundFee 钱包模块
+		balance, err := strconv.Atoi(collectTask.Balance)
+		if err != nil {
+			logrus.Error(err)
+		}
+		if collectTask.Symbol == "hui" && balance < max_tx_fee { //反向打gas--fundFee 钱包模块
 			//gas--getToken token模块
 			tokenParam := types.TokenParam{
 				Chain:  collectTask.Chain,
