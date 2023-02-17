@@ -8,6 +8,9 @@ hotWallet:
   - addr: "0x32f3323a268155160546504c45d0c4a832567159"
   - addr: "0xab41dedc0b7333fd76a0619a145a4aa3492cb017"
 
+server:
+  port: 8010
+
 gas:
   addr: "0x32755f0c070811cdd0b00b059e94593fae9835d9"
 

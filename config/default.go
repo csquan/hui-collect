@@ -7,8 +7,4 @@ var (
 			Level:  4,
 		},
 	}
-	DefaultServerConf = ServerConf{
-		Port:  8080,
-		Users: map[string]string{},
-	}
 )

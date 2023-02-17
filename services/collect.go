@@ -300,10 +300,6 @@ func (c *CollectService) Run() (err error) {
 			}
 		}
 
-		//uid := "" //这个后面填入，根据不同的交易
-		//requestID := ""
-		//err = c.handleAddTx(parentIDs, collectTask.Sender, collectTask.Receiver, uid, requestID, collectTask.Chain, collectTask.TokenCnt, collectTask.Addr)
-
 		if err != nil {
 			continue
 		}
