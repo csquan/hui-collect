@@ -9,6 +9,7 @@ import (
 	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"time"
 	"unsafe"
 
@@ -74,12 +75,11 @@ func Post(requestUrl string, bytesData []byte) (ret string, err error) {
 	return *str, nil
 }
 
-// 目前暂定策略：取出每个热钱包的地址
-func GetHotAddress(collectTx *types.CollectTxDB, hotwallet []config.HotWalletConf, url string) (addr string, err error) {
+func GetAsset(symbol string, chain string, addr string, url string) (string, error) {
 	param := types.AssetInParam{
-		Symbol:  collectTx.Symbol,
-		Chain:   collectTx.Chain,
-		Address: collectTx.Address,
+		Symbol:      symbol,
+		Chain:       chain,
+		AccountAddr: addr,
 	}
 	msg, err := json.Marshal(param)
 	if err != nil {
@@ -88,12 +88,48 @@ func GetHotAddress(collectTx *types.CollectTxDB, hotwallet []config.HotWalletCon
 	}
 	url = url + "/" + "getAsset"
 	str, err := Post(url, msg)
+	return str, nil
+}
 
-	assetStatus := gjson.Get(str, "status")
-	pendingBalance := gjson.Get(str, "pending_withdrawal_balance")
+// 目前暂定策略：取出每个热钱包的地址--对于同一个钱包地址，需要调用两次post，第一次获取代币，第二次获取本币？
+func GetHotAddress(collectTx *types.CollectTxDB, hotwallets []config.HotWalletConf, url string) (addr string, err error) {
+	sortMap := make(map[string]uint64)
 
-	if assetStatus.Int() == 0 && pendingBalance.Int() == 0 {
+	for _, hotwallet := range hotwallets {
+		str, err := GetAsset(collectTx.Symbol, collectTx.Chain, hotwallet.Addr, url)
+		if err != nil {
+			return "", err
+		}
+		assetStatus := gjson.Get(str, "status")
+		pendingBalance := gjson.Get(str, "pending_withdrawal_balance")
+		balance := gjson.Get(str, "balance")
 
+		if assetStatus.Int() == 0 && pendingBalance.Int() == 0 {
+			sortMap[hotwallet.Addr] = 100 / balance.Uint() //代币越小，则这里的结果越大
+		}
+
+		//todo：这个链对应的本币应该从db查询，目前就一条链,所以先写死
+		str1, err := GetAsset("hui", collectTx.Chain, hotwallet.Addr, url)
+		if err != nil {
+			return "", err
+		}
+		assetStatus = gjson.Get(str1, "statjius")
+		pendingBalance = gjson.Get(str1, "pending_withdrawal_balance")
+		balance = gjson.Get(str, "balance")
+
+		if assetStatus.Int() == 0 && pendingBalance.Int() == 0 {
+			sortMap[hotwallet.Addr] = sortMap[hotwallet.Addr] + balance.Uint()*1 //本币的权重为1
+		}
 	}
-	return "test", nil
+
+	//下面从大到小排序这个map，按照这个map中的point
+	var listAsset []types.AssetInHotwallet
+	for k, v := range sortMap {
+		listAsset = append(listAsset, types.AssetInHotwallet{k, v})
+	}
+	sort.Slice(listAsset, func(i, j int) bool {
+		return listAsset[i].Point > listAsset[j].Point // 降序
+	})
+
+	return listAsset[0].AccountAddr, nil
 }

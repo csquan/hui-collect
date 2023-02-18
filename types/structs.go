@@ -204,7 +204,24 @@ type Collect struct {
 }
 
 type AssetInParam struct {
-	Symbol  string `json:"symbol"`
-	Chain   string `json:"chain"`
-	Address string `json:"address"`
+	Symbol      string `json:"symbol"`
+	Chain       string `json:"chain"`
+	AccountAddr string `json:"account_addr"`
+}
+
+type AssetInHotwallet struct {
+	AccountAddr string `json:"account_addr"`
+	Point       uint64 `json:"point"`
+}
+
+type AssetInHotwallets []*AssetInHotwallet
+
+func (s AssetInHotwallets) Len() int {
+	return len(s)
+}
+func (s AssetInHotwallets) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s AssetInHotwallets) Less(i, j int) bool {
+	return s[i].Point < s[j].Point
 }
