@@ -237,7 +237,7 @@ func (c *CollectService) Run() (err error) {
 			fee_value := gjson.Get(str, "give_fee_value")
 
 			fund := types.Fund{
-				AppId:     "collect",
+				AppId:     "",
 				OrderId:   utils.NewIDGenerator().Generate(),
 				AccountId: collectTask.Uid,
 				Chain:     collectTask.Chain,
@@ -268,7 +268,7 @@ func (c *CollectService) Run() (err error) {
 
 				//这里调用keep的归集交易接口  --collenttohotwallet
 				fund := types.Fund{
-					AppId:     "collect",
+					AppId:     "",
 					OrderId:   utils.NewIDGenerator().Generate(),
 					AccountId: collectTask.Uid,
 					Chain:     collectTask.Chain,
