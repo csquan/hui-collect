@@ -15,12 +15,14 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-resty/resty/v2"
 	"github.com/go-xorm/xorm"
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
 	"github.com/tidwall/gjson"
 	"math/big"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -167,6 +169,12 @@ func (c *CollectService) GetTokenInfo(symbol string, chain string) (string, erro
 	return str, nil
 }
 
+func (c *CollectService) GetHotWallet(str string) ([]string, error) {
+	str = str[2 : len(str)-2]
+	arr := strings.Split(str, ",")
+	return arr, nil
+}
+
 func (c *CollectService) Run() (err error) {
 	collectTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
@@ -177,47 +185,63 @@ func (c *CollectService) Run() (err error) {
 		return
 	}
 
-	merge_tasks := make([]*types.CollectTxDB, 0)     //多条相同的交易合并（相同的接收地址和相同的合约地址）
+	mergeTasks := make([]*types.CollectTxDB, 0)      //多条相同的交易合并（相同的接收地址和相同的合约地址）
 	threshold_tasks := make([]*types.CollectTxDB, 0) //交易是否满足门槛
+	hotWallets := make(map[string]map[string][]string)
 
 	//这里如果有多条collectTask，那么需要归并到一起，依据规则：将相同合约地址,相同receiver,相同chain的 tokencnt累加
 	for _, task := range collectTasks {
 		found := false
-		for _, filter_task := range merge_tasks {
-			if filter_task.Address == task.Address && filter_task.Symbol == task.Symbol && filter_task.Chain == task.Chain {
-				cnt1, _ := big.NewInt(0).SetString(task.Balance, 10)
-				cnt2, _ := big.NewInt(0).SetString(filter_task.Balance, 10)
+		for _, filterTask := range mergeTasks {
+			if filterTask.Address == task.Address && filterTask.Symbol == task.Symbol && filterTask.Chain == task.Chain {
+				cnt1, _ := big.NewFloat(0).SetString(task.Balance)
+				cnt2, _ := big.NewFloat(0).SetString(filterTask.Balance)
 
-				res := big.NewInt(0).Add(cnt1, cnt2)
-				filter_task.Balance = res.String()
+				res := big.NewFloat(0).Add(cnt1, cnt2)
+				filterTask.Balance = res.String()
 
 				found = true
 			}
 		}
 		if found == false {
-			merge_tasks = append(merge_tasks, task)
+			mergeTasks = append(mergeTasks, task)
 		}
 	}
 
 	//这里归并后，应该看相同地址的是否大于对应币种的门槛--只看本币
-	for _, merge_task := range merge_tasks {
-		str, err := c.GetTokenInfo(merge_task.Symbol, merge_task.Chain)
+	for _, mergeTask := range mergeTasks {
+		str, err := c.GetTokenInfo(mergeTask.Symbol, mergeTask.Chain)
 
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		collect_threshold := gjson.Get(str, "collect_threshold")
+		collectThreshold := gjson.Get(str, "collect_threshold")
+		hotWallet := gjson.Get(str, "hot_wallets")
 
-		cnt1, _ := big.NewFloat(0).SetString(merge_task.Balance)
-		cnt2, _ := big.NewFloat(0).SetString(collect_threshold.String())
+		hotAddr, err := c.GetHotWallet(hotWallet.String())
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		if len(hotWallets[mergeTask.Chain]) == 0 {
+			hotWallets[mergeTask.Chain] = map[string][]string{}
+		}
+
+		for _, addr := range hotAddr {
+			if len(hotWallets[mergeTask.Chain][mergeTask.Symbol]) == 0 {
+				hotWallets[mergeTask.Chain][mergeTask.Symbol] = append(hotWallets[mergeTask.Chain][mergeTask.Symbol], addr)
+			}
+		}
+
+		cnt1, _ := big.NewFloat(0).SetString(mergeTask.Balance)
+		cnt2, _ := big.NewFloat(0).SetString(collectThreshold.String())
 
 		logrus.Info(cnt1.String(), cnt2.String())
 
 		enough := cnt1.Cmp(cnt2)
 
 		if enough >= 0 {
-			threshold_tasks = append(threshold_tasks, merge_task)
+			threshold_tasks = append(threshold_tasks, mergeTask)
 		}
 	}
 
@@ -259,20 +283,31 @@ func (c *CollectService) Run() (err error) {
 			//返回200
 		} else { //直接归集个人地址--订单ID，插入DB中，目前仅仅是查看标志状态用
 			err := utils.CommitWithSession(c.db, func(s *xorm.Session) error {
-				//这里要按照一定策略选择热钱包目标地址
-				to, err := utils.GetHotAddress(collectTask, c.config.HotWallet, c.config.Wallet.Url)
+				//这里要按照一定策略选择热钱包目标地址--这里找到对应的热钱包地址然后选择
+				to, err := utils.GetHotAddress(collectTask, hotWallets[collectTask.Chain][collectTask.Symbol], c.config.Wallet.Url)
 				if err != nil {
 					logrus.Error(err)
 					return err
 				}
 
+				balance, err := decimal.NewFromString(collectTask.Balance)
+				fmt.Println("balance:" + balance.String())
+
+				tmp := gjson.Get(tokenStr, "decimals")
+				tokenDecimals := decimal.New(1, int32(tmp.Uint()))
+				fmt.Println("tokenDecimals:" + tokenDecimals.String())
+
 				collectRemain := gjson.Get(tokenStr, "collect_remain")
-				balance, _ := big.NewFloat(0).SetString(collectTask.Balance)
-				remain, _ := big.NewFloat(0).SetString(collectRemain.String())
+				remain, _ := decimal.NewFromString(collectRemain.String())
+				fmt.Println("remain:" + remain.String())
 
-				balance = balance.Sub(balance, remain)
+				remainInDecimal := remain.Div(tokenDecimals)
+				fmt.Println("remainInDecimal:" + remainInDecimal.String())
 
-				logrus.Info(balance.String())
+				shouldCollect := balance.Sub(remainInDecimal)
+				fmt.Println("shouldCollect:" + shouldCollect.String())
+
+				logrus.Info(shouldCollect)
 
 				collectTask.OrderId = utils.NewIDGenerator().Generate()
 				//这里调用keep的归集交易接口  --collenttohotwallet
@@ -284,7 +319,7 @@ func (c *CollectService) Run() (err error) {
 					Symbol:    collectTask.Symbol,
 					From:      collectTask.Address,
 					To:        to, //这里要按照一定策略选择热钱包
-					Amount:    "9",
+					Amount:    shouldCollect.String(),
 				}
 
 				msg, err := json.Marshal(fund)
@@ -300,7 +335,7 @@ func (c *CollectService) Run() (err error) {
 				}
 				logrus.Info(str)
 
-				if err := c.db.UpdateCollectTx(s, collectTask); err != nil {
+				if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectingState)); err != nil {
 					logrus.Errorf("update colelct transaction task error:%v tasks:[%v]", err, collectTask)
 					return err
 				}

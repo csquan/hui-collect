@@ -31,10 +31,6 @@ type UserInfoConf struct {
 	URL       string `mapstructure:"url"` //获取用户信息的URL
 }
 
-type HotWalletConf struct {
-	Addr string `mapstructure:"addr"`
-}
-
 type WalletConf struct {
 	Url string `mapstructure:"url"`
 }
@@ -55,11 +51,10 @@ type Config struct {
 	AppName          string `mapstructure:"app_name"`
 	ProfPort         int    `mapstructure:"prof_port"`
 	QueryInterval    time.Duration
-	QueryIntervalInt uint64          `mapstructure:"query_interval"`
-	DataBase         DataBaseConf    `mapstructure:"database"`
-	UserInfo         UserInfoConf    `mapstructure:"userInfo"`
-	HotWallet        []HotWalletConf `mapstructure:"hotWallet"`
-	Wallet           WalletConf      `mapstructure:"wallet"`
+	QueryIntervalInt uint64       `mapstructure:"query_interval"`
+	DataBase         DataBaseConf `mapstructure:"database"`
+	UserInfo         UserInfoConf `mapstructure:"userInfo"`
+	Wallet           WalletConf   `mapstructure:"wallet"`
 
 	Token      TokenConf             `mapstructure:"token"`
 	Gas        GasConf               `mapstructure:"gas"`

@@ -62,6 +62,10 @@ type Token struct {
 	Decimal   int    `xorm:"f_decimal"`
 }
 
+type HotWalletArr struct {
+	hot string
+}
+
 func (t *Token) TableName() string {
 	return "t_token"
 }
@@ -207,8 +211,8 @@ type AssetInParam struct {
 }
 
 type AssetInHotwallet struct {
-	AccountAddr string `json:"account_addr"`
-	Point       uint64 `json:"point"`
+	AccountAddr string  `json:"account_addr"`
+	Point       float64 `json:"point"`
 }
 
 type AssetInHotwallets []*AssetInHotwallet

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/HuiCollect/config"
 	"github.com/ethereum/HuiCollect/types"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
@@ -92,11 +91,13 @@ func GetAsset(symbol string, chain string, addr string, url string) (string, err
 }
 
 // 目前暂定策略：取出每个热钱包的地址--对于同一个钱包地址，需要调用两次post，第一次获取代币，第二次获取本币？
-func GetHotAddress(collectTx *types.CollectTxDB, hotwallets []config.HotWalletConf, url string) (addr string, err error) {
-	sortMap := make(map[string]uint64)
+func GetHotAddress(collectTx *types.CollectTxDB, addrs []string, url string) (addr string, err error) {
+	sortMap := make(map[string]float64)
 
-	for _, hotwallet := range hotwallets {
-		str, err := GetAsset(collectTx.Symbol, collectTx.Chain, hotwallet.Addr, url)
+	for _, addr := range addrs {
+		logrus.Info("In GetHotAddress symbol:" + collectTx.Symbol + " collectTx.Chain:" + collectTx.Chain + " hotwallet.Addr:" + addr)
+		//代币
+		str, err := GetAsset(collectTx.Symbol, collectTx.Chain, addr, url)
 		if err != nil {
 			return "", err
 		}
@@ -104,21 +105,27 @@ func GetHotAddress(collectTx *types.CollectTxDB, hotwallets []config.HotWalletCo
 		pendingBalance := gjson.Get(str, "pending_withdrawal_balance")
 		balance := gjson.Get(str, "balance")
 
-		if assetStatus.Int() == 0 && pendingBalance.Int() == 0 {
-			sortMap[hotwallet.Addr] = 100 / balance.Uint() //代币越小，则这里的结果越大
+		if balance.Float() != 0 {
+			if assetStatus.Int() == 0 && pendingBalance.Int() == 0 {
+				sortMap[addr] = 100.0 / balance.Float() //代币越小，则这里的结果越大
+			}
+		} else {
+			logrus.Info("balance:" + balance.String())
 		}
 
 		//todo：这个链对应的本币应该从db查询，目前就一条链,所以先写死
-		str1, err := GetAsset("hui", collectTx.Chain, hotwallet.Addr, url)
-		if err != nil {
-			return "", err
-		}
-		assetStatus = gjson.Get(str1, "statjius")
-		pendingBalance = gjson.Get(str1, "pending_withdrawal_balance")
-		balance = gjson.Get(str, "balance")
+		if collectTx.Symbol != "hui" { //本币
+			str1, err := GetAsset("hui", collectTx.Chain, addr, url)
+			if err != nil {
+				return "", err
+			}
+			assetStatus = gjson.Get(str1, "statjius")
+			pendingBalance = gjson.Get(str1, "pending_withdrawal_balance")
+			balance = gjson.Get(str, "balance")
 
-		if assetStatus.Int() == 0 && pendingBalance.Int() == 0 {
-			sortMap[hotwallet.Addr] = sortMap[hotwallet.Addr] + balance.Uint()*1 //本币的权重为1
+			if assetStatus.Int() == 0 && pendingBalance.Int() == 0 {
+				sortMap[addr] = sortMap[addr] + balance.Float()*1.0 //本币的权重为1
+			}
 		}
 	}
 
