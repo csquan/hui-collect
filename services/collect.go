@@ -21,12 +21,11 @@ import (
 	"github.com/tidwall/gjson"
 	"math/big"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 )
 
-const max_tx_fee = 0 //400000000000000 //4*10 14 认为是一笔交易的费用
+const max_tx_fee = "0" //400000000000000 //4*10 14 认为是一笔交易的费用
 
 type CollectService struct {
 	db     types.IDB
@@ -246,16 +245,32 @@ func (c *CollectService) Run() (err error) {
 	}
 
 	for _, collectTask := range threshold_tasks {
-		balance, err := strconv.Atoi(collectTask.Balance)
-		if err != nil {
-			logrus.Error(err)
-		}
 		tokenStr, err := c.GetTokenInfo(collectTask.Symbol, collectTask.Chain)
 		if err != nil {
 			logrus.Error(err)
 		}
+		//这里需要查询本币的资产
+		str1, err := utils.GetAsset("hui", collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
+		if err != nil {
+			logrus.Error(err)
+			return err
+		}
+		balance1 := gjson.Get(str1, "balance")
+		UserBalance, err := decimal.NewFromString(balance1.String())
+		if err != nil {
+			logrus.Error(err)
+			return err
+		}
 
-		if collectTask.Symbol == "hui" && balance < max_tx_fee { //反向打gas--fundFee 钱包模块
+		singleTxFee, err := decimal.NewFromString(max_tx_fee)
+		if err != nil {
+			logrus.Error(err)
+			return err
+		}
+
+		enough := UserBalance.Cmp(singleTxFee)
+
+		if collectTask.Symbol == "hui" && enough < 0 { //反向打gas--fundFee 钱包模块
 			//gas--getToken token模块
 			fee_value := gjson.Get(tokenStr, "give_fee_value")
 
@@ -281,73 +296,76 @@ func (c *CollectService) Run() (err error) {
 			}
 			logrus.Info(str)
 			//返回200
-		} else { //直接归集个人地址--订单ID，插入DB中，目前仅仅是查看标志状态用
-			err := utils.CommitWithSession(c.db, func(s *xorm.Session) error {
-				//这里要按照一定策略选择热钱包目标地址--这里找到对应的热钱包地址然后选择
-				to, err := utils.GetHotAddress(collectTask, hotWallets[collectTask.Chain][collectTask.Symbol], c.config.Wallet.Url)
-				if err != nil {
-					logrus.Error(err)
-					return err
-				}
-
-				balance, err := decimal.NewFromString(collectTask.Balance)
-				fmt.Println("balance:" + balance.String())
-
-				tmp := gjson.Get(tokenStr, "decimals")
-				tokenDecimals := decimal.New(1, int32(tmp.Uint()))
-				fmt.Println("tokenDecimals:" + tokenDecimals.String())
-
-				collectRemain := gjson.Get(tokenStr, "collect_remain")
-				remain, _ := decimal.NewFromString(collectRemain.String())
-				fmt.Println("remain:" + remain.String())
-
-				remainInDecimal := remain.Div(tokenDecimals)
-				fmt.Println("remainInDecimal:" + remainInDecimal.String())
-
-				shouldCollect := balance.Sub(remainInDecimal)
-				fmt.Println("shouldCollect:" + shouldCollect.String())
-
-				logrus.Info(shouldCollect)
-
-				collectTask.OrderId = utils.NewIDGenerator().Generate()
-				//这里调用keep的归集交易接口  --collenttohotwallet
-				fund := types.Fund{
-					AppId:     "",
-					OrderId:   collectTask.OrderId,
-					AccountId: collectTask.Uid,
-					Chain:     collectTask.Chain,
-					Symbol:    collectTask.Symbol,
-					From:      collectTask.Address,
-					To:        to, //这里要按照一定策略选择热钱包
-					Amount:    shouldCollect.String(),
-				}
-
-				msg, err := json.Marshal(fund)
-				if err != nil {
-					logrus.Error(err)
-					return err
-				}
-				url := c.config.Wallet.Url + "/" + "collectToHotWallet"
-				str, err := utils.Post(url, msg)
-				if err != nil {
-					logrus.Error(err)
-					return err
-				}
-				logrus.Info(str)
-
-				if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectingState)); err != nil {
-					logrus.Errorf("update colelct transaction task error:%v tasks:[%v]", err, collectTask)
-					return err
-				}
-				return nil
-			})
-			if err != nil {
-				return fmt.Errorf("insert colelct sub transaction task error:%v", err)
-			}
 		}
+		//直接归集个人地址--订单ID，插入DB中，目前仅仅是查看标志状态用
+		err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
+			//这里要按照一定策略选择热钱包目标地址--这里找到对应的热钱包地址然后选择
+			to, err := utils.GetHotAddress(collectTask, hotWallets[collectTask.Chain][collectTask.Symbol], c.config.Wallet.Url)
+			if err != nil {
+				logrus.Error(err)
+				return err
+			}
 
+			balance, err := decimal.NewFromString(collectTask.Balance)
+			fmt.Println("balance:" + balance.String())
+
+			tmp := gjson.Get(tokenStr, "decimals")
+			tokenDecimals := decimal.New(1, int32(tmp.Uint()))
+			fmt.Println("tokenDecimals:" + tokenDecimals.String())
+
+			collectRemain := gjson.Get(tokenStr, "collect_remain")
+			remain, _ := decimal.NewFromString(collectRemain.String())
+			fmt.Println("remain:" + remain.String())
+
+			remainInDecimal := remain.Div(tokenDecimals)
+			fmt.Println("remainInDecimal:" + remainInDecimal.String())
+
+			shouldCollect := balance.Sub(remainInDecimal)
+			fmt.Println("shouldCollect:" + shouldCollect.String())
+
+			logrus.Info(shouldCollect)
+
+			collectAmount := ""
+			if collectTask.Symbol != "hui" { //remain 只对本币有效
+				collectAmount = collectTask.Balance
+			} else {
+				collectAmount = shouldCollect.String()
+			}
+
+			collectTask.OrderId = utils.NewIDGenerator().Generate()
+			//这里调用keep的归集交易接口  --collenttohotwallet
+			fund := types.Fund{
+				AppId:     "",
+				OrderId:   collectTask.OrderId,
+				AccountId: collectTask.Uid,
+				Chain:     collectTask.Chain,
+				Symbol:    collectTask.Symbol,
+				From:      collectTask.Address,
+				To:        to, //这里要按照一定策略选择热钱包
+				Amount:    collectAmount,
+			}
+
+			msg, err := json.Marshal(fund)
+			if err != nil {
+				logrus.Error(err)
+				return err
+			}
+			url := c.config.Wallet.Url + "/" + "collectToHotWallet"
+			str, err := utils.Post(url, msg)
+			if err != nil {
+				logrus.Error(err)
+				return err
+			}
+			logrus.Info(str)
+
+			if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectingState)); err != nil {
+				logrus.Errorf("update colelct transaction task error:%v tasks:[%v]", err, collectTask)
+				return err
+			}
+			return nil
+		})
 		if err != nil {
-			continue
+			return fmt.Errorf("insert colelct sub transaction task error:%v", err)
 		}
 
 	}
