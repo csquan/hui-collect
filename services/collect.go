@@ -24,7 +24,7 @@ import (
 	"time"
 )
 
-const max_tx_fee = 400000000000000 //4*10 14 认为是一笔交易的费用
+const max_tx_fee = 0 //400000000000000 //4*10 14 认为是一笔交易的费用
 
 type CollectService struct {
 	db     types.IDB
@@ -148,6 +148,25 @@ func (c *CollectService) getUidFromAddr(address string) (uid string, err error) 
 	return result.Data.UID, nil
 }
 
+func (c *CollectService) GetTokenInfo(symbol string, chain string) (string, error) {
+	tokenParam := types.TokenParam{
+		Chain:  chain,
+		Symbol: symbol,
+	}
+	msg, err1 := json.Marshal(tokenParam)
+	if err1 != nil {
+		logrus.Error(err1)
+	}
+	url := c.config.Token.Url + "/" + "getToken"
+
+	str, err := utils.Post(url, msg)
+	if err != nil {
+		logrus.Error(err1)
+		return "", err
+	}
+	return str, nil
+}
+
 func (c *CollectService) Run() (err error) {
 	collectTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
@@ -182,14 +201,18 @@ func (c *CollectService) Run() (err error) {
 
 	//这里归并后，应该看相同地址的是否大于对应币种的门槛--只看本币
 	for _, merge_task := range merge_tasks {
-		token, err := c.db.GetTokenInfo(merge_task.Address, merge_task.Chain) //token-getToken
+		str, err := c.GetTokenInfo(merge_task.Symbol, merge_task.Chain)
 
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		cnt1, _ := big.NewInt(0).SetString(merge_task.Balance, 10)
-		cnt2, _ := big.NewInt(0).SetString(token.Threshold, 10)
+		collect_threshold := gjson.Get(str, "collect_threshold")
+
+		cnt1, _ := big.NewFloat(0).SetString(merge_task.Balance)
+		cnt2, _ := big.NewFloat(0).SetString(collect_threshold.String())
+
+		logrus.Info(cnt1.String(), cnt2.String())
 
 		enough := cnt1.Cmp(cnt2)
 
@@ -198,43 +221,19 @@ func (c *CollectService) Run() (err error) {
 		}
 	}
 
-	parentIDs := ""
-
-	for _, threshold_task := range threshold_tasks {
-		parentIDs = parentIDs + "," + strconv.Itoa(int(threshold_task.ID))
-	}
-	logrus.Info("\n parentIDs:", parentIDs)
-
-	if len(parentIDs) > 1 {
-		if parentIDs[0] == 44 { //去除前面的逗号，ASCII值为44
-			parentIDs = parentIDs[1:]
-		}
-	}
-
 	for _, collectTask := range threshold_tasks {
 		balance, err := strconv.Atoi(collectTask.Balance)
 		if err != nil {
 			logrus.Error(err)
 		}
+		tokenStr, err := c.GetTokenInfo(collectTask.Symbol, collectTask.Chain)
+		if err != nil {
+			logrus.Error(err)
+		}
+
 		if collectTask.Symbol == "hui" && balance < max_tx_fee { //反向打gas--fundFee 钱包模块
 			//gas--getToken token模块
-			tokenParam := types.TokenParam{
-				Chain:  collectTask.Chain,
-				Symbol: collectTask.Symbol,
-			}
-			msg, err1 := json.Marshal(tokenParam)
-			if err1 != nil {
-				logrus.Error(err1)
-			}
-			url := c.config.Token.Url + "/" + "getToken"
-
-			str, err := utils.Post(url, msg)
-			if err != nil {
-				logrus.Error(err1)
-				continue
-			}
-
-			fee_value := gjson.Get(str, "give_fee_value")
+			fee_value := gjson.Get(tokenStr, "give_fee_value")
 
 			fund := types.Fund{
 				AppId:     "",
@@ -245,17 +244,18 @@ func (c *CollectService) Run() (err error) {
 				To:        collectTask.Address,
 				Amount:    fee_value.String(),
 			}
-			msg, err = json.Marshal(fund)
+			msg, err := json.Marshal(fund)
 			if err != nil {
 				logrus.Error(err)
 				continue
 			}
-			url = c.config.Wallet.Url + "/" + "getAsset"
-			str, err = utils.Post(url, msg)
+			url := c.config.Wallet.Url + "/" + "getAsset"
+			str, err := utils.Post(url, msg)
 			if err != nil {
-				logrus.Error(err1)
+				logrus.Error(err)
 				continue
 			}
+			logrus.Info(str)
 			//返回200
 		} else { //直接归集个人地址--订单ID，插入DB中，目前仅仅是查看标志状态用
 			err := utils.CommitWithSession(c.db, func(s *xorm.Session) error {
@@ -266,14 +266,25 @@ func (c *CollectService) Run() (err error) {
 					return err
 				}
 
+				collectRemain := gjson.Get(tokenStr, "collect_remain")
+				balance, _ := big.NewFloat(0).SetString(collectTask.Balance)
+				remain, _ := big.NewFloat(0).SetString(collectRemain.String())
+
+				balance = balance.Sub(balance, remain)
+
+				logrus.Info(balance.String())
+
+				collectTask.OrderId = utils.NewIDGenerator().Generate()
 				//这里调用keep的归集交易接口  --collenttohotwallet
 				fund := types.Fund{
 					AppId:     "",
-					OrderId:   utils.NewIDGenerator().Generate(),
+					OrderId:   collectTask.OrderId,
 					AccountId: collectTask.Uid,
 					Chain:     collectTask.Chain,
 					Symbol:    collectTask.Symbol,
+					From:      collectTask.Address,
 					To:        to, //这里要按照一定策略选择热钱包
+					Amount:    "9",
 				}
 
 				msg, err := json.Marshal(fund)

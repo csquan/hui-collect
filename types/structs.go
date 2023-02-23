@@ -41,19 +41,16 @@ type TransactionTask struct {
 
 // 资产表,归集源交易表
 type CollectTxDB struct {
-	Base                     `xorm:"extends"`
-	Chain                    string `xorm:"f_chain"`
-	Symbol                   string `xorm:"f_symbol"`
-	Address                  string `xorm:"f_address"`
-	Uid                      string `xorm:"f_uid"`
-	Balance                  string `xorm:"f_balance"`
-	PendingCollectBalance    string `xorm:"f_pendingCollectBalance"`
-	PendingWithdrawalBalance string `xorm:"f_pendingWithdrawalBalance"`
-	Status                   int    `xorm:"f_status"`
-	CollectState             int    `xorm:"f_collect_state"`
-	OwnerType                int    `xorm:"f_ownerType"`
-	Extension                string `xorm:"f_extension"`
-	UsedFee                  int    `xorm:"f_usedFee"`
+	Base         `xorm:"extends"`
+	Chain        string `xorm:"f_chain"`
+	Symbol       string `xorm:"f_symbol"`
+	Address      string `xorm:"f_address"`
+	Uid          string `xorm:"f_uid"`
+	Balance      string `xorm:"f_balance"`
+	Status       int    `xorm:"f_status"`
+	CollectState int    `xorm:"f_collect_state"`
+	OwnerType    int    `xorm:"f_ownerType"`
+	OrderId      string `xorm:"f_order_id"`
 }
 
 type Token struct {
@@ -175,7 +172,7 @@ type CallBackData struct {
 type Fund struct {
 	AppId     string `json:"app_id"` // 发起提现请求的appid
 	OrderId   string `json:"order_id"`
-	AccountId string `json:"accoount_id"`
+	AccountId string `json:"account_id"`
 	Chain     string `json:"chain"`  // 链, btc, eth
 	Symbol    string `json:"symbol"` // 币种:btc, eth, usdt
 	From      string `json:"from"`   // hotwallet 地址
@@ -206,7 +203,7 @@ type Collect struct {
 type AssetInParam struct {
 	Symbol      string `json:"symbol"`
 	Chain       string `json:"chain"`
-	AccountAddr string `json:"account_addr"`
+	AccountAddr string `json:"address"`
 }
 
 type AssetInHotwallet struct {

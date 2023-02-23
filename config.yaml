@@ -5,8 +5,7 @@ monitor:
   db : "root:csquan253905@tcp(127.0.0.1:3306)/block_data_test?charset=utf8mb4"
 
 hotWallet:
-  - addr: "0x32f3323a268155160546504c45d0c4a832567159"
-  - addr: "0xab41dedc0b7333fd76a0619a145a4aa3492cb017"
+  - addr: "0xB6bF4555ce0154Dec58d0E773bb4b087f43383DE"
 
 server:
   port: 8010
@@ -15,10 +14,10 @@ gas:
   addr: "0x32755f0c070811cdd0b00b059e94593fae9835d9"
 
 wallet:
-  url: http://15.152.203.71:8081
+  url: http://54.254.77.93:31218/v1
 
 token:
-  url: http://15.152.203.71:8081
+  url: http://54.254.77.93:31218/v1
 
 chains:
   hui:
