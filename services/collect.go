@@ -270,7 +270,7 @@ func (c *CollectService) Run() (err error) {
 
 		enough := UserBalance.Cmp(singleTxFee)
 
-		if collectTask.Symbol == "hui" && enough < 0 { //反向打gas--fundFee 钱包模块
+		if enough <= 0 { //反向打gas--fundFee 钱包模块
 			//gas--getToken token模块
 			fee_value := gjson.Get(tokenStr, "give_fee_value")
 
@@ -279,7 +279,7 @@ func (c *CollectService) Run() (err error) {
 				OrderId:   utils.NewIDGenerator().Generate(),
 				AccountId: collectTask.Uid,
 				Chain:     collectTask.Chain,
-				Symbol:    collectTask.Symbol,
+				Symbol:    "hui",
 				To:        collectTask.Address,
 				Amount:    fee_value.String(),
 			}
@@ -288,7 +288,7 @@ func (c *CollectService) Run() (err error) {
 				logrus.Error(err)
 				continue
 			}
-			url := c.config.Wallet.Url + "/" + "getAsset"
+			url := c.config.Wallet.Url + "/" + "fundFee"
 			str, err := utils.Post(url, msg)
 			if err != nil {
 				logrus.Error(err)
@@ -297,6 +297,28 @@ func (c *CollectService) Run() (err error) {
 			logrus.Info(str)
 			//返回200
 		}
+		zeroDecimal, err := decimal.NewFromString("0") //这里在循环查询用户资产是否到账
+		UserBalance2, err := decimal.NewFromString("0")
+		for {
+			if UserBalance2.GreaterThan(zeroDecimal) {
+				logrus.Info("get balance")
+				break
+			}
+			time.Sleep(2 * time.Second)
+			//这里需要查询本币的资产
+			str2, err := utils.GetAsset("hui", collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
+			if err != nil {
+				logrus.Error(err)
+				return err
+			}
+			balance2 := gjson.Get(str2, "balance")
+			UserBalance2, err = decimal.NewFromString(balance2.String())
+			if err != nil {
+				logrus.Error(err)
+				return err
+			}
+		}
+
 		//直接归集个人地址--订单ID，插入DB中，目前仅仅是查看标志状态用
 		err = utils.CommitWithSession(c.db, func(s *xorm.Session) error {
 			//这里要按照一定策略选择热钱包目标地址--这里找到对应的热钱包地址然后选择
@@ -305,23 +327,19 @@ func (c *CollectService) Run() (err error) {
 				logrus.Error(err)
 				return err
 			}
-
 			balance, err := decimal.NewFromString(collectTask.Balance)
 			fmt.Println("balance:" + balance.String())
 
-			tmp := gjson.Get(tokenStr, "decimals")
-			tokenDecimals := decimal.New(1, int32(tmp.Uint()))
-			fmt.Println("tokenDecimals:" + tokenDecimals.String())
+			shouldCollect, err := decimal.NewFromString(balance.String())
 
-			collectRemain := gjson.Get(tokenStr, "collect_remain")
-			remain, _ := decimal.NewFromString(collectRemain.String())
-			fmt.Println("remain:" + remain.String())
+			if collectTask.Symbol == collectTask.Chain { //本币
+				collectRemain := gjson.Get(tokenStr, "collect_remain")
+				remain, _ := decimal.NewFromString(collectRemain.String())
+				fmt.Println("remain:" + remain.String())
 
-			remainInDecimal := remain.Div(tokenDecimals)
-			fmt.Println("remainInDecimal:" + remainInDecimal.String())
-
-			shouldCollect := balance.Sub(remainInDecimal)
-			fmt.Println("shouldCollect:" + shouldCollect.String())
+				shouldCollect = balance.Sub(remain)
+				fmt.Println("shouldCollect:" + shouldCollect.String())
+			}
 
 			logrus.Info(shouldCollect)
 
@@ -358,7 +376,7 @@ func (c *CollectService) Run() (err error) {
 			}
 			logrus.Info(str)
 
-			if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectingState)); err != nil {
+			if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectedState)); err != nil {
 				logrus.Errorf("update colelct transaction task error:%v tasks:[%v]", err, collectTask)
 				return err
 			}
