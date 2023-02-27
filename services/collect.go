@@ -405,8 +405,7 @@ func (c *CollectService) Run() (err error) {
 				return err
 			}
 			logrus.Info(str)
-			collectTask.OrderId = collectTask.OrderId
-			if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectedState)); err != nil {
+			if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectedState), collectTask.OrderId); err != nil {
 				logrus.Errorf("update colelct transaction task error:%v tasks:[%v]", err, collectTask)
 				return err
 			}
