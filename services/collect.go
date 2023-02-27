@@ -201,6 +201,8 @@ func (c *CollectService) Run() (err error) {
 		logrus.Infof("no available collect Transaction task.")
 		return
 	}
+	logrus.Info("得到可供归集的原始交易:")
+	logrus.Info(collectTasks)
 
 	mergeTasks := make([]*types.CollectTxDB, 0)      //多条相同的交易合并（相同的接收地址和相同的合约地址）
 	threshold_tasks := make([]*types.CollectTxDB, 0) //交易是否满足门槛
@@ -215,7 +217,7 @@ func (c *CollectService) Run() (err error) {
 				cnt2, _ := big.NewFloat(0).SetString(filterTask.Balance)
 
 				res := big.NewFloat(0).Add(cnt1, cnt2)
-				logrus.Info("merge balance:" + cnt1.String() + "+" + cnt2.String() + "=" + res.String())
+				logrus.Info("merge chain: " + task.Chain + "symbol: " + task.Symbol + "addr: " + task.Address + "balance1:" + cnt1.String() + "+ balance2:" + cnt2.String() + "=" + res.String())
 				filterTask.Balance = res.String()
 
 				found = true
@@ -225,6 +227,8 @@ func (c *CollectService) Run() (err error) {
 			mergeTasks = append(mergeTasks, task)
 		}
 	}
+	logrus.Info("为了节约gas，合并相同地址、代币、链的交易:")
+	logrus.Info(mergeTasks)
 
 	//这里归并后，应该看相同地址的是否大于对应币种的门槛--只看本币
 	for _, mergeTask := range mergeTasks {
@@ -241,6 +245,13 @@ func (c *CollectService) Run() (err error) {
 		if err != nil {
 			logrus.Fatal(err)
 		}
+		logrus.Info("symbol: " + mergeTask.Symbol + " chain: " + mergeTask.Chain)
+		logrus.Info("热钱包:")
+		logrus.Info(hotAddrs)
+
+		logrus.Info("黑名单钱包:")
+		logrus.Info(blacklist)
+
 		var blackAddrs []string
 		if blacklist.String() != "" {
 			blackAddrs, err = c.GetHotWallet(blacklist.String())
@@ -258,7 +269,9 @@ func (c *CollectService) Run() (err error) {
 			hotWallets[mergeTask.Chain] = map[string][]string{}
 		}
 
+		logrus.Info("排除黑名单后的热钱包:")
 		for _, addr := range hotAddrs {
+			logrus.Info(addr)
 			hotWallets[mergeTask.Chain][mergeTask.Symbol] = append(hotWallets[mergeTask.Chain][mergeTask.Symbol], addr)
 		}
 
@@ -271,10 +284,17 @@ func (c *CollectService) Run() (err error) {
 
 		if enough >= 0 {
 			threshold_tasks = append(threshold_tasks, mergeTask)
+		} else {
+			logrus.Info("排除钱包余额小于门槛详情:")
+			logrus.Info("addr: " + mergeTask.Address + " symbol:" + mergeTask.Symbol + " chain: " + mergeTask.Chain)
 		}
 	}
 
+	logrus.Info("得到大于门槛的待归集交易:")
+	logrus.Info(threshold_tasks)
+
 	for _, collectTask := range threshold_tasks {
+		logrus.Info("++++++++++++++++Collect symbol:" + collectTask.Symbol + "chain:" + collectTask.Chain)
 		tokenStr, err := c.GetTokenInfo(collectTask.Symbol, collectTask.Chain)
 		if err != nil {
 			logrus.Error(err)
@@ -292,6 +312,9 @@ func (c *CollectService) Run() (err error) {
 			return err
 		}
 
+		logrus.Info("得到余额:")
+		logrus.Info(balance1.String())
+
 		singleTxFee, err := decimal.NewFromString(max_tx_fee)
 		if err != nil {
 			logrus.Error(err)
@@ -301,6 +324,7 @@ func (c *CollectService) Run() (err error) {
 		enough := UserBalance.Cmp(singleTxFee)
 
 		if enough <= 0 { //反向打gas--fundFee 钱包模块
+			logrus.Warn("++++++++++++++++fundFee:")
 			//gas--getToken token模块
 			fee_value := gjson.Get(tokenStr, "give_fee_value")
 
@@ -324,14 +348,13 @@ func (c *CollectService) Run() (err error) {
 				logrus.Error(err)
 				continue
 			}
-			logrus.Info(str)
-			//返回200
+			logrus.Info("fundFee return " + str)
 		}
 		zeroDecimal, err := decimal.NewFromString("0") //这里在循环查询用户资产是否到账
 		UserBalance2, err := decimal.NewFromString("0")
 		for {
 			if UserBalance2.GreaterThan(zeroDecimal) {
-				logrus.Info("get balance")
+				logrus.Info("获得余额: " + UserBalance2.String())
 				break
 			}
 			time.Sleep(2 * time.Second)
@@ -363,6 +386,7 @@ func (c *CollectService) Run() (err error) {
 			shouldCollect, err := decimal.NewFromString(balance.String())
 
 			if collectTask.Symbol == collectTask.Chain { //本币
+				fmt.Println("开始计算本币应该归集的数量:")
 				collectRemain := gjson.Get(tokenStr, "collect_remain")
 				remain, _ := decimal.NewFromString(collectRemain.String())
 				fmt.Println("remain:" + remain.String())
@@ -398,13 +422,16 @@ func (c *CollectService) Run() (err error) {
 				logrus.Error(err)
 				return err
 			}
+			logrus.Info("调用归集接口")
+			logrus.Info(fund)
+
 			url := c.config.Wallet.Url + "/" + "collectToHotWallet"
 			str, err := utils.Post(url, msg)
 			if err != nil {
 				logrus.Error(err)
 				return err
 			}
-			logrus.Info(str)
+			logrus.Info("归集接口返回：" + str)
 			if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectedState), collectTask.OrderId); err != nil {
 				logrus.Errorf("update colelct transaction task error:%v tasks:[%v]", err, collectTask)
 				return err
