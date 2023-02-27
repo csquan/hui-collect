@@ -111,13 +111,11 @@ func GetHotAddress(collectTx *types.CollectTxDB, addrs []string, url string) (ad
 		pendingBalance := gjson.Get(str, "pending_withdrawal_balance")
 		balance := gjson.Get(str, "balance")
 
-		if balance.Float() != 0 {
-			if assetStatus.Int() == 0 && pendingBalance.Int() == 0 {
-				assetInHotwallet := types.AssetInHotwallet{}
-				assetInHotwallet.Addr = addr
-				assetInHotwallet.Balance = balance.Float()
-				foreignToken = append(foreignToken, &assetInHotwallet)
-			}
+		if assetStatus.Int() == 0 && pendingBalance.Int() == 0 {
+			assetInHotwallet := types.AssetInHotwallet{}
+			assetInHotwallet.Addr = addr
+			assetInHotwallet.Balance = balance.Float()
+			foreignToken = append(foreignToken, &assetInHotwallet)
 		}
 
 		//todo：这个链对应的本币应该从db查询，目前就一条链,所以先写死
@@ -145,14 +143,14 @@ func GetHotAddress(collectTx *types.CollectTxDB, addrs []string, url string) (ad
 	logrus.Info("本币的point map:")
 	for index, value := range localCurrency {
 		localPoint[value.Addr] = index
-		sortMap[value.Addr] = float64((index + 1) * 1) //本币的权重为1
+		sortMap[value.Addr] = float64((index + 1) * 100) //本币的权重为100
 		str := fmt.Sprintf("%d", index)
 		logrus.Info("addr :" + addr + "index :" + str)
 	}
 	logrus.Info("代币的point map:")
 	for index, value := range foreignToken {
 		foreignPoint[value.Addr] = index
-		sortMap[value.Addr] = float64(100 / (index + 1)) //代币越小，则这里的结果越大
+		sortMap[value.Addr] = sortMap[value.Addr] + float64(100/(index+1)) //代币越小，则这里的结果越大
 		str := fmt.Sprintf("%d", index)
 		logrus.Info("addr:" + addr + "index :" + str)
 	}
