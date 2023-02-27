@@ -140,20 +140,25 @@ func GetHotAddress(collectTx *types.CollectTxDB, addrs []string, url string) (ad
 	sort.Sort(types.AssetInHotwallets(localCurrency))
 	sort.Sort(types.AssetInHotwallets(foreignToken))
 
-	logrus.Info("本币的point map:")
+	logrus.Info("本币的余额数组:")
 	for index, value := range localCurrency {
+		str1 := fmt.Sprintf("%d", index)
+		str2 := fmt.Sprintf("%f", value.Balance)
+		logrus.Info("index:" + str1 + " addr:" + value.Addr + " balance:" + str2)
 		localPoint[value.Addr] = index
 		sortMap[value.Addr] = float64((index + 1) * 100) //本币的权重为100
-		str := fmt.Sprintf("%d", index)
-		logrus.Info("addr :" + addr + "index :" + str)
 	}
-	logrus.Info("代币的point map:")
+	logrus.Info("代币的余额数组:")
 	for index, value := range foreignToken {
+		str1 := fmt.Sprintf("%d", index)
+		str2 := fmt.Sprintf("%f", value.Balance)
+		logrus.Info("index:" + str1 + " addr:" + value.Addr + " balance:" + str2)
 		foreignPoint[value.Addr] = index
 		sortMap[value.Addr] = sortMap[value.Addr] + float64(100/(index+1)) //代币越小，则这里的结果越大
-		str := fmt.Sprintf("%d", index)
-		logrus.Info("addr:" + addr + "index :" + str)
 	}
+
+	logrus.Info("排序后的权重map:")
+	logrus.Info(sortMap)
 
 	//下面从大到小排序这个map，按照这个map中的point
 	var listAsset []types.AssetInHotwallet
@@ -164,5 +169,10 @@ func GetHotAddress(collectTx *types.CollectTxDB, addrs []string, url string) (ad
 		return listAsset[i].Balance > listAsset[j].Balance // 降序
 	})
 
+	logrus.Info("降序后的数组:")
+	logrus.Info(listAsset)
+
+	logrus.Info("选择的地址为:")
+	logrus.Info(listAsset[0].Addr)
 	return listAsset[0].Addr, nil
 }
