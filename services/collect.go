@@ -172,6 +172,10 @@ func (c *CollectService) SubBlack(hotAddrs []string, blackAddrs []string) ([]str
 	var addrs []string
 
 	for _, hotValue := range hotAddrs {
+		if len(blackAddrs) == 0 {
+			hotValue = hotValue[1 : len(hotValue)-1]
+			addrs = append(addrs, hotValue)
+		}
 		for _, blackValue := range blackAddrs {
 			if blackValue != hotValue {
 				hotValue = hotValue[1 : len(hotValue)-1]
@@ -237,10 +241,14 @@ func (c *CollectService) Run() (err error) {
 		if err != nil {
 			logrus.Fatal(err)
 		}
-		blackAddrs, err := c.GetHotWallet(blacklist.String())
-		if err != nil {
-			logrus.Fatal(err)
+		var blackAddrs []string
+		if blacklist.String() != "" {
+			blackAddrs, err = c.GetHotWallet(blacklist.String())
+			if err != nil {
+				logrus.Fatal(err)
+			}
 		}
+
 		hotAddrs, err = c.SubBlack(hotAddrs, blackAddrs)
 		if err != nil {
 			logrus.Fatal(err)
@@ -397,7 +405,7 @@ func (c *CollectService) Run() (err error) {
 				return err
 			}
 			logrus.Info(str)
-
+			collectTask.OrderId = collectTask.OrderId
 			if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectedState)); err != nil {
 				logrus.Errorf("update colelct transaction task error:%v tasks:[%v]", err, collectTask)
 				return err
