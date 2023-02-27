@@ -201,7 +201,7 @@ func (c *CollectService) Run() (err error) {
 		logrus.Infof("no available collect Transaction task.")
 		return
 	}
-	logrus.Info("得到可供归集的原始交易:")
+	logrus.Info("开始新一轮归集，得到可供归集的原始交易:")
 	logrus.Info(collectTasks)
 
 	mergeTasks := make([]*types.CollectTxDB, 0)      //多条相同的交易合并（相同的接收地址和相同的合约地址）
@@ -278,6 +278,7 @@ func (c *CollectService) Run() (err error) {
 		cnt1, _ := big.NewFloat(0).SetString(mergeTask.Balance)
 		cnt2, _ := big.NewFloat(0).SetString(collectThreshold.String())
 
+		logrus.Info("当前币种的门槛:" + collectThreshold.String())
 		logrus.Info(cnt1.String(), cnt2.String())
 
 		enough := cnt1.Cmp(cnt2)
@@ -294,7 +295,7 @@ func (c *CollectService) Run() (err error) {
 	logrus.Info(threshold_tasks)
 
 	for _, collectTask := range threshold_tasks {
-		logrus.Info("++++++++++++++++Collect symbol:" + collectTask.Symbol + "chain:" + collectTask.Chain)
+		logrus.Info("Collect symbol:" + collectTask.Symbol + "chain:" + collectTask.Chain)
 		tokenStr, err := c.GetTokenInfo(collectTask.Symbol, collectTask.Chain)
 		if err != nil {
 			logrus.Error(err)
@@ -324,7 +325,7 @@ func (c *CollectService) Run() (err error) {
 		enough := UserBalance.Cmp(singleTxFee)
 
 		if enough <= 0 { //反向打gas--fundFee 钱包模块
-			logrus.Warn("++++++++++++++++fundFee:")
+			logrus.Warn("fundFee:")
 			//gas--getToken token模块
 			fee_value := gjson.Get(tokenStr, "give_fee_value")
 
