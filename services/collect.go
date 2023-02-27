@@ -215,6 +215,7 @@ func (c *CollectService) Run() (err error) {
 				cnt2, _ := big.NewFloat(0).SetString(filterTask.Balance)
 
 				res := big.NewFloat(0).Add(cnt1, cnt2)
+				logrus.Info("merge balance:" + cnt1.String() + "+" + cnt2.String() + "=" + res.String())
 				filterTask.Balance = res.String()
 
 				found = true
@@ -232,7 +233,6 @@ func (c *CollectService) Run() (err error) {
 		if err != nil {
 			logrus.Fatal(err)
 		}
-
 		collectThreshold := gjson.Get(str, "collect_threshold")
 		hotWallet := gjson.Get(str, "hot_wallets")
 		blacklist := gjson.Get(str, "blacklist")

@@ -95,7 +95,7 @@ func (m *Mysql) UpdateCollectTx(itf xorm.Interface, task *types.CollectTxDB) err
 }
 
 func (m *Mysql) UpdateCollectTxState(ID uint64, state int, orderId string) error {
-	_, err := m.engine.Exec("update t_src_tx set f_collect_state = ? and f_order_id = ? where f_id = ?", state, orderId, ID)
+	_, err := m.engine.Exec("update t_src_tx set f_collect_state = ? , f_order_id = ? where f_id = ?", state, orderId, ID)
 	return err
 }
 
