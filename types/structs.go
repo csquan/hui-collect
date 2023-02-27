@@ -211,8 +211,8 @@ type AssetInParam struct {
 }
 
 type AssetInHotwallet struct {
-	AccountAddr string  `json:"account_addr"`
-	Point       float64 `json:"point"`
+	Addr    string  `json:"addr"`
+	Balance float64 `json:"balance"`
 }
 
 type AssetInHotwallets []*AssetInHotwallet
@@ -224,5 +224,5 @@ func (s AssetInHotwallets) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 func (s AssetInHotwallets) Less(i, j int) bool {
-	return s[i].Point < s[j].Point
+	return s[i].Balance < s[j].Balance
 }

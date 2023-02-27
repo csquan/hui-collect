@@ -168,8 +168,22 @@ func (c *CollectService) GetTokenInfo(symbol string, chain string) (string, erro
 	return str, nil
 }
 
+func (c *CollectService) SubBlack(hotAddrs []string, blackAddrs []string) ([]string, error) {
+	var addrs []string
+
+	for _, hotValue := range hotAddrs {
+		for _, blackValue := range blackAddrs {
+			if blackValue != hotValue {
+				hotValue = hotValue[1 : len(hotValue)-1]
+				addrs = append(addrs, hotValue)
+			}
+		}
+	}
+	return addrs, nil
+}
+
 func (c *CollectService) GetHotWallet(str string) ([]string, error) {
-	str = str[2 : len(str)-2]
+	str = str[1 : len(str)-1]
 	arr := strings.Split(str, ",")
 	return arr, nil
 }
@@ -217,19 +231,27 @@ func (c *CollectService) Run() (err error) {
 
 		collectThreshold := gjson.Get(str, "collect_threshold")
 		hotWallet := gjson.Get(str, "hot_wallets")
+		blacklist := gjson.Get(str, "blacklist")
 
-		hotAddr, err := c.GetHotWallet(hotWallet.String())
+		hotAddrs, err := c.GetHotWallet(hotWallet.String())
 		if err != nil {
 			logrus.Fatal(err)
 		}
+		blackAddrs, err := c.GetHotWallet(blacklist.String())
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		hotAddrs, err = c.SubBlack(hotAddrs, blackAddrs)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
 		if len(hotWallets[mergeTask.Chain]) == 0 {
 			hotWallets[mergeTask.Chain] = map[string][]string{}
 		}
 
-		for _, addr := range hotAddr {
-			if len(hotWallets[mergeTask.Chain][mergeTask.Symbol]) == 0 {
-				hotWallets[mergeTask.Chain][mergeTask.Symbol] = append(hotWallets[mergeTask.Chain][mergeTask.Symbol], addr)
-			}
+		for _, addr := range hotAddrs {
+			hotWallets[mergeTask.Chain][mergeTask.Symbol] = append(hotWallets[mergeTask.Chain][mergeTask.Symbol], addr)
 		}
 
 		cnt1, _ := big.NewFloat(0).SetString(mergeTask.Balance)
