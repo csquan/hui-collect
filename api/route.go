@@ -49,7 +49,7 @@ func (a *ApiService) Run() {
 
 	r.POST("/collectToColdWallet", a.collectToColdWallet)
 
-	r.POST("/transferToHotWallet", a.transferToHotWallet)
+	r.POST("/collectToHotWallet", a.transferToHotWallet)
 
 	logrus.Info("HuiCollect api run at " + a.config.ServerConf.Port)
 
@@ -75,7 +75,7 @@ func (a *ApiService) collectToColdWallet(c *gin.Context) {
 		return
 	}
 
-	accountId := gjson.Get(data1, "account_Id")
+	accountId := gjson.Get(data1, "accountId")
 	chain := gjson.Get(data1, "chain")
 	symbol := gjson.Get(data1, "symbol")
 	to := gjson.Get(data1, "to")
@@ -142,7 +142,7 @@ func (a *ApiService) transferToHotWallet(c *gin.Context) {
 		return
 	}
 
-	accountId := gjson.Get(data1, "account_Id")
+	accountId := gjson.Get(data1, "accountId")
 	chain := gjson.Get(data1, "chain")
 	symbol := gjson.Get(data1, "symbol")
 	to := gjson.Get(data1, "to")

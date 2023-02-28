@@ -32,7 +32,7 @@ type UserInfoConf struct {
 }
 
 type AccountConf struct {
-	EndPoint string `mapstructure:"account"`
+	EndPoint string `mapstructure:"endpoint"`
 }
 
 type WalletConf struct {
