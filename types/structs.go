@@ -210,6 +210,12 @@ type AssetInParam struct {
 	AccountAddr string `json:"address"`
 }
 
+type AccountParam struct {
+	Verified  string `json:"verified"`
+	AccountId string `json:"accountId"`
+	ApiKey    string `json:"apiKey"`
+}
+
 type AssetInHotwallet struct {
 	Addr    string  `json:"addr"`
 	Balance float64 `json:"balance"`

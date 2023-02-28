@@ -193,15 +193,26 @@ func (c *CollectService) GetHotWallet(str string) ([]string, error) {
 }
 
 func (c *CollectService) Run() (err error) {
-	collectTasks, err := c.db.GetOpenedCollectTask()
+	srcTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
 		return
 	}
-	if len(collectTasks) == 0 {
+	if len(srcTasks) == 0 {
 		logrus.Infof("no available collect Transaction task.")
 		return
 	}
 	logrus.Info("开始新一轮归集，得到可供归集的原始交易:")
+	logrus.Info(srcTasks)
+
+	logrus.Info("过滤余额为0的源交易:")
+	var collectTasks []*types.CollectTxDB
+	for _, task := range collectTasks {
+		if task.Balance != "0" {
+			collectTasks = append(collectTasks, task)
+		}
+	}
+
+	logrus.Info("排除余额为0的交易后的归集源交易:")
 	logrus.Info(collectTasks)
 
 	mergeTasks := make([]*types.CollectTxDB, 0)      //多条相同的交易合并（相同的接收地址和相同的合约地址）

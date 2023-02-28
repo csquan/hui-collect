@@ -1,9 +1,11 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/HuiCollect/config"
 	"github.com/ethereum/HuiCollect/types"
+	"github.com/ethereum/HuiCollect/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -14,6 +16,8 @@ import (
 type ApiService struct {
 	config *config.Config
 }
+
+const StatusOk = 0
 
 func NewApiService(cfg *config.Config) *ApiService {
 	apiService := &ApiService{
@@ -72,13 +76,53 @@ func (a *ApiService) collectToColdWallet(c *gin.Context) {
 		return
 	}
 
-	//accountId := gjson.Get(data1, "account_Id")
-	//amount := gjson.Get(data1, "amount")
-	//hotwalletId := gjson.Get(data1, "hotwalletId")
+	accountId := gjson.Get(data1, "account_Id")
+	chain := gjson.Get(data1, "chain")
+	symbol := gjson.Get(data1, "symbol")
+	to := gjson.Get(data1, "to")
+	amount := gjson.Get(data1, "amount")
 
-	res.Code = http.StatusOK
-	res.Message = "success"
-	//res.Data = string(d)
+	url := a.config.Account.EndPoint + "/" + "query"
+	fromAddr, err := utils.GetAccountId(url, accountId.String())
+	if err != nil {
+		logrus.Error(err)
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	fund := types.Fund{
+		AppId:     "",
+		OrderId:   utils.NewIDGenerator().Generate(),
+		AccountId: accountId.String(),
+		Chain:     chain.String(),
+		Symbol:    symbol.String(),
+		From:      fromAddr,
+		To:        to.String(),
+		Amount:    amount.String(),
+	}
+
+	msg, err := json.Marshal(fund)
+	if err != nil {
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+	}
+	logrus.Info("调用collectToColdWallet接口")
+	logrus.Info(fund)
+
+	url = a.config.Wallet.Url + "/" + "collectToColdWallet"
+	str, err := utils.Post(url, msg)
+	if err != nil {
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+	}
+	logrus.Info("collectToColdWallet接口返回：" + str)
+
+	res.Code = StatusOk
+	res.Message = str
 
 	c.SecureJSON(http.StatusOK, res)
 }
@@ -99,13 +143,53 @@ func (a *ApiService) transferToHotWallet(c *gin.Context) {
 		return
 	}
 
-	//contractAddr := gjson.Get(data1, "contractAddr")
-	//operatorId := gjson.Get(data1, "operatorId")
-	//targetId := gjson.Get(data1, "targetId")
+	accountId := gjson.Get(data1, "account_Id")
+	chain := gjson.Get(data1, "chain")
+	symbol := gjson.Get(data1, "symbol")
+	to := gjson.Get(data1, "to")
+	amount := gjson.Get(data1, "amount")
 
-	res.Code = http.StatusOK
-	res.Message = "success"
-	//res.Data = string(d)
+	url := a.config.Account.EndPoint + "/" + "query"
+	fromAddr, err := utils.GetAccountId(url, accountId.String())
+	if err != nil {
+		logrus.Error(err)
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+		return
+	}
 
-	c.SecureJSON(http.StatusOK, res)
+	fund := types.Fund{
+		AppId:     "",
+		OrderId:   utils.NewIDGenerator().Generate(),
+		AccountId: accountId.String(),
+		Chain:     chain.String(),
+		Symbol:    symbol.String(),
+		From:      fromAddr,
+		To:        to.String(),
+		Amount:    amount.String(),
+	}
+
+	msg, err := json.Marshal(fund)
+	if err != nil {
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+	}
+	logrus.Info("调用transferToHotWallet接口")
+	logrus.Info(fund)
+
+	url = a.config.Wallet.Url + "/" + "transferToHotWallet"
+	str, err := utils.Post(url, msg)
+	if err != nil {
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+	}
+	logrus.Info("transferToHotWallet返回：" + str)
+
+	res.Code = StatusOk
+	res.Message = str
+
+	c.SecureJSON(StatusOk, res)
 }

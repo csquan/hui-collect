@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/HuiCollect/types"
+	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
@@ -72,6 +73,31 @@ func Post(requestUrl string, bytesData []byte) (ret string, err error) {
 	}
 	str := (*string)(unsafe.Pointer(&content)) //转化为string,优化内存
 	return *str, nil
+}
+
+func GetAccountId(url string, accountID string) (ret string, err error) {
+	param := types.AccountParam{
+		Verified:  "",
+		ApiKey:    "",
+		AccountId: accountID,
+	}
+	msg, err := json.Marshal(param)
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	}
+	str, err := Post(url, msg)
+	if err != nil {
+		return "", err
+	}
+	code := gjson.Get(str, "code")
+	message := gjson.Get(str, "message")
+	if code.Num != 0 {
+		return "", errors.New(message.String())
+	}
+	data := gjson.Get(str, "data")
+	accountAddr := gjson.Get(data.String(), "eth")
+	return accountAddr.String(), nil
 }
 
 func GetAsset(symbol string, chain string, addr string, url string) (string, error) {

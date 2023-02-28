@@ -31,6 +31,10 @@ type UserInfoConf struct {
 	URL       string `mapstructure:"url"` //获取用户信息的URL
 }
 
+type AccountConf struct {
+	EndPoint string `mapstructure:"account"`
+}
+
 type WalletConf struct {
 	Url string `mapstructure:"url"`
 }
@@ -54,6 +58,7 @@ type Config struct {
 	QueryIntervalInt uint64       `mapstructure:"query_interval"`
 	DataBase         DataBaseConf `mapstructure:"database"`
 	UserInfo         UserInfoConf `mapstructure:"userInfo"`
+	Account          AccountConf  `mapstructure:"account"`
 	Wallet           WalletConf   `mapstructure:"wallet"`
 
 	Token      TokenConf             `mapstructure:"token"`

@@ -4,6 +4,9 @@ database:
 server:
   port: 8010
 
+account:
+  endpoint: http://api.huiwang.io:31986/v1
+
 wallet:
   url: http://54.254.77.93:31218/v1
 
