@@ -46,10 +46,9 @@ func (a *ApiService) Run() {
 		}
 		ctx.Next()
 	})
-	//写合约
-	//禁止账户交易-加入黑名单
+
 	r.POST("/collectToColdWallet", a.collectToColdWallet)
-	//允许账户交易-移出黑名单
+
 	r.POST("/transferToHotWallet", a.transferToHotWallet)
 
 	logrus.Info("HuiCollect api run at " + a.config.ServerConf.Port)

@@ -98,8 +98,3 @@ func (m *Mysql) UpdateCollectTxState(ID uint64, state int, orderId string) error
 	_, err := m.engine.Exec("update t_src_tx set f_collect_state = ? , f_order_id = ? where f_id = ?", state, orderId, ID)
 	return err
 }
-
-func (m *Mysql) UpdateCollectSubTask(itf xorm.Interface, task *types.CollectTxDB) error {
-	_, err := itf.Table("t_src_tx").Where("f_id = ?", task.Base.ID).Update(task)
-	return err
-}

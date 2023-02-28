@@ -202,18 +202,24 @@ func (c *CollectService) Run() (err error) {
 		return
 	}
 	logrus.Info("开始新一轮归集，得到可供归集的原始交易:")
-	logrus.Info(srcTasks)
+	for _, tx := range srcTasks {
+		str := fmt.Sprintf("ID:%d ", tx.ID)
+		logrus.Info(str + "addr:" + tx.Address + "balance:" + tx.Balance)
+	}
 
 	logrus.Info("过滤余额为0的源交易:")
 	var collectTasks []*types.CollectTxDB
-	for _, task := range collectTasks {
+	for _, task := range srcTasks {
 		if task.Balance != "0" {
 			collectTasks = append(collectTasks, task)
 		}
 	}
 
 	logrus.Info("排除余额为0的交易后的归集源交易:")
-	logrus.Info(collectTasks)
+	for _, tx := range collectTasks {
+		str := fmt.Sprintf("ID:%d ", tx.ID)
+		logrus.Info(str + "addr:" + tx.Address + "balance:" + tx.Balance)
+	}
 
 	mergeTasks := make([]*types.CollectTxDB, 0)      //多条相同的交易合并（相同的接收地址和相同的合约地址）
 	threshold_tasks := make([]*types.CollectTxDB, 0) //交易是否满足门槛
@@ -444,7 +450,7 @@ func (c *CollectService) Run() (err error) {
 				return err
 			}
 			logrus.Info("归集接口返回：" + str)
-			if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectedState), collectTask.OrderId); err != nil {
+			if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectingState), collectTask.OrderId); err != nil {
 				logrus.Errorf("update colelct transaction task error:%v tasks:[%v]", err, collectTask)
 				return err
 			}

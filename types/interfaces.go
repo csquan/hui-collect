@@ -39,7 +39,6 @@ type IWriter interface {
 	InsertCollectSubTx(itf xorm.Interface, task *TransactionTask) (err error)
 
 	UpdateCollectTx(itf xorm.Interface, task *CollectTxDB) error
-	UpdateCollectSubTask(itf xorm.Interface, tasks *CollectTxDB) error
 	UpdateCollectTxState(taskID uint64, state int, orderId string) error
 	UpdateAccount(amount string, receiver string, contractAddr string) error
 }
