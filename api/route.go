@@ -47,7 +47,7 @@ func (a *ApiService) Run() {
 		ctx.Next()
 	})
 
-	r.POST("/collectFormUserToColdWallet", a.collectToColdWallet)
+	r.POST("/collectFromHotToColdWallet", a.collectToColdWallet)
 
 	r.POST("/collectFromHotToHotWallet", a.transferToHotWallet)
 
