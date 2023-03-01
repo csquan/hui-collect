@@ -47,9 +47,11 @@ func (a *ApiService) Run() {
 		ctx.Next()
 	})
 
-	r.POST("/collectToColdWallet", a.collectToColdWallet)
+	r.POST("/collectFormUserToColdWallet", a.collectToColdWallet)
 
-	r.POST("/collectToHotWallet", a.transferToHotWallet)
+	r.POST("/collectFromHotToHotWallet", a.transferToHotWallet)
+
+	r.POST("/collectFromUserToHotWallet", a.collectToHotWallet)
 
 	logrus.Info("HuiCollect api run at " + a.config.ServerConf.Port)
 
@@ -59,6 +61,7 @@ func (a *ApiService) Run() {
 	}
 }
 
+// 将热钱包中的钱归集到冷钱包
 func (a *ApiService) collectToColdWallet(c *gin.Context) {
 	buf := make([]byte, 1024)
 	n, _ := c.Request.Body.Read(buf)
@@ -108,7 +111,7 @@ func (a *ApiService) collectToColdWallet(c *gin.Context) {
 		res.Message = err.Error()
 		c.SecureJSON(http.StatusBadRequest, res)
 	}
-	logrus.Info("调用collectToColdWallet接口")
+	logrus.Info("调用collectToColdWallet接口:将热钱包中的钱归集到冷钱包")
 	logrus.Info(fund)
 
 	url = a.config.Wallet.Url + "/" + "collectToColdWallet"
@@ -126,6 +129,7 @@ func (a *ApiService) collectToColdWallet(c *gin.Context) {
 	c.SecureJSON(http.StatusOK, res)
 }
 
+// 从热钱包到热钱包
 func (a *ApiService) transferToHotWallet(c *gin.Context) {
 	buf := make([]byte, 1024)
 	n, _ := c.Request.Body.Read(buf)
@@ -145,11 +149,19 @@ func (a *ApiService) transferToHotWallet(c *gin.Context) {
 	accountId := gjson.Get(data1, "accountId")
 	chain := gjson.Get(data1, "chain")
 	symbol := gjson.Get(data1, "symbol")
-	to := gjson.Get(data1, "to")
+	toId := gjson.Get(data1, "toId")
 	amount := gjson.Get(data1, "amount")
 
 	url := a.config.Account.EndPoint + "/" + "query"
 	fromAddr, err := utils.GetAccountId(url, accountId.String())
+	if err != nil {
+		logrus.Error(err)
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+		return
+	}
+	toAddr, err := utils.GetAccountId(url, toId.String())
 	if err != nil {
 		logrus.Error(err)
 		res.Code = http.StatusBadRequest
@@ -165,7 +177,7 @@ func (a *ApiService) transferToHotWallet(c *gin.Context) {
 		Chain:     chain.String(),
 		Symbol:    symbol.String(),
 		From:      fromAddr,
-		To:        to.String(),
+		To:        toAddr,
 		Amount:    amount.String(),
 	}
 
@@ -175,7 +187,7 @@ func (a *ApiService) transferToHotWallet(c *gin.Context) {
 		res.Message = err.Error()
 		c.SecureJSON(http.StatusBadRequest, res)
 	}
-	logrus.Info("调用transferToHotWallet接口")
+	logrus.Info("调用transferToHotWallet接口：将热钱包中的钱转移到另一个热钱包")
 	logrus.Info(fund)
 
 	url = a.config.Wallet.Url + "/" + "transferToHotWallet"
@@ -186,6 +198,82 @@ func (a *ApiService) transferToHotWallet(c *gin.Context) {
 		c.SecureJSON(http.StatusBadRequest, res)
 	}
 	logrus.Info("transferToHotWallet返回：" + str)
+
+	res.Code = StatusOk
+	res.Message = str
+
+	c.SecureJSON(StatusOk, res)
+}
+
+// 从用户地址转移到热钱包
+func (a *ApiService) collectToHotWallet(c *gin.Context) {
+	buf := make([]byte, 1024)
+	n, _ := c.Request.Body.Read(buf)
+	data1 := string(buf[0:n])
+
+	res := types.HttpRes{}
+
+	isValid := gjson.Valid(data1)
+	if isValid == false {
+		logrus.Error("Not valid json")
+		res.Code = http.StatusBadRequest
+		res.Message = "Not valid json"
+		c.SecureJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	accountId := gjson.Get(data1, "accountId")
+	chain := gjson.Get(data1, "chain")
+	symbol := gjson.Get(data1, "symbol")
+	toId := gjson.Get(data1, "toId")
+	amount := gjson.Get(data1, "amount")
+
+	url := a.config.Account.EndPoint + "/" + "query"
+	fromAddr, err := utils.GetAccountId(url, accountId.String())
+	if err != nil {
+		logrus.Error(err)
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+		return
+	}
+	toAddr, err := utils.GetAccountId(url, toId.String())
+	if err != nil {
+		logrus.Error(err)
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	fund := types.Fund{
+		AppId:     "",
+		OrderId:   utils.NewIDGenerator().Generate(),
+		AccountId: accountId.String(),
+		Chain:     chain.String(),
+		Symbol:    symbol.String(),
+		From:      fromAddr,
+		To:        toAddr,
+		Amount:    amount.String(),
+	}
+
+	msg, err := json.Marshal(fund)
+	if err != nil {
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+	}
+	logrus.Info("调用collectToHotWallet接口:将用户账户中的钱归集到热钱包")
+	logrus.Info(fund)
+
+	url = a.config.Wallet.Url + "/" + "collectToHotWallet"
+	str, err := utils.Post(url, msg)
+	if err != nil {
+		res.Code = http.StatusBadRequest
+		res.Message = err.Error()
+		c.SecureJSON(http.StatusBadRequest, res)
+	}
+	logrus.Info("collectToHotWallet返回：" + str)
 
 	res.Code = StatusOk
 	res.Message = str

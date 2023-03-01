@@ -252,7 +252,8 @@ func (c *CollectService) Run() (err error) {
 		str, err := c.GetTokenInfo(mergeTask.Symbol, mergeTask.Chain)
 
 		if err != nil {
-			logrus.Fatal(err)
+			logrus.Error(err)
+			continue
 		}
 		collectThreshold := gjson.Get(str, "collect_threshold")
 		hotWallet := gjson.Get(str, "hot_wallets")
@@ -260,7 +261,8 @@ func (c *CollectService) Run() (err error) {
 
 		hotAddrs, err := c.GetHotWallet(hotWallet.String())
 		if err != nil {
-			logrus.Fatal(err)
+			logrus.Error(err)
+			continue
 		}
 		logrus.Info("symbol: " + mergeTask.Symbol + " chain: " + mergeTask.Chain)
 		logrus.Info("热钱包:")
@@ -273,13 +275,15 @@ func (c *CollectService) Run() (err error) {
 		if blacklist.String() != "" {
 			blackAddrs, err = c.GetHotWallet(blacklist.String())
 			if err != nil {
-				logrus.Fatal(err)
+				logrus.Error(err)
+				continue
 			}
 		}
 
 		hotAddrs, err = c.SubBlack(hotAddrs, blackAddrs)
 		if err != nil {
-			logrus.Fatal(err)
+			logrus.Error(err)
+			continue
 		}
 
 		if len(hotWallets[mergeTask.Chain]) == 0 {
