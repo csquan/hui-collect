@@ -1,0 +1,109 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hui-collect-config
+  labels:
+    app: hui-collect
+data:
+  config.yaml: |
+    database:
+      db : "admin:PHGcEPGcgNdIhZeI@tcp(api-db.cluster-c2ysntppgwso.ap-northeast-2.rds.amazonaws.com:3306)/Hui_Collect?charset=utf8mb4&parseTime=True&loc=UTC&collation=utf8mb4_bin"
+
+    monitor:
+      db : "admin:PHGcEPGcgNdIhZeI@tcp(api-db.cluster-c2ysntppgwso.ap-northeast-2.rds.amazonaws.com:3306)/block_data_test?charset=utf8mb4&parseTime=True&loc=UTC&collation=utf8mb4_bin"
+
+    wallet:
+      url: http://wallet/v1
+
+    token:
+      url: http://wallet/v1
+
+    account:
+      endpoint: http://account/v1
+
+    server:
+      port: 8010
+
+    chains:
+      Hui:
+        id: 8888
+        rpc_url: "http://43.198.66.226:8545"
+        fetch_timeout: 3000
+
+    log:
+      stdout:
+        enable: true
+        level: 5
+      file:
+        enable: true
+        path: "./log/hui-collect/app.log"
+        level: 4
+      kafka:
+        enable: false
+        topic: "Hui-test"
+        kafka_servers:
+          - "kafka-1.Hui.com:9092"
+          - "kafka-2.Hui.com:9092"
+          - "kafka-3.Hui.com:9092"
+        level: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hui-collect
+  namespace: default
+spec:
+  ports:
+    - name: http
+      targetPort: 8010
+      port: 80
+      nodePort: 31013
+  type: NodePort
+  selector:
+    app: hui-collect
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hui-collect
+  namespace: default
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: hui-collect
+  template:
+    metadata:
+      labels:
+        app: hui-collect
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: hui-collect
+          image: reg.huiwang.io/fat/hui-collect:2.0.9
+          command:
+            - sh
+            - -c
+            - sleep 10 && ./main
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: "0.1"
+              memory: 300M
+          volumeMounts:
+            - mountPath: /work/conf
+              name: conf-file
+      volumes:
+        - name: conf-file
+          configMap:
+            name: hui-collect-config

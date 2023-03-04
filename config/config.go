@@ -26,11 +26,6 @@ type DataBaseConf struct {
 	DB string `mapstructure:"db"` //DB 连接信息
 }
 
-type UserInfoConf struct {
-	KycPubKey string `mapstructure:"kycPubKey"`
-	URL       string `mapstructure:"url"` //获取用户信息的URL
-}
-
 type AccountConf struct {
 	EndPoint string `mapstructure:"endpoint"`
 }
@@ -57,7 +52,6 @@ type Config struct {
 	QueryInterval    time.Duration
 	QueryIntervalInt uint64       `mapstructure:"query_interval"`
 	DataBase         DataBaseConf `mapstructure:"database"`
-	UserInfo         UserInfoConf `mapstructure:"userInfo"`
 	Account          AccountConf  `mapstructure:"account"`
 	Wallet           WalletConf   `mapstructure:"wallet"`
 

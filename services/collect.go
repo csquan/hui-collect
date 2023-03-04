@@ -3,24 +3,19 @@ package services
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/HuiCollect/config"
-	"github.com/ethereum/HuiCollect/pkg/util/ecies"
 	"github.com/ethereum/HuiCollect/types"
 	"github.com/ethereum/HuiCollect/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/go-resty/resty/v2"
 	"github.com/go-xorm/xorm"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
 	"github.com/tidwall/gjson"
 	"math/big"
-	"net/http"
 	"strings"
 	"time"
 )
@@ -114,39 +109,6 @@ func (c *CollectService) InsertCollectSubTx(parentIDs string, from string, to st
 		return fmt.Errorf("insert colelct sub transaction task error:%v", err)
 	}
 	return nil
-}
-
-func (c *CollectService) getUidFromAddr(address string) (uid string, err error) {
-	pubKey, err1 := ecies.PublicFromString(c.config.UserInfo.KycPubKey)
-	if err1 != nil {
-		logrus.Println(err)
-	}
-
-	cli := resty.New()
-	cli.SetBaseURL(c.config.UserInfo.URL)
-
-	nowStr := time.Now().UTC().Format(http.TimeFormat)
-	ct, err1 := ecies.Encrypt(rand.Reader, pubKey, []byte(nowStr), nil, nil)
-	if err1 != nil {
-		logrus.Println(err1)
-	}
-	data := map[string]interface{}{
-		"verified": hex.EncodeToString(ct),
-		"addr":     address,
-	}
-	var result types.HttpData
-	resp, er := cli.R().SetBody(data).SetResult(&result).Post("/api/v1/pub/i-q-user-by-addr")
-	if er != nil {
-		logrus.Println(err)
-	}
-	if resp.StatusCode() != http.StatusOK {
-		logrus.Println(err)
-	}
-	if result.Code != 0 {
-		logrus.Println(err)
-	}
-
-	return result.Data.UID, nil
 }
 
 func (c *CollectService) GetTokenInfo(symbol string, chain string) (string, error) {
