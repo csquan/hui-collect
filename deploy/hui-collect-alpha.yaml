@@ -91,7 +91,7 @@ spec:
           command:
             - sh
             - -c
-            - sleep 10 && ./main
+            - sleep 1 && ./main
           imagePullPolicy: IfNotPresent
           resources:
             limits:
