@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS `t_transaction_task`;
 CREATE TABLE `t_transaction_task` (
     `f_id`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `f_parent_ids`        text                NOT NULL DEFAULT '0' COMMENT 'parent_ids',
+    `f_parent_ids`        text                NOT NULL COMMENT 'parent_ids',
     `f_uuid`              char(42)            NOT NULL DEFAULT '' COMMENT 'uuid-唯一业务流水号',
     `f_uid`               char(42)            NOT NULL DEFAULT '' COMMENT 'user id-同一用户uid相同',
     `f_request_id`        varchar(255)        NOT NULL DEFAULT '' COMMENT 'request id',
@@ -67,22 +67,6 @@ CREATE TABLE `t_monitor`
     UNIQUE KEY `uk_addr` (`f_addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='监控表';
 
-DROP TABLE IF EXISTS `t_token`;
-create TABLE `t_token` (
-    `f_id`           bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `f_threshold`    varchar(255)        NOT NULL COMMENT '归集门槛',
-    `f_chain`        varchar(255)        NOT NULL COMMENT '链',
-    `f_symbol`       varchar(255)        NOT NULL COMMENT 'token symbol',
-    `f_address`      varchar(255)        NOT NULL COMMENT 'token contract address',
-    `f_decimal`      integer             NOT NULL COMMENT '精度',
-    `f_created_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
-    `f_updated_at`   timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
-    PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */
-)
-ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4
-COMMENT ='监控币种表';
-
 DROP TABLE IF EXISTS `t_monitor_hash`;
 CREATE TABLE `t_monitor_hash`
 (
@@ -96,7 +80,3 @@ CREATE TABLE `t_monitor_hash`
     UNIQUE KEY `uk_addr` (`f_hash`,`f_chain`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='监控表';
 
-INSERT INTO t_token (f_id,f_threshold,f_chain,f_symbol,f_address,f_decimal,f_created_at,f_updated_at) VALUES
-            (1,'10000000000000000000','HUI','TSC','0x99Ac689Fd1f09AdA4c0365E6497B2A824Af68557',18,'2023-01-07 10:51:17','2023-01-07 10:56:05'),
-            (2,'10000000000000000000','HUI','TSC1','0xe7df395C170973654A2B054115146f02eE6DfbA5',18,'2023-01-07 10:52:17','2023-01-07 10:56:05'),
-            (3,'10000000000','HUI','TSC111','0x6B98aaa1f8A92ceCA108A49CFe7ee4081B7aF8F8',9,'2023-01-07 10:53:32','2023-01-07 10:56:05');

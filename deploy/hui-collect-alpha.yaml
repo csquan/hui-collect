@@ -93,6 +93,9 @@ spec:
             - -c
             - sleep 1 && ./main
           imagePullPolicy: IfNotPresent
+          env:
+            - name: GIN_MODE
+              value: release
           resources:
             limits:
               cpu: "1"
