@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-const max_tx_fee = "0" //400000000000000 //4*10 14 认为是一笔交易的费用
+const max_tx_fee = "100000000000000" //4*10 14 认为是一笔交易的费用
 
 type CollectService struct {
 	db     types.IDB
