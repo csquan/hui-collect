@@ -6,3 +6,5 @@ config
 Hui-TxState
 *.test
 .vscode
+
+.idea/

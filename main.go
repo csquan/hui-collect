@@ -23,19 +23,15 @@ var (
 	confFile string
 )
 
-func init() {
-	flag.StringVar(&confFile, "conf", "config.yaml", "conf file")
-	flag.StringVar(&config.Env, "env", "dev", "env")
-}
-
 func main() {
+	flag.StringVar(&confFile, "conf", "conf/config.yaml", "conf file")
 	flag.Parse()
 	logrus.Info(confFile)
 
 	conf, err := config.LoadConf(confFile)
 	if err != nil {
 		logrus.Errorf("load config error:%v", err)
-		return
+		panic(err)
 	}
 
 	if conf.ProfPort != 0 {

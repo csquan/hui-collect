@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS `t_transaction_task`;
 CREATE TABLE `t_transaction_task` (
     `f_id`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `f_parent_ids`        text                NOT NULL DEFAULT '0' COMMENT 'parent_ids',
+    `f_parent_ids`        text                NOT NULL COMMENT 'parent_ids',
     `f_uuid`              char(42)            NOT NULL DEFAULT '' COMMENT 'uuid-唯一业务流水号',
     `f_uid`               char(42)            NOT NULL DEFAULT '' COMMENT 'user id-同一用户uid相同',
     `f_request_id`        varchar(255)        NOT NULL DEFAULT '' COMMENT 'request id',
