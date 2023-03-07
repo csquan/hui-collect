@@ -23,6 +23,9 @@ chains:
     rpc_url: "https://rpc.ankr.com/eth_goerli"
     fetch_timeout: 3000
 
+single_fee:
+  fee : "5000000000000000"
+
 UserInfo:
   KycPubKey: "026a38b8aa47f2af2d2163253ff5385cd059f90476990c7e3ee84bca0ead322241"
   url: "https://fat.huiwang.io/registrar/"

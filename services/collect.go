@@ -326,7 +326,10 @@ func (c *CollectService) Run() (err error) {
 		logrus.Info("得到余额:")
 		logrus.Info(balance1.String())
 
-		singleTxFee, err := decimal.NewFromString(max_tx_fee)
+		logrus.Info("SingleFee:")
+		logrus.Info(c.config.SingleFee.Fee)
+
+		singleTxFee, err := decimal.NewFromString(c.config.SingleFee.Fee)
 		if err != nil {
 			logrus.Error(err)
 			return err

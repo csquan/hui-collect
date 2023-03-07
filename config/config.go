@@ -34,6 +34,10 @@ type WalletConf struct {
 	Url string `mapstructure:"url"`
 }
 
+type SingleFeeConf struct {
+	Fee string `mapstructure:"fee"`
+}
+
 type TokenConf struct {
 	Url string `mapstructure:"url"`
 }
@@ -50,17 +54,17 @@ type Config struct {
 	AppName          string `mapstructure:"app_name"`
 	ProfPort         int    `mapstructure:"prof_port"`
 	QueryInterval    time.Duration
-	QueryIntervalInt uint64       `mapstructure:"query_interval"`
-	DataBase         DataBaseConf `mapstructure:"database"`
-	Account          AccountConf  `mapstructure:"account"`
-	Wallet           WalletConf   `mapstructure:"wallet"`
-
-	Token      TokenConf             `mapstructure:"token"`
-	Gas        GasConf               `mapstructure:"gas"`
-	LogConf    Log                   `mapstructure:"log"`
-	Chains     map[string]*ChainInfo `mapstructure:"chains"`
-	Env        string                `mapstructure:"env"`
-	ServerConf ServerConf            `mapstructure:"server"`
+	QueryIntervalInt uint64                `mapstructure:"query_interval"`
+	DataBase         DataBaseConf          `mapstructure:"database"`
+	Account          AccountConf           `mapstructure:"account"`
+	Wallet           WalletConf            `mapstructure:"wallet"`
+	SingleFee        SingleFeeConf         `mapstructure:"single_fee"`
+	Token            TokenConf             `mapstructure:"token"`
+	Gas              GasConf               `mapstructure:"gas"`
+	LogConf          Log                   `mapstructure:"log"`
+	Chains           map[string]*ChainInfo `mapstructure:"chains"`
+	Env              string                `mapstructure:"env"`
+	ServerConf       ServerConf            `mapstructure:"server"`
 }
 
 type ChainInfo struct {
