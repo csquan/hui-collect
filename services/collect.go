@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-const max_tx_fee = "10000000000000000" //4*10 16 认为是一笔交易的费用
+const max_tx_fee = "5000000000000000" //4*10 15 认为是一笔交易的费用
 
 type CollectService struct {
 	db     types.IDB
@@ -250,7 +250,7 @@ func (c *CollectService) Run() (err error) {
 				hotAddr = hotAddr[1 : len(hotAddr)-1]
 				logrus.Info("热钱包地址: " + hotAddr + "当前交易地址" + mergeTask.Address)
 				if hotAddr == mergeTask.Address {
-					logrus.Info("待归集源交易地址 :" + mergeTask.Address + "匹配到热钱包地址: " + hotAddr)
+					logrus.Info("开始删除：待归集源交易地址 :" + mergeTask.Address + "匹配到热钱包地址: " + hotAddr)
 					c.db.DelCollectTask(mergeTask.Address, mergeTask.Symbol, mergeTask.Chain)
 				}
 			}
