@@ -87,7 +87,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: hui-collect
-          image: reg.huiwang.io/fat/hui-collect:3.0.3
+          image: reg.huiwang.io/fat/hui-collect:3.0.5
           command:
             - sh
             - -c

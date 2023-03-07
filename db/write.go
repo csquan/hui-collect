@@ -100,6 +100,6 @@ func (m *Mysql) UpdateCollectTxState(ID uint64, state int, orderId string) error
 }
 
 func (m *Mysql) DelCollectTask(address string, symbol string, chain string) error {
-	_, err := m.engine.Exec("delete  t_src_tx where f_address = ? and f_symbol =? and f_chain = ? ", address, symbol, chain)
+	_, err := m.engine.Exec("delete from t_src_tx where f_address = ? and f_symbol =? and f_chain = ? ", address, symbol, chain)
 	return err
 }

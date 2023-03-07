@@ -242,6 +242,23 @@ func (c *CollectService) Run() (err error) {
 			}
 		}
 
+		//这里删除热钱包和黑名单相同地址的交易
+		for _, hotAddr := range hotAddrs {
+			logrus.Info("热钱包地址: " + hotAddr)
+			if hotAddr == mergeTask.Address {
+				logrus.Info("待归集源交易地址 :" + mergeTask.Address + "匹配到热钱包地址: " + hotAddr)
+				c.db.DelCollectTask(mergeTask.Address, mergeTask.Symbol, mergeTask.Chain)
+			}
+		}
+
+		for _, blackAddr := range blackAddrs {
+			logrus.Info("黑名单地址: " + blackAddr)
+			if blackAddr == mergeTask.Address {
+				logrus.Info("待归集源交易地址 :" + mergeTask.Address + "匹配到黑名单地址: " + blackAddr)
+				c.db.DelCollectTask(mergeTask.Address, mergeTask.Symbol, mergeTask.Chain)
+			}
+		}
+
 		hotAddrs, err = c.SubBlack(hotAddrs, blackAddrs)
 		if err != nil {
 			logrus.Error(err)
