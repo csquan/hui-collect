@@ -207,7 +207,9 @@ func (c *CollectService) Run() (err error) {
 		}
 	}
 	logrus.Info("为了节约gas，合并相同地址、代币、链的交易:")
-	logrus.Info(mergeTasks)
+	for _, mergeTask := range mergeTasks {
+		logrus.Info(mergeTask.Address, mergeTask.Chain, mergeTask.Symbol)
+	}
 
 	//这里归并后，应该看相同地址的是否大于对应币种的门槛--只看本币
 	for _, mergeTask := range mergeTasks {
@@ -244,18 +246,24 @@ func (c *CollectService) Run() (err error) {
 
 		//这里删除热钱包和黑名单相同地址的交易
 		for _, hotAddr := range hotAddrs {
-			logrus.Info("热钱包地址: " + hotAddr)
-			if hotAddr == mergeTask.Address {
-				logrus.Info("待归集源交易地址 :" + mergeTask.Address + "匹配到热钱包地址: " + hotAddr)
-				c.db.DelCollectTask(mergeTask.Address, mergeTask.Symbol, mergeTask.Chain)
+			if len(hotAddr) > 1 {
+				hotAddr = hotAddr[1 : len(hotAddr)-1]
+				logrus.Info("热钱包地址: " + hotAddr + "当前交易地址" + mergeTask.Address)
+				if hotAddr == mergeTask.Address {
+					logrus.Info("待归集源交易地址 :" + mergeTask.Address + "匹配到热钱包地址: " + hotAddr)
+					c.db.DelCollectTask(mergeTask.Address, mergeTask.Symbol, mergeTask.Chain)
+				}
 			}
 		}
 
 		for _, blackAddr := range blackAddrs {
-			logrus.Info("黑名单地址: " + blackAddr)
-			if blackAddr == mergeTask.Address {
-				logrus.Info("待归集源交易地址 :" + mergeTask.Address + "匹配到黑名单地址: " + blackAddr)
-				c.db.DelCollectTask(mergeTask.Address, mergeTask.Symbol, mergeTask.Chain)
+			if len(blackAddr) > 1 {
+				blackAddr = blackAddr[1 : len(blackAddr)-1]
+				logrus.Info("黑名单地址: " + blackAddr)
+				if blackAddr == mergeTask.Address {
+					logrus.Info("待归集源交易地址 :" + mergeTask.Address + "匹配到黑名单地址: " + blackAddr)
+					c.db.DelCollectTask(mergeTask.Address, mergeTask.Symbol, mergeTask.Chain)
+				}
 			}
 		}
 
