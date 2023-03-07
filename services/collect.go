@@ -269,8 +269,10 @@ func (c *CollectService) Run() (err error) {
 		if enough >= 0 {
 			threshold_tasks = append(threshold_tasks, mergeTask)
 		} else {
-			logrus.Info("排除钱包余额小于门槛详情:")
+			logrus.Info("排除钱包余额小于门槛详情,将要删除本条记录:")
 			logrus.Info("addr: " + mergeTask.Address + " symbol:" + mergeTask.Symbol + " chain: " + mergeTask.Chain)
+			// 这里直接将这条记录删除
+			c.db.DelCollectTask(mergeTask.Address, mergeTask.Symbol, mergeTask.Chain)
 		}
 	}
 

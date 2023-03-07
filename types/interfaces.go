@@ -41,6 +41,8 @@ type IWriter interface {
 	UpdateCollectTx(itf xorm.Interface, task *CollectTxDB) error
 	UpdateCollectTxState(taskID uint64, state int, orderId string) error
 	UpdateAccount(amount string, receiver string, contractAddr string) error
+
+	DelCollectTask(address string, symbol string, chain string) error
 }
 
 type IDB interface {
