@@ -310,8 +310,9 @@ func (c *CollectService) Run() (err error) {
 		if err != nil {
 			logrus.Error(err)
 		}
+
 		//这里需要查询本币的资产
-		str1, err := utils.GetAsset("hui", collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
+		str1, err := utils.GetAsset(collectTask.Chain, collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
 		if err != nil {
 			logrus.Error(err)
 			return err
@@ -323,7 +324,7 @@ func (c *CollectService) Run() (err error) {
 			return err
 		}
 
-		logrus.Info("得到余额:")
+		logrus.Info("得到余额:" + collectTask.Chain)
 		logrus.Info(balance1.String())
 
 		logrus.Info("SingleFee:")
