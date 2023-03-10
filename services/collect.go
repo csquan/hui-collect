@@ -213,6 +213,12 @@ func (c *CollectService) Run() (err error) {
 
 	//这里归并后，应该看相同地址的是否大于对应币种的门槛--只看本币
 	for _, mergeTask := range mergeTasks {
+
+		hot_str, err := utils.GetHotWallets(c.config.Wallet.Url)
+		if err != nil {
+			logrus.Error(err)
+			continue
+		}
 		str, err := c.GetTokenInfo(mergeTask.Symbol, mergeTask.Chain)
 
 		if err != nil {
@@ -220,10 +226,15 @@ func (c *CollectService) Run() (err error) {
 			continue
 		}
 		collectThreshold := gjson.Get(str, "collect_threshold")
-		hotWallet := gjson.Get(str, "hot_wallets")
+		hot_msg := gjson.Get(hot_str, "message")
+
+		logrus.Info(hot_msg.String())
+		//for _, msg := range hot_msg {
+		//	logrus.Info(msg)
+		//}
 		blacklist := gjson.Get(str, "blacklist")
 
-		hotAddrs, err := c.GetHotWallet(hotWallet.String())
+		hotAddrs, err := c.GetHotWallet(hot_msg.String())
 		if err != nil {
 			logrus.Error(err)
 			continue
@@ -338,6 +349,9 @@ func (c *CollectService) Run() (err error) {
 
 		enough := UserBalance.Cmp(singleTxFee)
 
+		logrus.Info("enough:")
+		logrus.Info(enough)
+
 		if enough <= 0 { //反向打gas--fundFee 钱包模块
 			logrus.Warn("fundFee:")
 			//gas--getToken token模块
@@ -368,13 +382,14 @@ func (c *CollectService) Run() (err error) {
 		zeroDecimal, err := decimal.NewFromString("0") //这里在循环查询用户资产是否到账
 		UserBalance2, err := decimal.NewFromString("0")
 		for {
+			logrus.Info("开始循环读取余额 ")
 			if UserBalance2.GreaterThan(zeroDecimal) {
 				logrus.Info("获得余额: " + UserBalance2.String())
 				break
 			}
 			time.Sleep(2 * time.Second)
 			//这里需要查询本币的资产
-			str2, err := utils.GetAsset("hui", collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
+			str2, err := utils.GetAsset(collectTask.Chain, collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
 			if err != nil {
 				logrus.Error(err)
 				return err

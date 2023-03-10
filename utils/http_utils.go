@@ -116,6 +116,27 @@ func GetAsset(symbol string, chain string, addr string, url string) (string, err
 	return str, nil
 }
 
+func GetHotWallets(url string) (string, error) {
+	url = url + "/" + "hotwallets"
+	res, err := http.Get(url)
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	} else {
+		getRes, gerErr := ioutil.ReadAll(res.Body)
+		if gerErr != nil {
+			fmt.Println(gerErr)
+		} else {
+			logrus.Info(string(getRes))
+			return string(getRes), nil
+		}
+	}
+	if res.Status != "200" {
+
+	}
+	return "", nil
+}
+
 // 目前策略：取出每个热钱包的地址--对于同一个钱包地址，需要调用两次post，第一次获取代币，第二次获取本币？
 func GetHotAddress(collectTx *types.CollectTxDB, addrs []string, url string) (addr string, err error) {
 	sortMap := make(map[string]float64)
