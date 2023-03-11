@@ -38,6 +38,14 @@ type SingleFeeConf struct {
 	Fee string `mapstructure:"fee"`
 }
 
+type TrxSingleFeeConf struct {
+	Fee string `mapstructure:"fee"`
+}
+
+type Trx20SingleFeeConf struct {
+	Fee string `mapstructure:"fee"`
+}
+
 type TokenConf struct {
 	Url string `mapstructure:"url"`
 }
@@ -59,6 +67,8 @@ type Config struct {
 	Account          AccountConf           `mapstructure:"account"`
 	Wallet           WalletConf            `mapstructure:"wallet"`
 	SingleFee        SingleFeeConf         `mapstructure:"single_fee"`
+	Trx20SingleFee   Trx20SingleFeeConf    `mapstructure:"trx20_single_fee"`
+	TrxSingleFee     TrxSingleFeeConf      `mapstructure:"trx_single_fee"`
 	Token            TokenConf             `mapstructure:"token"`
 	Gas              GasConf               `mapstructure:"gas"`
 	LogConf          Log                   `mapstructure:"log"`

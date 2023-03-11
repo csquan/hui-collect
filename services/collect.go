@@ -319,12 +319,30 @@ func (c *CollectService) Run() (err error) {
 		logrus.Info("SingleFee:")
 		logrus.Info(c.config.SingleFee.Fee)
 
-		singleTxFee, err := decimal.NewFromString(c.config.SingleFee.Fee)
-		if err != nil {
-			logrus.Error(err)
-			return err
+		singleTxFee, _ := decimal.NewFromString("0")
+		if collectTask.Chain == "hui" {
+			singleTxFee, err = decimal.NewFromString(c.config.SingleFee.Fee)
+			if err != nil {
+				logrus.Error(err)
+				return err
+			}
 		}
-
+		if collectTask.Chain == "trx" {
+			if collectTask.Chain == collectTask.Symbol {
+				singleTxFee, err = decimal.NewFromString(c.config.TrxSingleFee.Fee)
+				if err != nil {
+					logrus.Error(err)
+					return err
+				}
+			} else {
+				singleTxFee, err = decimal.NewFromString(c.config.Trx20SingleFee.Fee)
+				if err != nil {
+					logrus.Error(err)
+					return err
+				}
+			}
+		}
+		logrus.Info("singleFee: " + singleTxFee.String())
 		enough := UserBalance.Cmp(singleTxFee)
 
 		if enough <= 0 { //反向打gas--fundFee 钱包模块
@@ -353,26 +371,27 @@ func (c *CollectService) Run() (err error) {
 				continue
 			}
 			logrus.Info("fundFee return " + str)
-		}
-		//这里在循环查询用户的fundFee资产是否到账
-		UserBalance2, err := decimal.NewFromString("0")
-		for {
-			if UserBalance2.GreaterThan(UserBalance) {
-				logrus.Info("获得新增后的余额: " + UserBalance2.String())
-				break
-			}
-			time.Sleep(2 * time.Second)
-			//这里需要查询本币的资产
-			str2, err := utils.GetAsset("hui", collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
-			if err != nil {
-				logrus.Error(err)
-				return err
-			}
-			balance2 := gjson.Get(str2, "balance")
-			UserBalance2, err = decimal.NewFromString(balance2.String())
-			if err != nil {
-				logrus.Error(err)
-				return err
+
+			//这里在循环查询用户的fundFee资产是否到账
+			UserBalance2, err := decimal.NewFromString("0")
+			for {
+				if UserBalance2.GreaterThan(UserBalance) {
+					logrus.Info("获得新增后的余额: " + UserBalance2.String())
+					break
+				}
+				time.Sleep(2 * time.Second)
+				//这里需要查询本币的资产
+				str2, err := utils.GetAsset("hui", collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
+				if err != nil {
+					logrus.Error(err)
+					return err
+				}
+				balance2 := gjson.Get(str2, "balance")
+				UserBalance2, err = decimal.NewFromString(balance2.String())
+				if err != nil {
+					logrus.Error(err)
+					return err
+				}
 			}
 		}
 

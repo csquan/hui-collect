@@ -24,7 +24,13 @@ chains:
     fetch_timeout: 3000
 
 single_fee:
-  fee : "5000000000000000"
+  fee : "0.05"
+
+trx_single_fee:
+  fee : "3"
+
+trx20_single_fee:
+  fee : "30"
 
 UserInfo:
   KycPubKey: "026a38b8aa47f2af2d2163253ff5385cd059f90476990c7e3ee84bca0ead322241"
