@@ -155,9 +155,6 @@ func (c *CollectService) GetHotWallet(str string) ([]string, error) {
 }
 
 func (c *CollectService) Run() (err error) {
-	go c.Collect()
-}
-func (c *CollectService) Collect() (err error) {
 	srcTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
 		return
