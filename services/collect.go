@@ -425,12 +425,12 @@ func (c *CollectService) Run() (err error) {
 			logrus.Info(shouldCollect)
 
 			collectAmount := ""
-			if collectTask.Symbol != "hui" { //remain 只对本币有效
+			if collectTask.Symbol != collectTask.Chain { //remain 只对本币有效
 				collectAmount = collectTask.Balance
 			} else {
 				collectAmount = shouldCollect.String()
 			}
-
+			logrus.Info("collectAmount" + collectAmount)
 			collectTask.OrderId = utils.NewIDGenerator().Generate()
 			//这里调用keep的归集交易接口  --collenttohotwallet
 			fund := types.Fund{
