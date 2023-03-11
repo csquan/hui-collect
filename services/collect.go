@@ -375,13 +375,14 @@ func (c *CollectService) Run() (err error) {
 			//这里在循环查询用户的fundFee资产是否到账
 			UserBalance2, err := decimal.NewFromString("0")
 			for {
+				logrus.Info("准备获取fundFee后的余额：")
 				if UserBalance2.GreaterThan(UserBalance) {
 					logrus.Info("获得新增后的余额: " + UserBalance2.String())
 					break
 				}
 				time.Sleep(2 * time.Second)
 				//这里需要查询本币的资产
-				str2, err := utils.GetAsset("hui", collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
+				str2, err := utils.GetAsset(collectTask.Symbol, collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
 				if err != nil {
 					logrus.Error(err)
 					return err
