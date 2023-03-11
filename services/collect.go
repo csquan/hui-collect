@@ -244,18 +244,7 @@ func (c *CollectService) Run() (err error) {
 			}
 		}
 
-		//这里删除热钱包和黑名单相同地址的交易
-		for _, hotAddr := range hotAddrs {
-			if len(hotAddr) > 1 {
-				hotAddr = hotAddr[1 : len(hotAddr)-1]
-				logrus.Info("热钱包地址: " + hotAddr + "当前交易地址" + mergeTask.Address)
-				if hotAddr == mergeTask.Address {
-					logrus.Info("开始删除：待归集源交易地址 :" + mergeTask.Address + "匹配到热钱包地址: " + hotAddr)
-					c.db.DelCollectTask(mergeTask.Address, mergeTask.Symbol, mergeTask.Chain)
-				}
-			}
-		}
-
+		//这里删除热钱包和黑名单相同地址的交易--todo：黑名单移到监控
 		for _, blackAddr := range blackAddrs {
 			if len(blackAddr) > 1 {
 				blackAddr = blackAddr[1 : len(blackAddr)-1]
@@ -365,11 +354,11 @@ func (c *CollectService) Run() (err error) {
 			}
 			logrus.Info("fundFee return " + str)
 		}
-		zeroDecimal, err := decimal.NewFromString("0") //这里在循环查询用户资产是否到账
+		//这里在循环查询用户的fundFee资产是否到账
 		UserBalance2, err := decimal.NewFromString("0")
 		for {
-			if UserBalance2.GreaterThan(zeroDecimal) {
-				logrus.Info("获得余额: " + UserBalance2.String())
+			if UserBalance2.GreaterThan(UserBalance) {
+				logrus.Info("获得新增后的余额: " + UserBalance2.String())
 				break
 			}
 			time.Sleep(2 * time.Second)
