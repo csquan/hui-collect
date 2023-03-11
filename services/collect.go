@@ -155,6 +155,9 @@ func (c *CollectService) GetHotWallet(str string) ([]string, error) {
 }
 
 func (c *CollectService) Run() (err error) {
+	go c.Collect()
+}
+func (c *CollectService) Collect() (err error) {
 	srcTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
 		return
@@ -213,6 +216,8 @@ func (c *CollectService) Run() (err error) {
 
 	//这里归并后，应该看相同地址的是否大于对应币种的门槛--只看本币
 	for _, mergeTask := range mergeTasks {
+		logrus.Info("开始调用GetTokenInfo")
+		logrus.Info(mergeTask.Symbol + mergeTask.Symbol)
 		str, err := c.GetTokenInfo(mergeTask.Symbol, mergeTask.Chain)
 
 		if err != nil {
@@ -231,6 +236,10 @@ func (c *CollectService) Run() (err error) {
 		logrus.Info("symbol: " + mergeTask.Symbol + " chain: " + mergeTask.Chain)
 		logrus.Info("热钱包:")
 		logrus.Info(hotAddrs)
+
+		for _, hotAddr := range hotAddrs {
+			logrus.Info(hotAddr)
+		}
 
 		logrus.Info("黑名单钱包:")
 		logrus.Info(blacklist)
@@ -316,9 +325,6 @@ func (c *CollectService) Run() (err error) {
 		logrus.Info("得到余额:" + collectTask.Chain)
 		logrus.Info(balance1.String())
 
-		logrus.Info("SingleFee:")
-		logrus.Info(c.config.SingleFee.Fee)
-
 		singleTxFee, _ := decimal.NewFromString("0")
 		if collectTask.Chain == "hui" {
 			singleTxFee, err = decimal.NewFromString(c.config.SingleFee.Fee)
@@ -374,8 +380,8 @@ func (c *CollectService) Run() (err error) {
 
 			//这里在循环查询用户的fundFee资产是否到账
 			UserBalance2, err := decimal.NewFromString("0")
+			logrus.Info("准备获取fundFee后的余额：")
 			for {
-				logrus.Info("准备获取fundFee后的余额：")
 				if UserBalance2.GreaterThan(UserBalance) {
 					logrus.Info("获得新增后的余额: " + UserBalance2.String())
 					break

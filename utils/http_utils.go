@@ -142,7 +142,7 @@ func GetHotAddress(collectTx *types.CollectTxDB, addrs []string, url string) (ad
 			assetInHotwallet.Addr = addr
 			assetInHotwallet.Balance = balance.Float()
 
-			if collectTx.Symbol == "hui" {
+			if collectTx.Symbol == collectTx.Chain {
 				localCurrency = append(localCurrency, &assetInHotwallet)
 			} else {
 				foreignToken = append(foreignToken, &assetInHotwallet)
@@ -150,8 +150,8 @@ func GetHotAddress(collectTx *types.CollectTxDB, addrs []string, url string) (ad
 		}
 
 		//todo：这个链对应的本币应该从db查询，目前就一条链,所以先写死
-		if collectTx.Symbol != "hui" { //本币
-			str1, err := GetAsset("hui", collectTx.Chain, addr, url)
+		if collectTx.Symbol != collectTx.Chain { //本币
+			str1, err := GetAsset(collectTx.Symbol, collectTx.Chain, addr, url)
 			if err != nil {
 				return "", err
 			}
