@@ -382,6 +382,7 @@ func (c *CollectService) Run() (err error) {
 				if UserBalance2.GreaterThan(UserBalance) {
 					logrus.Info("获得新增后的余额: " + UserBalance2.String())
 					collectTask.Balance = UserBalance2.String()
+					logrus.Info("已经赋值为最新的余额：" + collectTask.Balance)
 					break
 				}
 				time.Sleep(2 * time.Second)
@@ -408,8 +409,21 @@ func (c *CollectService) Run() (err error) {
 				logrus.Error(err)
 				return err
 			}
-			balance, err := decimal.NewFromString(collectTask.Balance)
-			fmt.Println("balance:" + balance.String())
+			//这里需要查询本币的资产-重新获取最新的
+			str3, err := utils.GetAsset(collectTask.Symbol, collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
+			if err != nil {
+				logrus.Error(err)
+				return err
+			}
+			balance2 := gjson.Get(str3, "balance")
+			UserBalance3, err := decimal.NewFromString(balance2.String())
+			if err != nil {
+				logrus.Error(err)
+				return err
+			}
+
+			balance, err := decimal.NewFromString(UserBalance3.String())
+			fmt.Println("获取到最新balance:" + balance.String())
 
 			shouldCollect, err := decimal.NewFromString(balance.String())
 
