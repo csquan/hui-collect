@@ -300,7 +300,7 @@ func (c *CollectService) Run() (err error) {
 	logrus.Info(threshold_tasks)
 
 	for _, collectTask := range threshold_tasks {
-		logrus.Info("Collect symbol:" + collectTask.Symbol + "chain:" + collectTask.Chain)
+		logrus.Info("-----Collect symbol:" + collectTask.Symbol + "chain:" + collectTask.Chain)
 		tokenStr, err := c.GetTokenInfo(collectTask.Symbol, collectTask.Chain)
 		if err != nil {
 			logrus.Error(err)
@@ -319,7 +319,7 @@ func (c *CollectService) Run() (err error) {
 			return err
 		}
 
-		logrus.Info("得到余额:" + collectTask.Chain)
+		logrus.Info("得到余额:")
 		logrus.Info(balance1.String())
 
 		singleTxFee, _ := decimal.NewFromString("0")
@@ -356,7 +356,8 @@ func (c *CollectService) Run() (err error) {
 			logrus.Warn("fundFee:")
 			//gas--getToken token模块
 			fee_value := gjson.Get(tokenStr, "give_fee_value")
-
+			logrus.Warn("fee_value:")
+			logrus.Info(fee_value)
 			fund := types.Fund{
 				AppId:     "",
 				OrderId:   utils.NewIDGenerator().Generate(),
