@@ -330,14 +330,18 @@ func (c *CollectService) Run() (err error) {
 				return err
 			}
 		}
+		logrus.Info("开始判断singleFee")
 		if collectTask.Chain == "trx" {
+			logrus.Info(collectTask.Chain + ":" + collectTask.Symbol)
 			if collectTask.Chain == collectTask.Symbol {
+				logrus.Info("collectTask.Chain == collectTask.Symbol")
 				singleTxFee, err = decimal.NewFromString(c.config.TrxSingleFee.Fee)
 				if err != nil {
 					logrus.Error(err)
 					return err
 				}
 			} else {
+				logrus.Info("collectTask.Chain != collectTask.Symbol")
 				singleTxFee, err = decimal.NewFromString(c.config.Trx20SingleFee.Fee)
 				if err != nil {
 					logrus.Error(err)
@@ -358,10 +362,11 @@ func (c *CollectService) Run() (err error) {
 				OrderId:   utils.NewIDGenerator().Generate(),
 				AccountId: collectTask.Uid,
 				Chain:     collectTask.Chain,
-				Symbol:    "hui",
+				Symbol:    collectTask.Chain,
 				To:        collectTask.Address,
 				Amount:    fee_value.String(),
 			}
+			logrus.Info(fund)
 			msg, err := json.Marshal(fund)
 			if err != nil {
 				logrus.Error(err)
