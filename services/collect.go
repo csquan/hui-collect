@@ -381,6 +381,7 @@ func (c *CollectService) Run() (err error) {
 			for {
 				if UserBalance2.GreaterThan(UserBalance) {
 					logrus.Info("获得新增后的余额: " + UserBalance2.String())
+					collectTask.Balance = UserBalance2.String()
 					break
 				}
 				time.Sleep(2 * time.Second)
