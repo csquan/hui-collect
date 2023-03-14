@@ -155,6 +155,11 @@ func (c *CollectService) GetHotWallet(str string) ([]string, error) {
 }
 
 func (c *CollectService) Run() (err error) {
+	go c.Collect()
+	return
+}
+
+func (c *CollectService) Collect() (err error) {
 	srcTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
 		return
@@ -384,6 +389,7 @@ func (c *CollectService) Run() (err error) {
 			//这里在循环查询用户的fundFee资产是否到账
 			UserBalance2, err := decimal.NewFromString("0")
 			logrus.Info("准备获取fundFee后的余额：")
+			count := 0
 			for {
 				if UserBalance2.GreaterThan(UserBalance) {
 					logrus.Info("获得新增后的余额: " + UserBalance2.String())
@@ -392,6 +398,7 @@ func (c *CollectService) Run() (err error) {
 					break
 				}
 				time.Sleep(2 * time.Second)
+				count = count + 1
 				//这里需要查询本币的资产
 				str2, err := utils.GetAsset(collectTask.Symbol, collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
 				if err != nil {
@@ -402,6 +409,10 @@ func (c *CollectService) Run() (err error) {
 				UserBalance2, err = decimal.NewFromString(balance2.String())
 				if err != nil {
 					logrus.Error(err)
+					return err
+				}
+				if count >= 5 {
+					logrus.Error("获得新增后的余额错误，超过5次")
 					return err
 				}
 			}
