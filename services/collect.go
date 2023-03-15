@@ -350,8 +350,8 @@ func (c *CollectService) Run() (err error) {
 		logrus.Info("singleFee: " + singleTxFee.String())
 		enough := UserBalance.Cmp(singleTxFee)
 
-		if collectTask.FundFeeOrderId == "" {
-			if enough <= 0 { //反向打gas--fundFee 钱包模块
+		if enough <= 0 {
+			if collectTask.FundFeeOrderId == "" {
 				logrus.Warn("fundFee:")
 				//gas--getToken token模块
 				fee_value := gjson.Get(tokenStr, "give_fee_value")
@@ -386,50 +386,51 @@ func (c *CollectService) Run() (err error) {
 				logrus.Info("更新fundFeeID为" + fund.OrderId + " Fund前的余额为：" + collectTask.BalanceBeforeFund)
 				logrus.Info(collectTask.ID)
 				c.db.UpdateCollectTxFundFeeInfo(collectTask.FundFeeOrderId, collectTask.BalanceBeforeFund, collectTask.ID)
+			} else {
+				logrus.Info("检测到上次已经有FundFee orderID" + collectTask.FundFeeOrderId)
 			}
-		} else {
-			logrus.Info("检测到上次已经有FundFee orderID" + collectTask.FundFeeOrderId)
-		}
-		CompareBalance := UserBalance
-		if collectTask.BalanceBeforeFund != "" {
-			BalanceBeforeFund, err := decimal.NewFromString(collectTask.BalanceBeforeFund)
-			if err != nil {
-				logrus.Error(err)
-				return err
-			}
-			CompareBalance = BalanceBeforeFund
-			logrus.Info("FundFee比较基准为" + collectTask.BalanceBeforeFund)
-		}
 
-		//这里在循环查询用户的fundFee资产是否到账
-		UserBalance2, err := decimal.NewFromString("0")
-		logrus.Info("准备获取fundFee后的余额：")
-		count := 0
+			CompareBalance := UserBalance
+			if collectTask.BalanceBeforeFund != "" {
+				BalanceBeforeFund, err := decimal.NewFromString(collectTask.BalanceBeforeFund)
+				if err != nil {
+					logrus.Error(err)
+					return err
+				}
+				CompareBalance = BalanceBeforeFund
+				logrus.Info("FundFee比较基准为" + collectTask.BalanceBeforeFund)
+			}
 
-		for {
-			if UserBalance2.GreaterThan(CompareBalance) {
-				logrus.Info("获得新增后的余额: " + UserBalance2.String())
-				collectTask.Balance = UserBalance2.String()
-				logrus.Info("已经赋值为最新的余额：" + collectTask.Balance)
-				break
-			}
-			time.Sleep(2 * time.Second)
-			if count >= 5 {
-				logrus.Error("获得新增后的余额错误，超过5次")
-				return err
-			}
-			count = count + 1
-			//这里需要查询本币的资产
-			str2, err := utils.GetAsset(collectTask.Symbol, collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
-			if err != nil {
-				logrus.Error(err)
-				return err
-			}
-			balance2 := gjson.Get(str2, "balance")
-			UserBalance2, err = decimal.NewFromString(balance2.String())
-			if err != nil {
-				logrus.Error(err)
-				return err
+			//这里在循环查询用户的fundFee资产是否到账
+			UserBalance2, err := decimal.NewFromString("0")
+			logrus.Info("准备获取fundFee后的余额：")
+			count := 0
+
+			for {
+				if UserBalance2.GreaterThan(CompareBalance) {
+					logrus.Info("获得新增后的余额: " + UserBalance2.String())
+					collectTask.Balance = UserBalance2.String()
+					logrus.Info("已经赋值为最新的余额：" + collectTask.Balance)
+					break
+				}
+				time.Sleep(2 * time.Second)
+				if count >= 5 {
+					logrus.Error("获得新增后的余额错误，超过5次")
+					return err
+				}
+				count = count + 1
+				//这里需要查询本币的资产
+				str2, err := utils.GetAsset(collectTask.Symbol, collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
+				if err != nil {
+					logrus.Error(err)
+					return err
+				}
+				balance2 := gjson.Get(str2, "balance")
+				UserBalance2, err = decimal.NewFromString(balance2.String())
+				if err != nil {
+					logrus.Error(err)
+					return err
+				}
 			}
 		}
 
