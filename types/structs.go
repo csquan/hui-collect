@@ -41,16 +41,18 @@ type TransactionTask struct {
 
 // 资产表,归集源交易表
 type CollectTxDB struct {
-	Base         `xorm:"extends"`
-	Chain        string `xorm:"f_chain"`
-	Symbol       string `xorm:"f_symbol"`
-	Address      string `xorm:"f_address"`
-	Uid          string `xorm:"f_uid"`
-	Balance      string `xorm:"f_balance"`
-	Status       int    `xorm:"f_status"`
-	CollectState int    `xorm:"f_collect_state"`
-	OwnerType    int    `xorm:"f_ownerType"`
-	OrderId      string `xorm:"f_order_id"`
+	Base              `xorm:"extends"`
+	Chain             string `xorm:"f_chain"`
+	Symbol            string `xorm:"f_symbol"`
+	Address           string `xorm:"f_address"`
+	Uid               string `xorm:"f_uid"`
+	Balance           string `xorm:"f_balance"`
+	Status            int    `xorm:"f_status"`
+	CollectState      int    `xorm:"f_collect_state"`
+	OwnerType         int    `xorm:"f_ownerType"`
+	OrderId           string `xorm:"f_order_id"`
+	FundFeeOrderId    string `xorm:"f_fundFee_Id"`
+	BalanceBeforeFund string `xorm:"f_balance_before_fund"`
 }
 
 type Token struct {

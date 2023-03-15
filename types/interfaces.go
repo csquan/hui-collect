@@ -42,6 +42,8 @@ type IWriter interface {
 	UpdateCollectTxState(taskID uint64, state int, orderId string) error
 	UpdateAccount(amount string, receiver string, contractAddr string) error
 
+	UpdateCollectTxFundFeeInfo(orderId string, balance string, ID uint64) error
+
 	DelCollectTask(address string, symbol string, chain string) error
 }
 
