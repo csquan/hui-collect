@@ -20,8 +20,6 @@ import (
 	"time"
 )
 
-const max_tx_fee = "5000000000000000" //4*10 15 认为是一笔交易的费用
-
 type CollectService struct {
 	db     types.IDB
 	config *config.Config
@@ -155,11 +153,6 @@ func (c *CollectService) GetHotWallet(str string) ([]string, error) {
 }
 
 func (c *CollectService) Run() (err error) {
-	go c.Collect()
-	return
-}
-
-func (c *CollectService) Collect() (err error) {
 	srcTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
 		return
