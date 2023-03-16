@@ -12,6 +12,8 @@ CREATE TABLE `t_src_tx`
     `f_collect_state`            tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:ready 1:ing 2:ed',
     `f_created_at`               timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'time',
     `f_updated_at`               timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
+    `f_fundFee_Id` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin COMMENT 'fundFee的ORDERID',
+    `f_balance_before_fund` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin COMMENT 'fundFee前的余额',
     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='归集源交易表';
 
