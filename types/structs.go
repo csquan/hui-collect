@@ -53,6 +53,7 @@ type CollectTxDB struct {
 	OrderId           string `xorm:"f_order_id"`
 	FundFeeOrderId    string `xorm:"f_fundFee_Id"`
 	BalanceBeforeFund string `xorm:"f_balance_before_fund"`
+	Decimal           string `xorm:"f_decimal"`
 }
 
 type Token struct {
@@ -173,6 +174,11 @@ type SigData struct {
 type CallBackData struct {
 	RequestID string
 	Hash      string
+}
+
+type BalanceParam struct {
+	Chain   string `json:"chain"`
+	Address string `json:"address"`
 }
 
 type Fund struct {

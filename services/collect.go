@@ -152,6 +152,26 @@ func (c *CollectService) GetHotWallet(str string) ([]string, error) {
 	return arr, nil
 }
 
+func (c *CollectService) GetBalances(chain string, addr string) (string, error) {
+	param := types.BalanceParam{
+		Chain:   chain,
+		Address: addr,
+	}
+	logrus.Info(param)
+	msg, err := json.Marshal(param)
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	}
+	str, err := utils.Post(c.config.ChainNode.Url, msg)
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	}
+	logrus.Info("balance return " + str)
+	return str, nil
+}
+
 func (c *CollectService) Run() (err error) {
 	srcTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
@@ -304,21 +324,25 @@ func (c *CollectService) Run() (err error) {
 			logrus.Error(err)
 		}
 
-		//这里需要查询本币的资产
-		str1, err := utils.GetAsset(collectTask.Chain, collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
+		str, err := c.GetBalances(collectTask.Chain, collectTask.Address)
 		if err != nil {
 			logrus.Error(err)
 			return err
 		}
-		balance1 := gjson.Get(str1, "balance")
-		UserBalance, err := decimal.NewFromString(balance1.String())
+		logrus.Info(str)
+		code := gjson.Get(str, "code")
+		if code.Int() != 0 {
+			msg := gjson.Get(str, "msg")
+			logrus.Error(msg.String())
+			return fmt.Errorf(msg.String())
+		}
+		balance := gjson.Get(str, "balance")
+		UserBalance, err := decimal.NewFromString(balance.String())
 		if err != nil {
 			logrus.Error(err)
 			return err
 		}
-
-		logrus.Info("得到余额:")
-		logrus.Info(balance1.String())
+		logrus.Info("得到余额: " + UserBalance.String())
 
 		singleTxFee, _ := decimal.NewFromString("0")
 		if collectTask.Chain == "hui" || collectTask.Chain == "eth" {
@@ -328,7 +352,7 @@ func (c *CollectService) Run() (err error) {
 				return err
 			}
 		}
-		logrus.Info("开始判断singleFee")
+		logrus.Info("开始取配置文件中的singleFee")
 		if collectTask.Chain == "trx" {
 			logrus.Info(collectTask.Chain + ":" + collectTask.Symbol)
 			if collectTask.Chain == collectTask.Symbol {
@@ -382,7 +406,7 @@ func (c *CollectService) Run() (err error) {
 
 				//这里保存FundFeeOrderId
 				collectTask.FundFeeOrderId = fund.OrderId
-				collectTask.BalanceBeforeFund = balance1.String()
+				//collectTask.BalanceBeforeFund = balance1.String()
 				logrus.Info("更新fundFeeID为" + fund.OrderId + " Fund前的余额为：" + collectTask.BalanceBeforeFund)
 				logrus.Info(collectTask.ID)
 				c.db.UpdateCollectTxFundFeeInfo(collectTask.FundFeeOrderId, collectTask.BalanceBeforeFund, collectTask.ID)

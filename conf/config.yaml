@@ -13,6 +13,9 @@ wallet:
 token:
   url: http://54.254.77.93:31218/v1
 
+chainnode:
+  url: https://fat.huiwang.io/hw-node/v1/broadcast/get_balance
+
 chains:
   hui:
     id: 8888

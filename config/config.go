@@ -34,6 +34,10 @@ type WalletConf struct {
 	Url string `mapstructure:"url"`
 }
 
+type ChainNodeConf struct {
+	Url string `mapstructure:"url"`
+}
+
 type SingleFeeConf struct {
 	Fee string `mapstructure:"fee"`
 }
@@ -66,6 +70,7 @@ type Config struct {
 	DataBase         DataBaseConf          `mapstructure:"database"`
 	Account          AccountConf           `mapstructure:"account"`
 	Wallet           WalletConf            `mapstructure:"wallet"`
+	ChainNode        ChainNodeConf         `mapstructure:"chainnode"`
 	SingleFee        SingleFeeConf         `mapstructure:"single_fee"`
 	Trx20SingleFee   Trx20SingleFeeConf    `mapstructure:"trx20_single_fee"`
 	TrxSingleFee     TrxSingleFeeConf      `mapstructure:"trx_single_fee"`
