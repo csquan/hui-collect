@@ -321,7 +321,7 @@ func (c *CollectService) Run() (err error) {
 		logrus.Info(balance1.String())
 
 		singleTxFee, _ := decimal.NewFromString("0")
-		if collectTask.Chain == "hui" {
+		if collectTask.Chain == "hui" || collectTask.Chain == "eth" {
 			singleTxFee, err = decimal.NewFromString(c.config.SingleFee.Fee)
 			if err != nil {
 				logrus.Error(err)

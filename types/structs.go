@@ -179,12 +179,12 @@ type Fund struct {
 	AppId     string `json:"app_id"` // 发起提现请求的appid
 	OrderId   string `json:"order_id"`
 	AccountId string `json:"account_id"`
-	Chain     string `json:"chain"`  // 链, btc, eth
-	Symbol    string `json:"symbol"` // 币种:btc, eth, usdt
-	From      string `json:"from"`   // hotwallet 地址
-	To        string `json:"to"`     // hotwallet 地址
-	Amount    string `json:"amount"` // 提现金额
-	Memo      string `json:"memo"`   //memo
+	Chain     string `json:"chain"`         // 链, btc, eth
+	Symbol    string `json:"mapped_symbol"` // 币种:btc, eth, usdt
+	From      string `json:"from"`          // hotwallet 地址
+	To        string `json:"to"`            // hotwallet 地址
+	Amount    string `json:"amount"`        // 提现金额
+	Memo      string `json:"memo"`          //memo
 	Extension string `json:"extension"`
 }
 
@@ -207,7 +207,7 @@ type Collect struct {
 }
 
 type AssetInParam struct {
-	Symbol      string `json:"symbol"`
+	Symbol      string `json:"mapped_symbol"`
 	Chain       string `json:"chain"`
 	AccountAddr string `json:"address"`
 }
