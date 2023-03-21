@@ -207,3 +207,19 @@ func GetHotAddress(collectTx *types.CollectTxDB, addrs []string, url string) (ad
 	logrus.Info(listAsset[0].Addr)
 	return listAsset[0].Addr, nil
 }
+
+func Get(url string) (ret string, err error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	}
+	return string(body), nil
+}

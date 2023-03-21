@@ -16,6 +16,7 @@ import (
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
 	"github.com/tidwall/gjson"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -173,6 +174,59 @@ func (c *CollectService) GetBalances(chain string, addr string, contractAddr str
 	return str, nil
 }
 
+func (c *CollectService) GetMappedTokenInfo() ([]*string, error) {
+	assetStrs := make([]*string, 0)
+	url := c.config.Wallet.Url + "/" + "getSupportedMappedToken"
+	res, err := utils.Get(url)
+	if err != nil {
+		logrus.Error(err)
+		return nil, err
+	}
+	if res == "[]" {
+		return nil, nil
+	}
+	logrus.Info(res)
+	coinArray := strings.Split(res[1:len(res)-1], ",")
+	logrus.Info(coinArray)
+	url = c.config.Wallet.Url + "/" + "getMappedToken"
+	for _, coin := range coinArray {
+		logrus.Info("当前币种")
+		logrus.Info(coin)
+		param := types.Coin{
+			MappedSymbol: coin[1 : len(coin)-1],
+		}
+		msg, err1 := json.Marshal(param)
+		if err1 != nil {
+			logrus.Error(err1)
+			return nil, err1
+		}
+		res, err1 := utils.Post(url, msg)
+		if err1 != nil {
+			logrus.Error(err1)
+			return nil, err1
+		}
+		logrus.Info("getMappedToken返回：")
+		logrus.Info(res)
+		assetStrs = append(assetStrs, &res)
+	}
+	return assetStrs, nil
+}
+
+type Stringer interface {
+	String() string
+}
+
+func ToString(any interface{}) string {
+	if v, ok := any.(Stringer); ok {
+		return v.String()
+	}
+	switch v := any.(type) {
+	case int:
+		return strconv.Itoa(v)
+	}
+	return "???"
+}
+
 func (c *CollectService) Run() (err error) {
 	srcTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
@@ -187,6 +241,29 @@ func (c *CollectService) Run() (err error) {
 		str := fmt.Sprintf("ID:%d ", tx.ID)
 		logrus.Info(str + "addr:" + tx.Address + "balance:" + tx.Balance)
 	}
+
+	//获取所有支持的mappedToken名称
+	tokensArr, err := c.GetMappedTokenInfo()
+	if err != nil {
+		logrus.Error(err)
+	}
+	tokens := map[string]types.TokenSymbol{}
+	for _, token := range tokensArr {
+		var infos []map[string]interface{}
+		err = json.Unmarshal([]byte(*token), &infos)
+		if err != nil {
+			logrus.Error(err)
+			continue
+		}
+		ContractAddress := common.HexToAddress(infos[0]["contract_address"].(string)).String()
+
+		obj := types.TokenSymbol{
+			Symbol:       infos[0]["symbol"].(string),
+			MappedSymbol: infos[0]["mapped_symbol"].(string),
+		}
+		tokens[ContractAddress] = obj
+	}
+	logrus.Info(tokens)
 
 	logrus.Info("过滤余额为0的源交易:")
 	var collectTasks []*types.CollectTxDB
@@ -234,7 +311,10 @@ func (c *CollectService) Run() (err error) {
 	for _, mergeTask := range mergeTasks {
 		logrus.Info("开始调用GetTokenInfo")
 		logrus.Info(mergeTask.Symbol + mergeTask.Symbol)
-		str, err := c.GetTokenInfo(mergeTask.Symbol, mergeTask.Chain)
+
+		//这里根据合约地址找
+		mappedSymbol := tokens[mergeTask.ContractAddress].MappedSymbol
+		str, err := c.GetTokenInfo(mappedSymbol, mergeTask.Chain)
 
 		if err != nil {
 			logrus.Error(err)
@@ -243,6 +323,11 @@ func (c *CollectService) Run() (err error) {
 		collectThreshold := gjson.Get(str, "collect_threshold")
 		hotWallet := gjson.Get(str, "hot_wallets")
 		blacklist := gjson.Get(str, "blacklist")
+
+		if len(hotWallet.String()) == 0 {
+			logrus.Warn("*****热钱包为空，请检查配置******")
+			continue
+		}
 
 		hotAddrs, err := c.GetHotWallet(hotWallet.String())
 		if err != nil {
@@ -253,10 +338,6 @@ func (c *CollectService) Run() (err error) {
 		logrus.Info("热钱包:")
 		logrus.Info(hotAddrs)
 
-		if len(hotAddrs[0]) == 0 {
-			logrus.Warn("*****热钱包为空，请检查配置******")
-			continue
-		}
 		for _, hotAddr := range hotAddrs {
 			logrus.Info(hotAddr)
 		}
@@ -372,7 +453,7 @@ func (c *CollectService) Run() (err error) {
 				singleTxFee, err = decimal.NewFromString(c.config.Trx20SingleFee.Fee)
 				if err != nil {
 					logrus.Error(err)
-					return err
+					continue
 				}
 			}
 		}
@@ -424,14 +505,14 @@ func (c *CollectService) Run() (err error) {
 				BalanceBeforeFund, err := decimal.NewFromString(collectTask.BalanceBeforeFund)
 				if err != nil {
 					logrus.Error(err)
-					return err
+					continue
 				}
 				CompareBalance = BalanceBeforeFund
 				logrus.Info("FundFee比较基准为" + collectTask.BalanceBeforeFund)
 			}
 
 			//这里在循环查询用户的fundFee资产是否到账
-			UserBalance2, err := decimal.NewFromString("0")
+			UserBalance2, _ := decimal.NewFromString("0")
 			logrus.Info("准备获取fundFee后的余额：")
 			count := 0
 
@@ -444,22 +525,22 @@ func (c *CollectService) Run() (err error) {
 				}
 				time.Sleep(2 * time.Second)
 				if count >= 5 {
-					logrus.Error("获得新增后的余额错误，超过5次")
-					return err
+					logrus.Error("获得新增后的余额错误，超过5次，continue")
+					continue
 				}
 				count = count + 1
 				//这里需要查询本币的资产
 				str2, err := c.GetBalances(collectTask.Chain, collectTask.Address, collectTask.ContractAddress)
 				if err != nil {
 					logrus.Error(err)
-					return err
+					continue
 				}
 
 				balance2 := gjson.Get(str2, "balance")
 				UserBalance2, err = decimal.NewFromString(balance2.String())
 				if err != nil {
 					logrus.Error(err)
-					return err
+					continue
 				}
 			}
 		}
@@ -508,6 +589,9 @@ func (c *CollectService) Run() (err error) {
 			} else {
 				collectAmount = shouldCollect.String()
 			}
+			//这里根据合约地址找
+			mappedSymbol := tokens[collectTask.ContractAddress].MappedSymbol
+
 			logrus.Info("collectAmount" + collectAmount)
 			collectTask.OrderId = utils.NewIDGenerator().Generate()
 			//这里调用keep的归集交易接口  --collenttohotwallet
@@ -516,7 +600,7 @@ func (c *CollectService) Run() (err error) {
 				OrderId:   collectTask.OrderId,
 				AccountId: collectTask.Uid,
 				Chain:     collectTask.Chain,
-				Symbol:    collectTask.Symbol,
+				Symbol:    mappedSymbol,
 				From:      collectTask.Address,
 				To:        to, //这里要按照一定策略选择热钱包
 				Amount:    collectAmount,

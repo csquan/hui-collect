@@ -197,8 +197,17 @@ type Fund struct {
 }
 
 type TokenParam struct {
-	Chain  string "json:chain"
-	Symbol string "json:symbol"
+	Chain  string `json:"chain"`
+	Symbol string `json:"mapped_symbol"`
+}
+
+type TokenSymbol struct {
+	Symbol       string "json:symbol"
+	MappedSymbol string "json:mapped_symbol"
+}
+
+type Coin struct {
+	MappedSymbol string `json:"mapped_symbol"`
 }
 
 type Collect struct {
