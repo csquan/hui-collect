@@ -152,10 +152,11 @@ func (c *CollectService) GetHotWallet(str string) ([]string, error) {
 	return arr, nil
 }
 
-func (c *CollectService) GetBalances(chain string, addr string) (string, error) {
+func (c *CollectService) GetBalances(chain string, addr string, contractAddr string) (string, error) {
 	param := types.BalanceParam{
-		Chain:   chain,
-		Address: addr,
+		Chain:    chain,
+		Address:  addr,
+		Contract: contractAddr,
 	}
 	logrus.Info(param)
 	msg, err := json.Marshal(param)
@@ -252,6 +253,10 @@ func (c *CollectService) Run() (err error) {
 		logrus.Info("热钱包:")
 		logrus.Info(hotAddrs)
 
+		if len(hotAddrs[0]) == 0 {
+			logrus.Warn("*****热钱包为空，请检查配置******")
+			continue
+		}
 		for _, hotAddr := range hotAddrs {
 			logrus.Info(hotAddr)
 		}
@@ -324,7 +329,7 @@ func (c *CollectService) Run() (err error) {
 			logrus.Error(err)
 		}
 
-		str, err := c.GetBalances(collectTask.Chain, collectTask.Address)
+		str, err := c.GetBalances(collectTask.Chain, collectTask.Address, collectTask.ContractAddress)
 		if err != nil {
 			logrus.Error(err)
 			return err
@@ -406,7 +411,7 @@ func (c *CollectService) Run() (err error) {
 
 				//这里保存FundFeeOrderId
 				collectTask.FundFeeOrderId = fund.OrderId
-				//collectTask.BalanceBeforeFund = balance1.String()
+				collectTask.BalanceBeforeFund = UserBalance.String()
 				logrus.Info("更新fundFeeID为" + fund.OrderId + " Fund前的余额为：" + collectTask.BalanceBeforeFund)
 				logrus.Info(collectTask.ID)
 				c.db.UpdateCollectTxFundFeeInfo(collectTask.FundFeeOrderId, collectTask.BalanceBeforeFund, collectTask.ID)
@@ -444,11 +449,12 @@ func (c *CollectService) Run() (err error) {
 				}
 				count = count + 1
 				//这里需要查询本币的资产
-				str2, err := utils.GetAsset(collectTask.Symbol, collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
+				str2, err := c.GetBalances(collectTask.Chain, collectTask.Address, collectTask.ContractAddress)
 				if err != nil {
 					logrus.Error(err)
 					return err
 				}
+
 				balance2 := gjson.Get(str2, "balance")
 				UserBalance2, err = decimal.NewFromString(balance2.String())
 				if err != nil {
@@ -466,8 +472,8 @@ func (c *CollectService) Run() (err error) {
 				logrus.Error(err)
 				return err
 			}
-			//这里需要查询本币的资产-重新获取最新的
-			str3, err := utils.GetAsset(collectTask.Symbol, collectTask.Chain, collectTask.Address, c.config.Wallet.Url)
+			//这里需要查询最新的资产-重新获取最新的
+			str3, err := c.GetBalances(collectTask.Chain, collectTask.Address, collectTask.ContractAddress)
 			if err != nil {
 				logrus.Error(err)
 				return err
@@ -531,6 +537,12 @@ func (c *CollectService) Run() (err error) {
 				return err
 			}
 			logrus.Info("归集接口返回：" + str)
+			errMsg := gjson.Get(str, "error")
+
+			if errMsg.String() != "" {
+				logrus.Errorf(errMsg.String())
+				return err
+			}
 			if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectingState), collectTask.OrderId); err != nil {
 				logrus.Errorf("update colelct transaction task error:%v tasks:[%v]", err, collectTask)
 				return err

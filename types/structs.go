@@ -53,7 +53,8 @@ type CollectTxDB struct {
 	OrderId           string `xorm:"f_order_id"`
 	FundFeeOrderId    string `xorm:"f_fundFee_Id"`
 	BalanceBeforeFund string `xorm:"f_balance_before_fund"`
-	Decimal           string `xorm:"f_decimal"`
+	Decimal           uint8  `xorm:"f_decimal"`
+	ContractAddress   string `xorm:"f_contract_address"`
 }
 
 type Token struct {
@@ -177,8 +178,9 @@ type CallBackData struct {
 }
 
 type BalanceParam struct {
-	Chain   string `json:"chain"`
-	Address string `json:"address"`
+	Chain    string `json:"chain"`
+	Address  string `json:"address"`
+	Contract string `json:"contract"`
 }
 
 type Fund struct {
