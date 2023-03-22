@@ -405,12 +405,15 @@ func (c *CollectService) Run() (err error) {
 
 	for _, collectTask := range threshold_tasks {
 		logrus.Info("-----Collect symbol:" + collectTask.Symbol + "chain:" + collectTask.Chain)
-		tokenStr, err := c.GetTokenInfo(collectTask.Symbol, collectTask.Chain)
+		mappedSymbol := tokens[collectTask.ContractAddress].MappedSymbol
+
+		tokenStr, err := c.GetTokenInfo(mappedSymbol, collectTask.Chain)
 		if err != nil {
 			logrus.Error(err)
 		}
 
-		str, err := c.GetBalances(collectTask.Chain, collectTask.Address, collectTask.ContractAddress)
+		//这里获取本币余额
+		str, err := c.GetBalances(collectTask.Chain, collectTask.Address, "")
 		if err != nil {
 			logrus.Error(err)
 			return err
@@ -530,7 +533,7 @@ func (c *CollectService) Run() (err error) {
 				}
 				count = count + 1
 				//这里需要查询本币的资产
-				str2, err := c.GetBalances(collectTask.Chain, collectTask.Address, collectTask.ContractAddress)
+				str2, err := c.GetBalances(collectTask.Chain, collectTask.Address, "")
 				if err != nil {
 					logrus.Error(err)
 					continue
@@ -594,6 +597,14 @@ func (c *CollectService) Run() (err error) {
 
 			logrus.Info("collectAmount" + collectAmount)
 			collectTask.OrderId = utils.NewIDGenerator().Generate()
+
+			collectDecimal := decimal.New(int64(10), int32(collectTask.Decimal-1))
+			logrus.Info("精度：" + collectDecimal.String())
+			amount, _ := decimal.NewFromString(collectAmount)
+			logrus.Info("转换前的金额：" + amount.String())
+			amount = amount.Div(collectDecimal)
+			logrus.Info("转换后的金额：" + amount.String())
+
 			//这里调用keep的归集交易接口  --collenttohotwallet
 			fund := types.Fund{
 				AppId:     "",
@@ -603,7 +614,7 @@ func (c *CollectService) Run() (err error) {
 				Symbol:    mappedSymbol,
 				From:      collectTask.Address,
 				To:        to, //这里要按照一定策略选择热钱包
-				Amount:    collectAmount,
+				Amount:    amount.String(),
 			}
 
 			msg, err := json.Marshal(fund)
