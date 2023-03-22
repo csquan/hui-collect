@@ -597,20 +597,12 @@ func (c *CollectService) Run() (err error) {
 
 			logrus.Info(shouldCollect)
 
-			collectAmount := ""
-			if collectTask.Symbol != collectTask.Chain { //remain 只对本币有效
-				collectAmount = collectTask.Balance
-			} else {
-				collectAmount = shouldCollect.String()
-			}
 			//这里根据合约地址找
 			mappedSymbol := tokens[collectTask.ContractAddress].MappedSymbol
 			contractAddress := strings.TrimSpace(collectTask.ContractAddress)
 			if contractAddress == "" {
 				mappedSymbol = collectTask.Symbol
 			}
-
-			logrus.Info("collectAmount" + collectAmount)
 			collectTask.OrderId = utils.NewIDGenerator().Generate()
 
 			//这里调用keep的归集交易接口  --collenttohotwallet
@@ -622,7 +614,7 @@ func (c *CollectService) Run() (err error) {
 				Symbol:    mappedSymbol,
 				From:      collectTask.Address,
 				To:        to, //这里要按照一定策略选择热钱包
-				Amount:    collectAmount,
+				Amount:    shouldCollect.String(),
 			}
 
 			msg, err := json.Marshal(fund)
