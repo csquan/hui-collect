@@ -5,6 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/ethereum/HuiCollect/config"
 	"github.com/ethereum/HuiCollect/types"
 	"github.com/ethereum/HuiCollect/utils"
@@ -15,10 +20,6 @@ import (
 	"github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
 	"github.com/tidwall/gjson"
-	"math/big"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type CollectService struct {
@@ -314,6 +315,10 @@ func (c *CollectService) Run() (err error) {
 
 		//这里根据合约地址找
 		mappedSymbol := tokens[mergeTask.ContractAddress].MappedSymbol
+		contractAddress := strings.TrimSpace(mergeTask.ContractAddress)
+		if contractAddress == "" {
+			mappedSymbol = mergeTask.Symbol
+		}
 		str, err := c.GetTokenInfo(mappedSymbol, mergeTask.Chain)
 
 		if err != nil {
