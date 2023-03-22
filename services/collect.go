@@ -534,7 +534,7 @@ func (c *CollectService) Run() (err error) {
 				time.Sleep(2 * time.Second)
 				if count >= 5 {
 					logrus.Error("获得新增后的余额错误，超过5次，continue")
-					continue
+					return err
 				}
 				count = count + 1
 				//这里需要查询本币的资产
