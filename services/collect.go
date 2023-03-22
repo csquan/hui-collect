@@ -292,11 +292,13 @@ func (c *CollectService) Run() (err error) {
 				cnt1, _ := big.NewFloat(0).SetString(task.Balance)
 				cnt2, _ := big.NewFloat(0).SetString(filterTask.Balance)
 
-				res := big.NewFloat(0).Add(cnt1, cnt2)
-				logrus.Info("merge chain: " + task.Chain + "symbol: " + task.Symbol + "addr: " + task.Address + "balance1:" + cnt1.String() + "+ balance2:" + cnt2.String() + "=" + res.String())
-				filterTask.Balance = res.String()
+				if cnt1 != nil && cnt2 != nil {
+					res := big.NewFloat(0).Add(cnt1, cnt2)
+					logrus.Info("merge chain: " + task.Chain + "symbol: " + task.Symbol + "addr: " + task.Address + "balance1:" + cnt1.String() + "+ balance2:" + cnt2.String() + "=" + res.String())
+					filterTask.Balance = res.String()
 
-				found = true
+					found = true
+				}
 			}
 		}
 		if found == false {
@@ -611,11 +613,6 @@ func (c *CollectService) Run() (err error) {
 			logrus.Info("collectAmount" + collectAmount)
 			collectTask.OrderId = utils.NewIDGenerator().Generate()
 
-			collectDecimal := decimal.New(int64(10), int32(collectTask.Decimal-1))
-			logrus.Info("精度：" + collectDecimal.String())
-			amount, _ := decimal.NewFromString(collectAmount)
-			logrus.Info("转换前的金额：" + amount.String())
-
 			if collectTask.Symbol == collectTask.Chain { //本币不带精度
 				logrus.Info("本币归集，不需要转换")
 			} else { //代币带有精度 就是很多0
@@ -633,7 +630,7 @@ func (c *CollectService) Run() (err error) {
 				Symbol:    mappedSymbol,
 				From:      collectTask.Address,
 				To:        to, //这里要按照一定策略选择热钱包
-				Amount:    amount.String(),
+				Amount:    collectAmount,
 			}
 
 			msg, err := json.Marshal(fund)
