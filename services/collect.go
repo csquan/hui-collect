@@ -311,7 +311,7 @@ func (c *CollectService) Run() (err error) {
 	//这里归并后，应该看相同地址的是否大于对应币种的门槛--只看本币
 	for _, mergeTask := range mergeTasks {
 		logrus.Info("开始调用GetTokenInfo")
-		logrus.Info(mergeTask.Symbol + mergeTask.Symbol)
+		logrus.Info(mergeTask.Chain + mergeTask.Symbol)
 
 		//这里根据合约地址找
 		mappedSymbol := tokens[mergeTask.ContractAddress].MappedSymbol
@@ -411,6 +411,10 @@ func (c *CollectService) Run() (err error) {
 	for _, collectTask := range threshold_tasks {
 		logrus.Info("-----Collect symbol:" + collectTask.Symbol + "chain:" + collectTask.Chain)
 		mappedSymbol := tokens[collectTask.ContractAddress].MappedSymbol
+		contractAddress := strings.TrimSpace(collectTask.ContractAddress)
+		if contractAddress == "" {
+			mappedSymbol = collectTask.Symbol
+		}
 
 		tokenStr, err := c.GetTokenInfo(mappedSymbol, collectTask.Chain)
 		if err != nil {
@@ -599,6 +603,10 @@ func (c *CollectService) Run() (err error) {
 			}
 			//这里根据合约地址找
 			mappedSymbol := tokens[collectTask.ContractAddress].MappedSymbol
+			contractAddress := strings.TrimSpace(collectTask.ContractAddress)
+			if contractAddress == "" {
+				mappedSymbol = collectTask.Symbol
+			}
 
 			logrus.Info("collectAmount" + collectAmount)
 			collectTask.OrderId = utils.NewIDGenerator().Generate()
