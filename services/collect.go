@@ -607,8 +607,14 @@ func (c *CollectService) Run() (err error) {
 			logrus.Info("精度：" + collectDecimal.String())
 			amount, _ := decimal.NewFromString(collectAmount)
 			logrus.Info("转换前的金额：" + amount.String())
-			amount = amount.Div(collectDecimal)
-			logrus.Info("转换后的金额：" + amount.String())
+
+			if collectTask.Symbol == collectTask.Chain { //本币不带精度
+				logrus.Info("本币归集，不需要转换")
+			} else { //代币带有精度 就是很多0
+				logrus.Info("代币归集，需要转换")
+				amount = amount.Div(collectDecimal)
+				logrus.Info("转换后的金额：" + amount.String())
+			}
 
 			//这里调用keep的归集交易接口  --collenttohotwallet
 			fund := types.Fund{
@@ -627,7 +633,7 @@ func (c *CollectService) Run() (err error) {
 				logrus.Error(err)
 				return err
 			}
-			logrus.Info("调用归集接口")
+			logrus.Info("****调用归集接口****")
 			logrus.Info(fund)
 
 			url := c.config.Wallet.Url + "/" + "collectToHotWallet"
