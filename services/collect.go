@@ -256,8 +256,8 @@ func (c *CollectService) Run() (err error) {
 			logrus.Error(err)
 			continue
 		}
-		ContractAddress := common.HexToAddress(infos[0]["contract_address"].(string)).String()
-
+		ContractAddress := infos[0]["contract_address"].(string)
+		logrus.Info(ContractAddress)
 		obj := types.TokenSymbol{
 			Symbol:       infos[0]["symbol"].(string),
 			MappedSymbol: infos[0]["mapped_symbol"].(string),
