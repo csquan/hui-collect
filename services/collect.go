@@ -17,7 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-xorm/xorm"
 	"github.com/shopspring/decimal"
-	"github.com/sirupsen/logrus"
+	logrus "github.com/sirupsen/logrus"
 	tgbot "github.com/suiguo/hwlib/telegram_bot"
 	"github.com/tidwall/gjson"
 )
@@ -389,7 +389,28 @@ func (c *CollectService) Run() (err error) {
 			hotWallets[mergeTask.Chain][mergeTask.Symbol] = append(hotWallets[mergeTask.Chain][mergeTask.Symbol], addr)
 		}
 
-		cnt1, _ := big.NewFloat(0).SetString(mergeTask.Balance)
+		//这里获取余额和门槛比较
+		str1, err := c.GetBalances(mergeTask.Chain, mergeTask.Address, mergeTask.ContractAddress)
+		if err != nil {
+			logrus.Error(err)
+			return err
+		}
+		logrus.Info(str1)
+		code := gjson.Get(str, "code")
+		if code.Int() != 0 {
+			msg := gjson.Get(str, "msg")
+			logrus.Error(msg.String())
+			return fmt.Errorf(msg.String())
+		}
+		balance := gjson.Get(str, "balance")
+		UserBalance1, err := decimal.NewFromString(balance.String())
+		if err != nil {
+			logrus.Error(err)
+			return err
+		}
+		logrus.Info("得到余额: " + UserBalance1.String())
+
+		cnt1, _ := big.NewFloat(0).SetString(UserBalance1.String())
 		cnt2, _ := big.NewFloat(0).SetString(collectThreshold.String())
 
 		logrus.Info("当前币种的门槛:" + collectThreshold.String())
