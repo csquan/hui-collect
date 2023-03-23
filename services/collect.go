@@ -396,13 +396,13 @@ func (c *CollectService) Run() (err error) {
 			return err
 		}
 		logrus.Info(str1)
-		code := gjson.Get(str, "code")
+		code := gjson.Get(str1, "code")
 		if code.Int() != 0 {
-			msg := gjson.Get(str, "msg")
+			msg := gjson.Get(str1, "msg")
 			logrus.Error(msg.String())
 			return fmt.Errorf(msg.String())
 		}
-		balance := gjson.Get(str, "balance")
+		balance := gjson.Get(str1, "balance")
 		UserBalance1, err := decimal.NewFromString(balance.String())
 		if err != nil {
 			logrus.Error(err)
