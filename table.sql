@@ -14,6 +14,9 @@ CREATE TABLE `t_src_tx`
     `f_updated_at`               timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP COMMENT 'time',
     `f_fundFee_Id` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin COMMENT 'fundFee的ORDERID',
     `f_balance_before_fund` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin COMMENT 'fundFee前的余额',
+    `f_decimal` int DEFAULT NULL,
+    `f_contract_address` varchar(100) COLLATE utf8mb4_bin DEFAULT NULL,
+
     PRIMARY KEY (`f_id`) /*T![clustered_index] CLUSTERED */
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='归集源交易表';
 
