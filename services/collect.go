@@ -228,7 +228,7 @@ func ToString(any interface{}) string {
 	return "???"
 }
 
-func (c *CollectService) Run() (err error) {
+func (c *CollectService) fun() (err error) {
 	srcTasks, err := c.db.GetOpenedCollectTask()
 	if err != nil {
 		return

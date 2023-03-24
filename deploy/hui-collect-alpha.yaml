@@ -26,11 +26,28 @@ data:
       port: 8010
 
     chains:
-      Hui:
+      hui:
         id: 8888
         rpc_url: "http://43.198.66.226:8545"
         fetch_timeout: 3000
+      eth:
+        id: 5
+        rpc_url: "https://rpc.ankr.com/eth_goerli"
+        fetch_timeout: 3000
 
+    single_fee:
+      fee : "0.05"
+
+    trx_single_fee:
+      fee : "3"
+
+    trx20_single_fee:
+      fee : "50"
+
+    UserInfo:
+      KycPubKey: "026a38b8aa47f2af2d2163253ff5385cd059f90476990c7e3ee84bca0ead322241"
+      url: "https://fat.huiwang.io/registrar/" 
+    
     log:
       stdout:
         enable: true
@@ -87,7 +104,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: hui-collect
-          image: reg.huiwang.io/fat/hui-collect:3.0.5
+          image: reg.huiwang.io/fat/hui-collect:3.0.44
           command:
             - sh
             - -c
