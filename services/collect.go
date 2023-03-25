@@ -390,7 +390,7 @@ func (c *CollectService) Run() (err error) {
 		}
 
 		//这里获取余额和门槛比较
-		logrus.Info("开始获取合约地址的余额以便和门槛比较:" + mergeTask.ContractAddress)
+		logrus.Info("开始获取合约地址的余额以便和门槛比较: " + mergeTask.ContractAddress)
 		str1, err := c.GetBalances(mergeTask.Chain, mergeTask.Address, mergeTask.ContractAddress)
 		if err != nil {
 			logrus.Error(err)
@@ -446,6 +446,7 @@ func (c *CollectService) Run() (err error) {
 		}
 
 		//这里获取本币余额
+		logrus.Info("开始获取本币余额 :" + collectTask.Chain + collectTask.Address)
 		str, err := c.GetBalances(collectTask.Chain, collectTask.Address, "")
 		if err != nil {
 			logrus.Error(err)
@@ -658,7 +659,6 @@ func (c *CollectService) Run() (err error) {
 
 			if errMsg.String() != "" {
 				logrus.Errorf(errMsg.String())
-				return err
 			}
 			if err := c.db.UpdateCollectTxState(collectTask.ID, int(types.TxCollectingState), collectTask.OrderId); err != nil {
 				logrus.Errorf("update colelct transaction task error:%v tasks:[%v]", err, collectTask)
