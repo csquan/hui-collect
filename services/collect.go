@@ -186,6 +186,7 @@ func (c *CollectService) GetMappedTokenInfo() ([]*string, error) {
 	if res == "[]" {
 		return nil, nil
 	}
+	logrus.Info("getSupportedMappedToken返回：")
 	logrus.Info(res)
 	coinArray := strings.Split(res[1:len(res)-1], ",")
 	logrus.Info(coinArray)
@@ -248,22 +249,31 @@ func (c *CollectService) Run() (err error) {
 	if err != nil {
 		logrus.Error(err)
 	}
+	logrus.Info("获取的原始map")
+	logrus.Info(tokensArr)
 	tokens := map[string]types.TokenSymbol{}
 	for _, token := range tokensArr {
+		logrus.Info(token)
 		var infos []map[string]interface{}
 		err = json.Unmarshal([]byte(*token), &infos)
 		if err != nil {
 			logrus.Error(err)
 			continue
 		}
-		ContractAddress := infos[0]["contract_address"].(string)
-		logrus.Info(ContractAddress)
-		obj := types.TokenSymbol{
-			Symbol:       infos[0]["symbol"].(string),
-			MappedSymbol: infos[0]["mapped_symbol"].(string),
+		logrus.Info("原始数据")
+		logrus.Info(infos)
+		for _, info := range infos {
+			ContractAddress := info["contract_address"].(string)
+			logrus.Info("合约地址")
+			logrus.Info(ContractAddress)
+			obj := types.TokenSymbol{
+				Symbol:       infos[0]["symbol"].(string),
+				MappedSymbol: infos[0]["mapped_symbol"].(string),
+			}
+			tokens[ContractAddress] = obj
 		}
-		tokens[ContractAddress] = obj
 	}
+	logrus.Info("转换后的map")
 	logrus.Info(tokens)
 
 	logrus.Info("过滤余额为0的源交易:")
@@ -315,8 +325,14 @@ func (c *CollectService) Run() (err error) {
 		logrus.Info("开始调用GetTokenInfo")
 		logrus.Info(mergeTask.Chain + mergeTask.Symbol)
 
+		logrus.Info("合约地址")
+		logrus.Info(mergeTask.ContractAddress)
+
 		//这里根据合约地址找
 		mappedSymbol := tokens[mergeTask.ContractAddress].MappedSymbol
+		logrus.Info("mappedSymbol")
+		logrus.Info(mappedSymbol)
+
 		contractAddress := strings.TrimSpace(mergeTask.ContractAddress)
 		if contractAddress == "" {
 			mappedSymbol = mergeTask.Symbol
